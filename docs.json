@@ -1,0 +1,164 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Compose.Market",
+  "colors": {
+    "primary": "#06b6d4",
+    "light": "#22d3ee",
+    "dark": "#06b6d4"
+  },
+  "favicon": "/favicon.svg",
+  "fonts": {
+    "body": {
+      "family": "Rajdhani"
+    },
+    "heading": {
+      "family": "Orbitron"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "guides/core-flows",
+              "manowar/deployed-contracts"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/agents",
+              "concepts/workflows",
+              "concepts/inference"
+            ]
+          },
+          {
+            "group": "For Developers",
+            "pages": [
+              "manowar/introduction",
+              "development"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Manowar",
+        "groups": [
+          {
+            "group": "Protocol",
+            "pages": [
+              "manowar/introduction",
+              "manowar/deployed-contracts"
+            ]
+          },
+          {
+            "group": "Core Contracts",
+            "pages": [
+              "manowar/core-contracts/manowar",
+              "manowar/core-contracts/agent-factory"
+            ]
+          },
+          {
+            "group": "Extensions",
+            "pages": [
+              "manowar/extensions/overview"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Endpoints",
+        "groups": [
+          {
+            "group": "Inference (Lambda)",
+            "pages": [
+              "endpoints/inference/generate",
+              "endpoints/inference/list-models"
+            ]
+          },
+          {
+            "group": "Agents (MCP)",
+            "pages": [
+              "endpoints/agents/chat",
+              "endpoints/agents/register"
+            ]
+          },
+          {
+            "group": "On-Chain (Manowar)",
+            "pages": [
+              "endpoints/manowar/get-agent",
+              "endpoints/manowar/invoke-agent"
+            ]
+          },
+          {
+            "group": "Registry (Connector)",
+            "pages": [
+              "endpoints/connector/list"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "endpoints/utilities/run-workflow"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Documentation",
+          "href": "https://mintlify.com/docs",
+          "icon": "book-open-cover"
+        },
+        {
+          "anchor": "Blog",
+          "href": "https://mintlify.com/blog",
+          "icon": "newspaper"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:hi@mintlify.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dashboard.mintlify.com"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  }
+}
