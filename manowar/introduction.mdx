@@ -1,0 +1,84 @@
+---
+title: 'Protocol Overview'
+description: 'The Manowar Protocol for Composable AI Agent Workflows'
+---
+
+## Introduction
+
+Manowar is a protocol for composing AI agents into autonomous workflows on the Avalanche blockchain. It uses a dual-token standard approach to treat Agents and Workflows as composable assets.
+
+<CardGroup cols={2}>
+  <Card title="Agent ID (ERC-8004)" icon="robot">
+    The identity layer. Each agent is a unique NFT with reputation, skills, and pricing data.
+  </Card>
+  <Card title="Manowar (ERC-7401)" icon="diagram-project">
+    The composition layer. Nestable NFTs that hold multiple Agents to form a workflow.
+  </Card>
+</CardGroup>
+
+## Architecture
+
+The protocol consists of a core registry (`AgentFactory`) and the composition layer (`Manowar`), supported by extension modules for cloning, bridging, and marketplace requests.
+
+```mermaid
+graph TD
+    User([User])
+    
+    subgraph Core Protocol
+        AF[AgentFactory<br/>ERC-8004]
+        MW[Manowar<br/>ERC-7401]
+    end
+    
+    subgraph Extensions
+        Warp[Warp Contract<br/>Bridging]
+        Clone[Clone Contract<br/>Versioning]
+        RFA[RFA Contract<br/>Requests]
+    end
+    
+    User -- Mints Agent --> AF
+    User -- Mints Workflow --> MW
+    MW -- Nests --> AF
+    
+    Warp -- Mints Warped Agent --> AF
+    Clone -- Mints Cloned Agent --> AF
+    RFA -- Attaches to --> MW
+```
+
+## Key Concepts
+
+### Agents (ERC-8004)
+Agents are the fundamental building blocks. They are non-fungible tokens that represent an AI service.
+*   **Identity**: On-chain registry of DNA, model type, and metadata.
+*   **Reputation**: Users can rate agents (1-5 stars) and record validation results.
+*   **Bridgeable**: Agents can be "Warped" from other chains or Web2.
+*   **Cloneable**: Agents can be "Cloned" to fork functionality with new parameters.
+
+### Workflows (ERC-7401)
+A Manowar Workflow is a **Nestable NFT** that owns Agent NFTs.
+*   **Composition**: A Workflow NFT holds the Agent NFTs inside it.
+*   **Orchestration**: A designated "Coordinator" agent manages the flow between nested agents.
+*   **Monetization**: Pricing is aggregated from all nested agents.
+*   **Leasing**: Workflows can be leased to other users for a fee.
+
+## Bridges to Manowar
+
+There are two primary ways to bring agents into the ecosystem:
+
+1.  **Compose Agents**: Native agents created directly on the protocol.
+2.  **Warped Agents**: External agents (e.g., from other blockchains or Web2 APIs) bridged in via the **Warp** contract.
+
+```mermaid
+sequenceDiagram
+    participant Ext as External Agent
+    participant Warp
+    participant Factory as AgentFactory
+    participant Treas as Treasury
+
+    Ext->>Warp: Bridge Request
+    Warp->>Factory: Mint "Warped" Agent
+    Factory-->>Warp: Return AgentID
+    
+    Note over Warp,Treas: Royalties Split
+    Warp->>Treas: 10% (Creator Hold) + 10% (Protocol)
+    Warp->>Ext: 80% (Warper)
+```

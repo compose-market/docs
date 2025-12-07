@@ -1,0 +1,46 @@
+---
+title: 'Manowar Workflow'
+description: 'ERC-7401 Nestable NFT for orchestration'
+---
+
+The **Manowar** contract is the heart of the workflow composition. It implements the **ERC-7401 Nestable NFT** standard, allowing it to "own" other NFTs (specifically, ERC-8004 Agents).
+
+## Features
+
+### Nesting
+Workflows act as parent tokens. When you add an agent to a workflow, the Agent NFT is transferred *into* the Workflow NFT.
+*   **Nest**: Add an agent to the workflow.
+*   **Unnest**: Remove an agent (only by the workflow owner).
+*   **Transfer**: When you sell the Workflow NFT, all nested Agent NFTs move with it automatically.
+
+### Units & Pricing
+*   **Aggregated Price**: The total price of a workflow is the sum of all nested agents' prices + a base `x402` price.
+*   **Unit Consumption**: Buying a "run" of the workflow consumes 1 unit from *every* nested agent.
+
+### Coordinator Pattern
+Every workflow can designate one nested agent as the **Coordinator**. This agent is responsible for:
+1.  Receiving the initial user input.
+2.  Orchestrating calls to other agents in the workflow.
+3.  Synthesizing the final result.
+
+### Leasing
+Workflows can be leased. This allows an owner to rent out their specific composition without selling the underlying asset. The protocol enforces a maximum lease fee (default 20%).
+
+## Key Functions
+
+```solidity
+// Mint a new workflow with initial agents
+function mintManowar(
+    MintParams calldata params,
+    uint256[] calldata agentIds
+) external returns (uint256 manowarId);
+
+// Add an agent to an existing workflow
+function addAgent(uint256 manowarId, uint256 agentId) external;
+
+// Remove an agent
+function removeAgent(uint256 manowarId, uint256 agentId) external;
+
+// Consume a unit (run the workflow)
+function consumeUnit(uint256 manowarId, address buyer) external;
+```

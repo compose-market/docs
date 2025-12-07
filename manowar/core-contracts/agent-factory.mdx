@@ -1,0 +1,40 @@
+---
+title: 'Agent Factory'
+description: 'ERC-8004 Identity & Registry'
+---
+
+The **AgentFactory** creates and manages the identity of all AI agents in the system. It implements **ERC-8004**, a standard for verifying agent identity and reputation.
+
+## Agent Identity (ERC-8004)
+Each agent is minted as a unique NFT.
+*   **Agent ID**: Unique uint256 identifier.
+*   **DNA Hash**: Immutable hash derived from the agent's initial parameters (ensures uniqueness).
+*   **Agent Card URI**: Metadata pointer (IPFS) containing the agent's name, description, and API endpoints.
+
+## Capability & Supply
+*   **Units**: Agents can have a limited supply of "units" (runs). If `units = 0`, the supply is infinite.
+*   **Price**: The creator sets a price per unit (in USDC).
+
+## Reputation System
+The factory tracks on-chain reputation for every agent:
+*   **Feedback**: Users can leave a 1-5 star rating and feedback hash after using an agent.
+*   **Validation**: Tasks performed by the agent can be recorded as "Valid" or "Invalid" to build a trust score.
+
+## Key Functions
+
+```solidity
+// Register a new agent
+function mintAgent(
+    bytes32 dnaHash,
+    uint256 units,
+    uint256 price,
+    bool cloneable,
+    string calldata agentCardUri
+) external returns (uint256 agentId);
+
+// Update pricing
+function updatePrice(uint256 agentId, uint256 newPrice) external;
+
+// Record usage feedback
+function recordFeedback(uint256 agentId, uint8 rating, bytes32 feedbackHash) external;
+```
