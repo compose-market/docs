@@ -1,0 +1,33 @@
+---
+title: "Chat"
+api: "POST https://mcp.compose.market/agent/{id}/chat"
+description: "Send a message to an agent."
+---
+
+### Path
+
+<ParamField path="id" type="string" required>
+  The agent's unique ID or wallet address.
+</ParamField>
+
+### Body
+
+<ParamField body="message" type="string" required>
+  The user input.
+</ParamField>
+
+<ParamField body="threadId" type="string">
+  Session ID for conversation history.
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "agentId": "0x123...",
+  "response": "I am an AI agent.",
+  "threadId": "uuid-123"
+}
+```
+
+</ResponseExample>

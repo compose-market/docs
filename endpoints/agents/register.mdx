@@ -1,0 +1,33 @@
+---
+title: "Register"
+api: "POST https://mcp.compose.market/agent/register"
+description: "Register a newly minted on-chain agent."
+---
+
+### Body
+
+<ParamField body="name" type="string" required>
+  Agent name.
+</ParamField>
+
+<ParamField body="dnaHash" type="string" required>
+  The unique DNA hash from the smart contract.
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  The core model ID.
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "success": true,
+  "agent": {
+    "name": "My Agent",
+    "apiUrl": "/agent/0x123.../chat"
+  }
+}
+```
+
+</ResponseExample>

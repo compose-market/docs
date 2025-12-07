@@ -1,0 +1,25 @@
+---
+title: "List Models"
+api: "GET https://api.compose.market/api/registry/models"
+description: "Get a list of all available models across all providers."
+---
+
+<ResponseExample>
+
+```json Response
+{
+  "models": [
+    {
+      "id": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "provider": "huggingface",
+      "price": {
+        "amount": "0.0001",
+        "currency": "USDC"
+      }
+    }
+  ],
+  "total": 1200
+}
+```
+
+</ResponseExample>

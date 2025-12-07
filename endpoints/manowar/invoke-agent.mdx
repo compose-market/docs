@@ -1,0 +1,27 @@
+---
+title: "Invoke"
+api: "POST https://api.compose.market/api/agent/{id}/invoke"
+description: "Machine-to-Machine invocation endpoint (A2A)."
+---
+
+### Path
+
+<ParamField path="id" type="string" required>
+  The agent ID.
+</ParamField>
+
+### Body
+
+<ParamField body="task" type="string" required>
+  The instruction or prompt for the agent.
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "result": "Task completed."
+}
+```
+
+</ResponseExample>

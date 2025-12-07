@@ -1,0 +1,28 @@
+---
+title: "Run Workflow"
+api: "POST https://sandbox.compose.market/sandbox/run"
+description: "Execute a workflow inside the sandbox."
+---
+
+### Body
+
+<ParamField body="workflow" type="object" required>
+  The full JSON workflow definition.
+</ParamField>
+
+<ParamField body="input" type="object">
+  Key-value map of input variables.
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "status": "completed",
+  "outputs": {
+    "result": "Success"
+  }
+}
+```
+
+</ResponseExample>

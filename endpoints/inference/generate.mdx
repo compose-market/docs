@@ -1,0 +1,46 @@
+---
+title: "Generate"
+api: "POST https://api.compose.market/api/inference"
+description: "Execute AI inference with x402 payment."
+---
+
+### Body
+
+<ParamField body="modelId" type="string" required>
+  The ID of the model to use (e.g., `meta-llama/Meta-Llama-3-8B-Instruct`).
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  List of messages in standard OpenAI format.
+  
+  ```json
+  [{ "role": "user", "content": "Hello!" }]
+  ```
+</ParamField>
+
+### Headers
+
+<ParamField header="x-payment" type="string">
+  The x402 payment signature (required for paid models).
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20
+  }
+}
+```
+
+</ResponseExample>

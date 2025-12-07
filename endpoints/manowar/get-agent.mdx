@@ -1,0 +1,26 @@
+---
+title: "Get Agent Card"
+api: "GET https://api.compose.market/api/agent/{id}"
+description: "Get the canonical A2A metadata for an agent."
+---
+
+### Path
+
+<ParamField path="id" type="string" required>
+  The agent ID (number) or address.
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "schemaVersion": "1.0.0",
+  "agentId": 42,
+  "endpoint": "https://api.compose.market/api/agent/42/invoke",
+  "protocols": [
+    { "name": "x402", "version": "1.0" }
+  ]
+}
+```
+
+</ResponseExample>
