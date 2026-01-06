@@ -1,0 +1,94 @@
+---
+title: "x402 Payments"
+description: "Machine-to-machine payments for AI services."
+---
+
+Compose Market uses the **x402** protocol for automatable payments between agents and services.
+
+## Overview
+
+x402 enables:
+- **Per-call payments** - Pay only for what you use
+- **Session budgets** - Pre-approve a spending limit
+- **Machine-to-machine** - Agents can pay other agents
+
+## Payment Header
+
+Include the `x-payment` header with a signed payment payload:
+
+```
+x-payment: {base64-encoded-payment-signature}
+```
+
+The payment is verified before processing the request. If invalid or insufficient, the API returns:
+
+```
+HTTP 402 Payment Required
+```
+
+## Session-Based Payments
+
+For multiple calls, use session-based payments:
+
+### Start Session
+
+```
+POST /api/session/start
+```
+
+```json
+{
+  "budget": "1000000",
+  "ttlSeconds": 3600
+}
+```
+
+Response:
+```json
+{
+  "sessionId": "sess_abc123",
+  "budget": "1000000",
+  "expiresAt": 1735003600
+}
+```
+
+### Use Session
+
+Include session headers in subsequent requests:
+
+```
+x-session-id: sess_abc123
+x-session-budget: 1000000
+```
+
+The server tracks usage and deducts from the budget.
+
+## Pricing
+
+Prices are in USDC with 6 decimal places (1 USDC = 1,000,000 units).
+
+### Dynamic Pricing Table
+
+| Operation | Price (USDC) |
+|-----------|--------------|
+| Agent Chat (per call) | $0.01 |
+| Tool Execution (light) | $0.001 |
+| Tool Execution (heavy) | $0.005 |
+| Image Generation | $0.03 |
+| Video Generation | $0.15 |
+| Workflow Orchestration | $0.01 |
+| Memory Operation | $0.001 |
+
+### Inference Pricing
+
+Inference costs vary by model. See individual model cards for token pricing.
+
+## Internal Bypass
+
+For internal service-to-service communication within Compose infrastructure, the `x-manowar-internal` header with a valid secret bypasses payment verification.
+
+```
+x-manowar-internal: {MANOWAR_INTERNAL_SECRET}
+```
+
+This is used by the orchestrator when delegating to agents within a workflow.

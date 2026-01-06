@@ -1,25 +1,110 @@
 ---
-title: 'Decentralized Inference'
-description: 'Accessing 1000+ Models via AI Agents'
+title: 'Model Catalog'
+description: 'Access to 50,000+ AI models across providers'
 ---
 
-Compose.Market leverages the power of decentralized inference networks to provide access to virtually any AI model in existence.
+Compose Market provides unified access to AI models from multiple providers through a single API.
 
-## Why Decentralized?
+## Model Catalog
 
-### 1. Uncensored & Unbiased
-Centralized APIs often gatekeep or sanitize outputs. Our network provides access to raw, uncensored models for pure research and development.
+The platform maintains two catalogs:
 
-### 2. Lowest Cost
-By tapping into a global network of GPU providers, we offer inference at prices significantly lower than major cloud providers.
+### Curated Catalog (~2,100 models)
 
-### 3. Thousands of Models
-We aren't limited to "GPT-4" or "Claude".
-*   **Llama 3** (8B, 70B, 400B)
-*   **Mistral & Mixtral**
-*   **DeepSeek Coder**
-*   **Stable Diffusion** & proprietary image models
-*   ...and hundreds of community finetunes.
+Models visible on the platform with:
+- Verified pricing
+- Validated capabilities
+- Quality assurance
 
-## How it Works
-When you create an agent, you select a **Model ID**. The agent's smart contract routes requests to the decentralized network, verifying the proof of inference before releasing payment founds.
+Access via: `GET /v1/models`
+
+### Extended Catalog (50,000+ models)
+
+Complete index from all providers including:
+- Experimental models
+- Community fine-tunes
+- Specialized variants
+
+Access via: `GET /v1/models/all`
+
+## Providers
+
+| Provider | Models | Specialization |
+|----------|--------|----------------|
+| OpenAI | GPT-4o, o1, DALL-E | General, reasoning |
+| Anthropic | Claude 4, 3.7 | Analysis, coding |
+| Google | Gemini 3, Veo, Lyria | Multimodal |
+| AIML | Various | Aggregation |
+| HuggingFace | Open source | Community models |
+| OpenRouter | Routing | 200+ models |
+
+## Model Types
+
+### Text Generation
+
+Models for chat, reasoning, and content generation:
+
+- `google/gemini-3-flash-preview` - Fast multimodal
+- `deepseek/deepseek-v3.2` - Reasoning
+- `arcee-ai/trinity-mini` - Efficient
+
+### Image Generation
+
+Text-to-image and image-to-image:
+
+- `fal-ai/flux-2` - High quality
+- `bytedance/seedream-4-5` - Fast generation
+- `dall-e-3` - OpenAI
+
+### Video Generation
+
+Text-to-video and image-to-video:
+
+- `openai/sora-2` - Cinematic
+- `google/veo3-1` - Fast
+- `kwai/kling-2.6` - Motion control
+
+### Embeddings
+
+Feature extraction for search and similarity:
+
+- `text-embedding-3-large` - OpenAI
+- `intfloat/e5-mistral-7b-instruct` - Open source
+
+### Audio
+
+Speech and music generation:
+
+- `tts-1-hd` - Text-to-speech
+- `whisper-1` - Speech recognition
+- `google/lyria2` - Music generation
+
+## ModelCard Schema
+
+Each model has a `ModelCard` with:
+
+```typescript
+interface ModelCard {
+  modelId: string;           // Canonical identifier
+  name: string;              // Display name
+  provider: string;          // Provider ID
+  taskType: string;          // Primary task
+  capabilities: string[];    // Supported features
+  pricing: {
+    inputTokenPrice: string;
+    outputTokenPrice: string;
+  };
+  contextWindow?: number;
+  maxOutputTokens?: number;
+}
+```
+
+## API Compatibility
+
+All models use OpenAI-compatible endpoints:
+
+- `POST /v1/chat/completions` - Text generation
+- `POST /v1/images/generations` - Image generation
+- `POST /v1/embeddings` - Embeddings
+
+This allows drop-in replacement with existing OpenAI client libraries.
