@@ -34,7 +34,8 @@
             "pages": [
               "concepts/agents",
               "concepts/workflows",
-              "concepts/inference"
+              "concepts/inference",
+              "concepts/payments"
             ]
           }
         ]
@@ -65,39 +66,48 @@
         ]
       },
       {
+        "tab": "MCP",
+        "groups": [
+          {
+            "group": "Tool Registry",
+            "pages": [
+              "mcp/overview",
+              "mcp/registry"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Endpoints",
         "groups": [
           {
             "group": "Inference (Lambda)",
             "pages": [
               "endpoints/inference/generate",
-              "endpoints/inference/list-models"
+              "endpoints/inference/list-models",
+              "endpoints/inference/multimodal"
             ]
           },
           {
             "group": "Agents (MCP)",
             "pages": [
               "endpoints/agents/chat",
-              "endpoints/agents/register"
+              "endpoints/agents/register",
+              "endpoints/agents/discovery"
             ]
           },
           {
-            "group": "On-Chain (Manowar)",
+            "group": "Workflows (Manowar)",
             "pages": [
               "endpoints/manowar/get-agent",
-              "endpoints/manowar/invoke-agent"
+              "endpoints/manowar/invoke-agent",
+              "endpoints/manowar/workflows"
             ]
           },
           {
             "group": "Registry (Connector)",
             "pages": [
               "endpoints/connector/list"
-            ]
-          },
-          {
-            "group": "Utilities",
-            "pages": [
-              "endpoints/utilities/run-workflow"
             ]
           }
         ]
