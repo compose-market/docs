@@ -1,0 +1,178 @@
+---
+title: "Workflows (Manowars)"
+description: "Register, discover, and execute multi-agent workflows."
+---
+
+A **Manowar** is a multi-agent workflow that orchestrates multiple agents to complete complex tasks.
+
+## Discovery (Lambda API)
+
+### List Manowars
+
+```
+GET https://api.compose.market/manowars
+```
+
+Returns all Manowars from Pinata IPFS.
+
+```json
+{
+  "manowars": [
+    {
+      "schemaVersion": "1.0.0",
+      "title": "DeFi Research Pipeline",
+      "description": "Research and analyze DeFi protocols",
+      "dnaHash": "0xdef...",
+      "walletAddress": "0xMW...",
+      "agents": [...],
+      "pricing": { "totalAgentPrice": "50000" },
+      "cid": "Qm..."
+    }
+  ],
+  "total": 5
+}
+```
+
+### Get Manowar by Wallet
+
+```
+GET https://api.compose.market/manowar/{walletAddress}
+```
+
+Returns the ManowarMetadata for a specific workflow.
+
+---
+
+## Runtime (Manowar Service)
+
+### Register Manowar
+
+```
+POST https://manowar.compose.market/manowar/register
+```
+
+<ParamField body="walletAddress" type="string" required>
+  Derived wallet address
+</ParamField>
+
+<ParamField body="manowarId" type="number">
+  On-chain token ID
+</ParamField>
+
+<ParamField body="manowarCardUri" type="string">
+  IPFS URI to metadata
+</ParamField>
+
+<ParamField body="dnaHash" type="string">
+  On-chain DNA hash
+</ParamField>
+
+<ParamField body="title" type="string">
+  Workflow title
+</ParamField>
+
+<ParamField body="description" type="string">
+  Workflow description
+</ParamField>
+
+<ParamField body="hasCoordinator" type="boolean">
+  Has coordinator model
+</ParamField>
+
+<ParamField body="coordinatorModel" type="string">
+  Coordinator LLM model ID
+</ParamField>
+
+<ParamField body="agentWalletAddresses" type="array">
+  List of nested agent wallet addresses
+</ParamField>
+
+```json
+{
+  "success": true,
+  "walletAddress": "0xMW...",
+  "onchainTokenId": 1,
+  "chatUrl": "/manowar/0xMW.../chat"
+}
+```
+
+---
+
+### Chat with Manowar
+
+```
+POST https://manowar.compose.market/manowar/{id}/chat
+```
+
+Execute a Manowar workflow with streaming progress.
+
+<ParamField path="id" type="string" required>
+  Manowar wallet address
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  User's task description
+</ParamField>
+
+<ParamField body="threadId" type="string">
+  Session ID
+</ParamField>
+
+<ParamField header="x-payment" type="string" required>
+  x402 payment signature
+</ParamField>
+
+### Response (SSE)
+
+```
+event: start
+data: {"runId":"run-123","message":"Starting workflow..."}
+
+event: step
+data: {"stepName":"Data Collector","stepIndex":1,"totalSteps":3}
+
+event: agent
+data: {"agentName":"Data Collector","message":"Collecting data..."}
+
+event: result
+data: {"success":true,"output":"Final report...","walletAddress":"0xMW..."}
+
+event: done
+data: {}
+```
+
+---
+
+### Execute Workflow
+
+```
+POST https://manowar.compose.market/manowar/execute
+```
+
+Execute a workflow without streaming.
+
+<ParamField body="payload.walletAddress" type="string" required>
+  Manowar wallet address
+</ParamField>
+
+<ParamField body="payload.input" type="string" required>
+  User's task description
+</ParamField>
+
+---
+
+## ManowarMetadata Schema
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schemaVersion` | string | Schema version |
+| `title` | string | Workflow title |
+| `description` | string | Description |
+| `walletAddress` | string | Derived wallet |
+| `dnaHash` | string | On-chain hash |
+| `agents` | AgentCard[] | Nested agents |
+| `edges` | array | Workflow graph |
+| `coordinator` | object | Coordinator config |
+| `pricing` | object | Total agent price |
+| `lease` | object | Lease config |
+| `creator` | string | Creator address |

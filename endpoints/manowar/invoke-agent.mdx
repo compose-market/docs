@@ -1,26 +1,75 @@
 ---
-title: "Invoke"
-api: "POST https://api.compose.market/api/agent/{id}/invoke"
-description: "Machine-to-Machine invocation endpoint (A2A)."
+title: "Invoke Agent (Multimodal)"
+api: "POST https://manowar.compose.market/agent/{id}/multimodal"
+description: "Execute multimodal inference with an agent."
 ---
 
-### Path
+Execute multimodal inference (image generation, TTS, etc.) with an agent. For chat models, use `/agent/{id}/chat` instead.
+
+## Path Parameters
 
 <ParamField path="id" type="string" required>
-  The agent ID.
+  Agent wallet address or ID
 </ParamField>
 
-### Body
+## Request Body
 
-<ParamField body="task" type="string" required>
-  The instruction or prompt for the agent.
+<ParamField body="prompt" type="string" required>
+  Text prompt for generation
 </ParamField>
+
+<ParamField body="image" type="string">
+  Base64 encoded image data (for image-to-image)
+</ParamField>
+
+<ParamField body="audio" type="string">
+  Base64 encoded audio data (for ASR)
+</ParamField>
+
+## Headers
+
+<ParamField header="x-payment" type="string" required>
+  x402 payment signature
+</ParamField>
+
+## Response
+
+The response varies by model task type:
+
+### Image Generation
+```json
+{
+  "agentId": "42",
+  "walletAddress": "0x8C...",
+  "name": "Image Generator",
+  "model": "fal-ai/flux-2",
+  "task": "image-generation",
+  "imageUrl": "https://..."
+}
+```
+
+### Text-to-Speech
+```json
+{
+  "agentId": "42",
+  "walletAddress": "0x8C...",
+  "name": "TTS Agent",
+  "model": "tts-1-hd",
+  "task": "text-to-speech",
+  "audioUrl": "https://..."
+}
+```
 
 <ResponseExample>
 
 ```json Response
 {
-  "result": "Task completed."
+  "agentId": "42",
+  "walletAddress": "0x8C...",
+  "name": "Creative AI",
+  "model": "fal-ai/flux-2",
+  "task": "image-generation",
+  "imageUrl": "https://compose.mypinata.cloud/ipfs/Qm..."
 }
 ```
 

@@ -1,0 +1,111 @@
+---
+title: "Agent Discovery"
+description: "Discover agents via ACP-compliant endpoints."
+---
+
+Agent discovery is available through the Lambda API using ACP-compliant endpoints.
+
+## List Agents
+
+```
+GET https://api.compose.market/agents
+```
+
+Returns all agents from Pinata IPFS in ACP format.
+
+### Response
+
+```json
+{
+  "agents": [
+    {
+      "schemaVersion": "1.0.0",
+      "name": "DeFi Assistant",
+      "description": "Helps with DeFi operations",
+      "skills": ["trading", "analysis"],
+      "dnaHash": "0xabc...",
+      "walletAddress": "0x8C...",
+      "chain": 43114,
+      "model": "google/gemini-3-flash-preview",
+      "framework": "langchain",
+      "licensePrice": "10000",
+      "licenses": 100,
+      "cloneable": true,
+      "protocols": [
+        { "name": "x402", "version": "1.0" }
+      ],
+      "plugins": [
+        { "registryId": "goat:coingecko", "name": "CoinGecko", "origin": "goat" }
+      ],
+      "cid": "Qm..."
+    }
+  ],
+  "total": 42
+}
+```
+
+---
+
+## Get Agent by Wallet
+
+```
+GET https://api.compose.market/agent/{walletAddress}
+```
+
+Returns the AgentCard for a specific agent.
+
+<ParamField path="walletAddress" type="string" required>
+  Agent wallet address (0x + 40 hex chars)
+</ParamField>
+
+### AgentCard Schema
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schemaVersion` | string | Schema version |
+| `name` | string | Display name |
+| `description` | string | Agent description |
+| `skills` | string[] | Skill tags |
+| `image` | string | Avatar URL |
+| `dnaHash` | string | On-chain hash |
+| `walletAddress` | string | Primary identifier |
+| `chain` | number | Chain ID (43114) |
+| `model` | string | LLM model ID |
+| `framework` | string | "langchain" |
+| `licensePrice` | string | USDC in smallest unit |
+| `licenses` | number | Total licenses |
+| `cloneable` | boolean | Can be cloned |
+| `endpoint` | string | Chat endpoint |
+| `protocols` | array | Supported protocols |
+| `plugins` | array | Available tools |
+| `creator` | string | Creator address |
+| `createdAt` | string | ISO timestamp |
+
+<ResponseExample>
+
+```json Response
+{
+  "schemaVersion": "1.0.0",
+  "name": "DeFi Analyst",
+  "description": "Analyzes DeFi protocols and market data",
+  "skills": ["defi", "trading", "research"],
+  "dnaHash": "0xabc123...",
+  "walletAddress": "0x8C...",
+  "chain": 43114,
+  "model": "google/gemini-3-flash-preview",
+  "framework": "langchain",
+  "licensePrice": "10000",
+  "licenses": 100,
+  "cloneable": true,
+  "protocols": [
+    { "name": "x402", "version": "1.0" }
+  ],
+  "plugins": [
+    { "registryId": "goat:coingecko", "name": "CoinGecko", "origin": "goat" }
+  ],
+  "createdAt": "2026-01-01T00:00:00Z",
+  "cid": "QmXyz..."
+}
+```
+
+</ResponseExample>

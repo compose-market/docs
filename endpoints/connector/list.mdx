@@ -1,8 +1,76 @@
 ---
-title: "List Connectors"
-api: "GET https://connector.compose.market/registry/servers"
-description: "List all available tool connectors."
+title: "Connector Registry"
+api: "GET https://api.compose.market/registry/servers"
+description: "Query the unified tool and server registry."
 ---
+
+The Connector service aggregates tools from multiple sources into a unified registry.
+
+## Sources
+
+| Origin | Description | Count |
+|--------|-------------|-------|
+| `mcp` | MCP servers (NPX, HTTP, Docker) | 400+ |
+| `goat` | GOAT SDK blockchain plugins | 20+ |
+| `internal` | Compose internal tools | 10+ |
+
+## List Servers
+
+```
+GET /registry/servers
+```
+
+### Query Parameters
+
+<ParamField query="origin" type="string">
+  Filter by source: `mcp`, `goat`, `internal`
+</ParamField>
+
+<ParamField query="transport" type="string">
+  Filter by transport: `npx`, `stdio`, `http`, `docker`
+</ParamField>
+
+<ParamField query="executable" type="boolean">
+  Only return executable servers
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by name or description
+</ParamField>
+
+### UnifiedServerRecord Schema
+
+<ResponseField name="registryId" type="string">
+  Unique ID: `{origin}:{slug}` (e.g., `goat:coingecko`)
+</ResponseField>
+
+<ResponseField name="origin" type="string">
+  Source: `mcp`, `goat`, `internal`
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Server name
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Server description
+</ResponseField>
+
+<ResponseField name="transport" type="string">
+  Transport type: `npx`, `stdio`, `http`, `docker`
+</ResponseField>
+
+<ResponseField name="toolCount" type="number">
+  Number of tools exposed
+</ResponseField>
+
+<ResponseField name="available" type="boolean">
+  Whether server is available (env vars configured)
+</ResponseField>
+
+<ResponseField name="executable" type="boolean">
+  Whether server can be executed
+</ResponseField>
 
 <ResponseExample>
 
@@ -10,11 +78,31 @@ description: "List all available tool connectors."
 {
   "servers": [
     {
-      "slug": "coingecko",
+      "registryId": "goat:coingecko",
+      "origin": "goat",
       "name": "CoinGecko",
-      "description": "Crypto market data"
+      "description": "Cryptocurrency market data",
+      "transport": "npx",
+      "toolCount": 5,
+      "available": true,
+      "executable": true,
+      "category": "defi",
+      "tags": ["crypto", "market-data", "prices"]
+    },
+    {
+      "registryId": "mcp:github",
+      "origin": "mcp",
+      "name": "GitHub",
+      "description": "GitHub repository operations",
+      "transport": "npx",
+      "toolCount": 12,
+      "available": true,
+      "executable": true,
+      "category": "developer",
+      "tags": ["git", "code", "repository"]
     }
-  ]
+  ],
+  "total": 430
 }
 ```
 

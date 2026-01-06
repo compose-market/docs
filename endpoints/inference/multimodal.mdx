@@ -1,0 +1,191 @@
+---
+title: "Multimodal"
+description: "Generate images, videos, audio, and embeddings via unified endpoints."
+---
+
+Compose Market provides multimodal AI capabilities through OpenAI-compatible endpoints.
+
+## Image Generation
+
+```
+POST /v1/images/generations
+```
+
+<ParamField body="model" type="string" required>
+  Image model ID: `fal-ai/flux-2`, `bytedance/seedream-4-5`, `dall-e-3`
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Text description of the image to generate
+</ParamField>
+
+<ParamField body="size" type="string">
+  Image size: `1024x1024`, `1024x1792`, `1792x1024`
+</ParamField>
+
+<ParamField body="n" type="number">
+  Number of images to generate (1-4). Default: `1`
+</ParamField>
+
+### Response
+
+```json
+{
+  "created": 1735000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "..."
+    }
+  ]
+}
+```
+
+---
+
+## Video Generation
+
+```
+POST /v1/videos/generations
+```
+
+Video generation uses an async job pattern due to longer processing times.
+
+<ParamField body="model" type="string" required>
+  Video model ID: `openai/sora-2`, `google/veo3-1`, `kwai/kling-2.6`
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Text description of the video
+</ParamField>
+
+<ParamField body="duration" type="number">
+  Video duration in seconds (5-60)
+</ParamField>
+
+### Job Response
+
+```json
+{
+  "id": "job_abc123",
+  "status": "processing",
+  "created": 1735000000
+}
+```
+
+### Poll for Status
+
+```
+GET /v1/videos/generations/{job_id}
+```
+
+```json
+{
+  "id": "job_abc123",
+  "status": "completed",
+  "video_url": "https://..."
+}
+```
+
+---
+
+## Text-to-Speech
+
+```
+POST /v1/audio/speech
+```
+
+<ParamField body="model" type="string" required>
+  TTS model ID: `tts-1`, `tts-1-hd`
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  Text to synthesize (max 4096 characters)
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Voice: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`
+</ParamField>
+
+Returns audio binary in the specified format.
+
+---
+
+## Speech Recognition
+
+```
+POST /v1/audio/transcriptions
+```
+
+<ParamField body="file" type="file" required>
+  Audio file (mp3, mp4, mpeg, mpga, m4a, wav, webm)
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  ASR model ID: `whisper-1`
+</ParamField>
+
+<ParamField body="language" type="string">
+  ISO-639-1 language code
+</ParamField>
+
+```json
+{
+  "text": "Transcribed audio content here..."
+}
+```
+
+---
+
+## Embeddings
+
+```
+POST /v1/embeddings
+```
+
+<ParamField body="model" type="string" required>
+  Embedding model: `text-embedding-3-large`, `intfloat/e5-mistral-7b-instruct`
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Text or array of texts to embed
+</ParamField>
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [0.0023064255, -0.009327292, ...],
+      "index": 0
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 8,
+    "total_tokens": 8
+  }
+}
+```
+
+---
+
+## Music Generation
+
+```
+POST /v1/audio/music
+```
+
+<ParamField body="model" type="string" required>
+  Music model: `google/lyria2`
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Text description of the music to generate
+</ParamField>
+
+<ParamField body="duration" type="number">
+  Duration in seconds (10-300)
+</ParamField>
+
+Uses async job pattern similar to video generation.

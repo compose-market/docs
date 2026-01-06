@@ -1,24 +1,147 @@
 ---
 title: "List Models"
-api: "GET https://api.compose.market/api/registry/models"
-description: "Get a list of all available models across all providers."
+api: "GET https://api.compose.market/v1/models"
+description: "Get a list of available models in OpenAI-compatible format."
 ---
+
+Compose Market provides access to an extensive catalog of AI models across multiple providers. The API follows OpenAI's `/v1/models` format for compatibility.
+
+## Endpoints
+
+### Standard Catalog
+```
+GET /v1/models
+```
+Returns the curated model catalog (~2,100 models) used by the platform. These models have verified pricing and validated capabilities.
+
+### Extended Catalog
+```
+GET /v1/models/all
+```
+Returns the complete model catalog (50,000+ models) from all indexed providers. Includes experimental and community models.
+
+## Response Schema
+
+Each model in the response follows the `ModelCard` structure:
+
+<ResponseField name="modelId" type="string" required>
+  Canonical model identifier (e.g., `google/gemini-3-flash-preview`)
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Human-readable display name
+</ResponseField>
+
+<ResponseField name="provider" type="string" required>
+  Provider identifier: `openai`, `anthropic`, `google`, `aiml`, `huggingface`, `openrouter`, `asi`
+</ResponseField>
+
+<ResponseField name="taskType" type="string" required>
+  Primary task type: `text-generation`, `image-generation`, `video-generation`, `text-to-speech`, `speech-to-text`, `embeddings`, `music-generation`
+</ResponseField>
+
+<ResponseField name="capabilities" type="array">
+  Supported capabilities: `chat`, `streaming`, `tools`, `vision`, `reasoning`
+</ResponseField>
+
+<ResponseField name="pricing" type="object">
+  Cost per token in USDC (6 decimals)
+  
+  - `inputTokenPrice` - Cost per input token
+  - `outputTokenPrice` - Cost per output token
+</ResponseField>
+
+<ResponseField name="contextWindow" type="number">
+  Maximum context length in tokens
+</ResponseField>
+
+<ResponseField name="maxOutputTokens" type="number">
+  Maximum output length in tokens
+</ResponseField>
+
+## Example Models
+
+### Text Generation (Reasoning)
+
+| Model ID | Name | Context |
+|----------|------|---------|
+| `google/gemini-3-flash-preview` | Gemini 3 Flash | 1M |
+| `nvidia/nemotron-3-nano-30b-a3b` | Nemotron 3 Nano | 128K |
+| `arcee-ai/trinity-mini` | Arcee Trinity Mini | 128K |
+| `nex-agi/deepseek-v3.1-nex-n1` | DeepSeek V3.1 NEX-N1 | 128K |
+| `deepseek/deepseek-v3.2` | DeepSeek V3.2 | 128K |
+
+### Image Generation
+
+| Model ID | Name |
+|----------|------|
+| `fal-ai/flux-2` | Flux 2 |
+| `bytedance/seedream-4-5` | Seedream 4.5 |
+| `dall-e-3` | DALL-E 3 |
+
+### Video Generation
+
+| Model ID | Name |
+|----------|------|
+| `openai/sora-2` | Sora 2 |
+| `google/veo3-1` | Veo 3.1 |
+| `kwai/kling-2.6` | Kling 2.6 |
+
+### Embeddings
+
+| Model ID | Name |
+|----------|------|
+| `intfloat/e5-mistral-7b-instruct` | E5-Mistral-7B |
+| `text-embedding-3-large` | OpenAI Embedding 3 |
+
+### Music Generation
+
+| Model ID | Name |
+|----------|------|
+| `google/lyria2` | Lyria 2 |
 
 <ResponseExample>
 
 ```json Response
 {
-  "models": [
+  "object": "list",
+  "data": [
     {
-      "id": "meta-llama/Meta-Llama-3-8B-Instruct",
-      "provider": "huggingface",
-      "price": {
-        "amount": "0.0001",
-        "currency": "USDC"
+      "id": "google/gemini-3-flash-preview",
+      "object": "model",
+      "created": 1735000000,
+      "owned_by": "google",
+      "compose": {
+        "modelId": "google/gemini-3-flash-preview",
+        "name": "Gemini 3 Flash Preview",
+        "provider": "google",
+        "taskType": "text-generation",
+        "capabilities": ["chat", "streaming", "tools", "vision", "reasoning"],
+        "pricing": {
+          "inputTokenPrice": "75000",
+          "outputTokenPrice": "300000"
+        },
+        "contextWindow": 1000000,
+        "maxOutputTokens": 65536
+      }
+    },
+    {
+      "id": "fal-ai/flux-2",
+      "object": "model",
+      "created": 1735000000,
+      "owned_by": "fal-ai",
+      "compose": {
+        "modelId": "fal-ai/flux-2",
+        "name": "Flux 2",
+        "provider": "huggingface",
+        "taskType": "image-generation",
+        "capabilities": ["text-to-image", "image-to-image"],
+        "pricing": {
+          "perImagePrice": "30000"
+        }
       }
     }
-  ],
-  "total": 1200
+  ]
 }
 ```
 

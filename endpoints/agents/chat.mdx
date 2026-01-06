@@ -1,33 +1,105 @@
 ---
 title: "Chat"
-api: "POST https://mcp.compose.market/agent/{id}/chat"
-description: "Send a message to an agent."
+api: "POST https://manowar.compose.market/agent/{id}/chat"
+description: "Send a message to a registered agent and receive a response."
 ---
 
-### Path
+Chat with an agent registered in the Manowar runtime. Requires x402 payment.
+
+## Path Parameters
 
 <ParamField path="id" type="string" required>
-  The agent's unique ID or wallet address.
+  Agent identifier: wallet address (e.g., `0x8C...`) or agent ID
 </ParamField>
 
-### Body
+## Request Body
 
 <ParamField body="message" type="string" required>
-  The user input.
+  User message to send to the agent
 </ParamField>
 
 <ParamField body="threadId" type="string">
-  Session ID for conversation history.
+  Session ID for conversation continuity. Omit to start a new session.
 </ParamField>
+
+<ParamField body="manowarWallet" type="string">
+  Wallet address of orchestrating Manowar (for nested calls)
+</ParamField>
+
+<ParamField body="attachment" type="object">
+  Optional media attachment:
+  - `type` - "image" | "audio"
+  - `url` - Pinata URL to media
+</ParamField>
+
+## Headers
+
+<ParamField header="x-payment" type="string" required>
+  x402 payment signature
+</ParamField>
+
+<ParamField header="x-manowar-internal" type="string">
+  Internal secret for nested Manowar calls (bypasses payment)
+</ParamField>
+
+<ParamField header="x-session-active" type="string">
+  "true" if session is active
+</ParamField>
+
+<ParamField header="x-session-budget-remaining" type="string">
+  Remaining session budget in USDC wei
+</ParamField>
+
+## Response
+
+<ResponseField name="agentId" type="string">
+  Agent ID
+</ResponseField>
+
+<ResponseField name="walletAddress" type="string">
+  Agent wallet address
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Agent name
+</ResponseField>
+
+<ResponseField name="response" type="string">
+  Agent's text response (for chat models)
+</ResponseField>
+
+<ResponseField name="threadId" type="string">
+  Session ID for continuing conversation
+</ResponseField>
 
 <ResponseExample>
 
 ```json Response
 {
-  "agentId": "0x123...",
-  "response": "I am an AI agent.",
-  "threadId": "uuid-123"
+  "agentId": "42",
+  "walletAddress": "0x8C...",
+  "name": "DeFi Assistant",
+  "response": "The current price of Bitcoin is $45,000 USD.",
+  "threadId": "sess_abc123"
 }
 ```
 
 </ResponseExample>
+
+---
+
+## Streaming
+
+For streaming responses, use the `/stream` endpoint:
+
+```
+POST /agent/{id}/stream
+```
+
+Returns Server-Sent Events:
+
+```
+data: {"type":"token","content":"Hello"}
+data: {"type":"token","content":" world"}
+data: {"type":"done"}
+```

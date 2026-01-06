@@ -1,44 +1,101 @@
 ---
-title: "Generate"
-api: "POST https://api.compose.market/api/inference"
-description: "Execute AI inference with x402 payment."
+title: "Chat Completions"
+api: "POST https://api.compose.market/v1/chat/completions"
+description: "Generate text using any supported model via OpenAI-compatible API."
 ---
+
+The chat completions endpoint follows the OpenAI API format, allowing you to use any model in the catalog with a consistent interface.
+
+## Request
 
 ### Body
 
-<ParamField body="modelId" type="string" required>
-  The ID of the model to use (e.g., `meta-llama/Meta-Llama-3-8B-Instruct`).
+<ParamField body="model" type="string" required>
+  Model ID from the catalog (e.g., `google/gemini-3-flash-preview`)
 </ParamField>
 
 <ParamField body="messages" type="array" required>
-  List of messages in standard OpenAI format.
+  Conversation messages in OpenAI format.
   
   ```json
-  [{ "role": "user", "content": "Hello!" }]
+  [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "Hello!" }
+  ]
   ```
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Enable SSE streaming for real-time responses. Default: `false`
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Sampling temperature (0-2). Default: `1`
+</ParamField>
+
+<ParamField body="max_tokens" type="number">
+  Maximum tokens to generate
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Tool definitions for function calling (for models with `tools` capability)
 </ParamField>
 
 ### Headers
 
-<ParamField header="x-payment" type="string">
-  The x402 payment signature (required for paid models).
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_API_KEY`
 </ParamField>
+
+<ParamField header="x-payment" type="string">
+  x402 payment signature for paid models. See [Payments](/concepts/payments).
+</ParamField>
+
+## Provider Routing
+
+Requests are automatically routed to the optimal provider based on the model ID:
+
+| Provider | Model Prefix Examples |
+|----------|----------------------|
+| OpenAI | `gpt-4o`, `gpt-5`, `o1-` |
+| Anthropic | `claude-`, `anthropic/` |
+| Google | `gemini-`, `google/` |
+| AIML | Models via AIML API |
+| HuggingFace | `meta-llama/`, `mistralai/` |
+| OpenRouter | Most community models |
+
+## Streaming
+
+When `stream: true`, responses are sent as Server-Sent Events:
+
+```
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","choices":[{"delta":{"content":"Hello"}}]}
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","choices":[{"delta":{"content":"!"}}]}
+data: [DONE]
+```
 
 <ResponseExample>
 
 ```json Response
 {
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1735000000,
+  "model": "google/gemini-3-flash-preview",
   "choices": [
     {
+      "index": 0,
       "message": {
         "role": "assistant",
         "content": "Hello! How can I help you today?"
-      }
+      },
+      "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 10,
-    "completion_tokens": 20
+    "prompt_tokens": 12,
+    "completion_tokens": 9,
+    "total_tokens": 21
   }
 }
 ```

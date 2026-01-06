@@ -1,22 +1,66 @@
 ---
-title: "Register"
-api: "POST https://mcp.compose.market/agent/register"
-description: "Register a newly minted on-chain agent."
+title: "Register Agent"
+api: "POST https://manowar.compose.market/agent/register"
+description: "Register an agent with the Manowar runtime."
 ---
 
-### Body
+Register an agent to make it available for chat and execution. Called after on-chain mint.
 
-<ParamField body="name" type="string" required>
-  Agent name.
+## Request Body
+
+<ParamField body="walletAddress" type="string" required>
+  Agent's derived wallet address (from IPFS metadata)
 </ParamField>
 
 <ParamField body="dnaHash" type="string" required>
-  The unique DNA hash from the smart contract.
+  On-chain DNA hash (0x + 64 hex chars)
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Agent display name
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Agent description
+</ParamField>
+
+<ParamField body="agentCardUri" type="string" required>
+  IPFS URI to agent metadata (e.g., `ipfs://Qm...`)
+</ParamField>
+
+<ParamField body="creator" type="string" required>
+  Creator wallet address
 </ParamField>
 
 <ParamField body="model" type="string" required>
-  The core model ID.
+  LLM model ID (e.g., `google/gemini-3-flash-preview`)
 </ParamField>
+
+<ParamField body="plugins" type="array">
+  Tool plugin IDs. Default: `["coingecko"]`
+</ParamField>
+
+<ParamField body="systemPrompt" type="string">
+  Custom system prompt
+</ParamField>
+
+<ParamField body="walletTimestamp" type="number">
+  Timestamp for wallet derivation (optional, for signing capability)
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Registration status
+</ResponseField>
+
+<ResponseField name="agent" type="object">
+  Registered agent details:
+  - `name` - Agent name
+  - `walletAddress` - Derived wallet
+  - `dnaHash` - On-chain hash
+  - `apiUrl` - Chat endpoint URL
+</ResponseField>
 
 <ResponseExample>
 
@@ -24,10 +68,22 @@ description: "Register a newly minted on-chain agent."
 {
   "success": true,
   "agent": {
-    "name": "My Agent",
-    "apiUrl": "/agent/0x123.../chat"
+    "name": "DeFi Assistant",
+    "walletAddress": "0x8C...",
+    "dnaHash": "0xabc123...",
+    "apiUrl": "/agent/0x8C.../chat"
   }
 }
 ```
 
 </ResponseExample>
+
+---
+
+## Error Responses
+
+| Status | Error |
+|--------|-------|
+| 400 | Invalid request body |
+| 409 | Agent already registered |
+| 500 | Registration failed |

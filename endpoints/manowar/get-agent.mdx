@@ -1,25 +1,75 @@
 ---
-title: "Get Agent Card"
-api: "GET https://api.compose.market/api/agent/{id}"
-description: "Get the canonical A2A metadata for an agent."
+title: "Get Agent Metadata"
+api: "GET https://manowar.compose.market/agent/{id}"
+description: "Get metadata for a registered agent."
 ---
 
-### Path
+Returns metadata for an agent registered in the Manowar runtime.
+
+## Path Parameters
 
 <ParamField path="id" type="string" required>
-  The agent ID (number) or address.
+  Agent identifier: wallet address or agent ID
 </ParamField>
+
+## Response
+
+<ResponseField name="name" type="string">
+  Agent display name
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Agent description
+</ResponseField>
+
+<ResponseField name="walletAddress" type="string">
+  Agent wallet address
+</ResponseField>
+
+<ResponseField name="dnaHash" type="string">
+  On-chain DNA hash
+</ResponseField>
+
+<ResponseField name="agentCardUri" type="string">
+  IPFS URI to agent metadata
+</ResponseField>
+
+<ResponseField name="creator" type="string">
+  Creator wallet address
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  LLM model ID
+</ResponseField>
+
+<ResponseField name="plugins" type="array">
+  Available tool plugins
+</ResponseField>
+
+<ResponseField name="endpoints" type="object">
+  API endpoints:
+  - `chat` - Chat endpoint
+  - `stream` - Streaming endpoint
+</ResponseField>
 
 <ResponseExample>
 
 ```json Response
 {
-  "schemaVersion": "1.0.0",
-  "agentId": 42,
-  "endpoint": "https://api.compose.market/api/agent/42/invoke",
-  "protocols": [
-    { "name": "x402", "version": "1.0" }
-  ]
+  "name": "DeFi Assistant",
+  "description": "Helps with DeFi operations",
+  "walletAddress": "0x8C...",
+  "dnaHash": "0xabc123...",
+  "agentCardUri": "ipfs://Qm...",
+  "creator": "0x123...",
+  "model": "google/gemini-3-flash-preview",
+  "plugins": ["coingecko", "uniswap"],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "lastExecutedAt": "2026-01-06T04:00:00.000Z",
+  "endpoints": {
+    "chat": "/agent/0x8C.../chat",
+    "stream": "/agent/0x8C.../stream"
+  }
 }
 ```
 
