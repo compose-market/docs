@@ -1,0 +1,84 @@
+---
+title: 'Everywhere Product / Global Execution'
+description: 'Manowar operates as a **universal execution layer,** accessible from any interface, settled on-chain, and globally distributed.'
+---
+
+## The x402 Economic Engine
+
+Every inference, tool call, and agent execution happens through our isolated sandbox, and settles through the x402 protocol:
+
+```
+┌──────────────┐      HTTP Request      ┌──────────────┐
+│   Client     │ ───────────────────────>│   Server     │
+│  (Cursor/    │<─────── 402 ───────────│   (Lambda)   │
+│   VSCode/    │   Payment Required      │              │
+│   Browser)   │                         │              │
+│              │ ────── x-payment ──────>│              │
+│              │   (signed USDC tx)      │              │
+│              │<────── 200 ────────────│              │
+│              │   (with result)         │              │
+└──────────────┘                         └──────────────┘
+
+```
+
+## Two-Phase Deferred Settlement
+
+Prevents over-billing on transient failures:
+
+1. **Phase 1 (Validation)**: `preparePayment()` verifies JWT + Redis budget, returns `settle()` callback
+2. **Model Invocation**: Server calls AI provider
+3. **Phase 2 (Settlement)**: `settle()` executes only after first valid response
+
+Users never pay for failed requests.
+
+## Session Keys (ERC4337)
+
+For signature-free "Compose Keys" experience:
+
+- User grants restricted session key with budget (e.g., $10)
+- Key authorized only for `transferFrom` on USDC contract
+- Redis tracks real-time usage; blockchain is final authority
+- Revocable on-chain at any time
+
+## Global Endpoints
+
+| Surface | Endpoint |
+| --- | --- |
+| **Manowar Server** | `manowar.compose.market` |
+| **Lambda API** | `api.compose.market` |
+| **Agent Delegation** | `/agent/{wallet}/chat` |
+| **Model Registry** | `/api/registry/model/{modelId}` |
+
+## Technology Stack
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  MANOWAR ORCHESTRATION FRAMEWORK                        │
+├─────────────────────────────────────────────────────────┤
+│  Orchestration    │  LangChain + LangGraph              │
+│  Memory           │  Mem0 Platform API (Graph Memory)   │
+│  Observability    │  LangSmith (Traces, Evaluation)     │
+│  Settlement       │  x402 Protocol + ERC4337 Sessions   │
+│  Embeddings       │  e5-mistral-7b-instruct             │
+│  Coordinators     │  Nemotron, Kimi K2, MiniMax M2.1    │
+│  Persistence      │  IPFS (Pinata) + Redis              │
+│  Contracts        │  Zod schemas (task-contracts.ts)    │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+---
+
+## Summary
+
+**Manowar is compose.market's answer to the gap between AI capability and AI agency.**
+
+It transforms scattered model calls into coherent, persistent, economically-settled workflows that:
+
+1. **Execute Without Supervision**: Plan → Act → Reflect loop with multi-run learning
+2. **Remember Across Sessions**: Hierarchical memory with safe wipe compression
+3. **Operate Proactively**: Natural language triggers and lifecycle hooks
+4. **Settle On-Chain**: x402 micropayments for every atomic action
+5. **Run Everywhere**: HTTP-native access from any interface, globally distributed
+
+The system is not a wrapper around LLMs - it is a deployment fabric that makes AI agents *trustworthy economic actors* in the agentic economy.

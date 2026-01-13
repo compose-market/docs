@@ -1,0 +1,133 @@
+---
+title: 'Memory & Context Management'
+description: 'Manowar's memory architecture solves the fundamental challenge of agentic systems: maintaining coherent context across long-running, multi-agent operations.'
+---
+
+## Memory Priority Matrix
+
+| Priority | Scope | Contents | Use Case |
+| --- | --- | --- | --- |
+| **1** | `user_id` | User preferences, learned behaviors | Personalization |
+| **2** | `agent_id` | Manowar execution patterns, skill learnings | Multi-run improvement |
+| **3** | `run_id` | Current execution context | Within-run coherence |
+
+Search cascades from user → agent → run, ensuring the most relevant context surfaces first.
+
+## The Safe Wipe Pattern
+
+When context window usage exceeds the dynamic threshold, Manowar compresses state without information loss:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. Summarize current context (coordinator model)       │
+│     └── 200 words max, preserving key facts             │
+│                                                         │
+│  2. Store summary in Mem0 with graph extraction         │
+│     └── Entities and relations automatically extracted  │
+│                                                         │
+│  3. Return [CONTEXT REFRESHED] marker                   │
+│     └── State reset while summary available via search  │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+The dynamic threshold scales with model capacity:
+
+```
+Threshold = 55% + 0.5 × log₁₀(contextWindow / 1024)
+
+```
+
+- 32k context → ~56.8%
+- 128k context → ~58.9%
+- 4M context (MiniMax M2.1) → ~72.3%
+
+## Semantic Retrieval
+
+Context retrieval uses `e5-mistral-7b-instruct` embeddings with Mem0's advanced features:
+
+- **Reranking**: Relevance optimization after initial retrieval
+- **Keyword Search**: Hybrid semantic + lexical matching
+- **Metadata Filtering**: Type-based access (step_reflection, checkpoint_summary, trigger)
+
+## Checkpoint System
+
+Internal agents annotate execution with ephemeral checkpoints:
+
+| Type | Purpose |
+| --- | --- |
+| `observation` | What the agent perceived |
+| `decision` | Choices made and reasoning |
+| `output` | Results produced |
+| `insight` | Meta-learnings for future runs |
+| `error` | Failure modes for pattern avoidance |
+
+Checkpoints persist to Mem0 at workflow completion for cross-run learning.
+
+---
+
+# Ambient Intelligence / Proactive Systems
+
+Manowar supports **autonomous operation** through natural language triggers—enabling workflows that execute without human initiation.
+
+## Trigger Architecture
+
+```
+Natural Language → Pattern Matching → LLM Fallback → Cron Expression
+   "every day          [matched]                       "0 9 * * *"
+    at 9am"
+
+```
+
+**Common patterns** are parsed instantly:
+
+- "every 5 minutes" → `/5 * * * *`
+- "every Monday at 3 PM" → `0 15 * * 1`
+- "daily at midnight" → `0 0 * * *`
+
+Complex patterns fall back to LLM parsing with `nvidia/nemotron-3`.
+
+## Trigger Storage
+
+Triggers persist in Mem0 graph memory:
+
+```tsx
+{
+  type: "trigger",
+  trigger_id: "trg-...",
+  manowar_wallet: "0x...",
+  cron_expression: "0 9 * * 1-5",
+  enabled: true,
+  trigger_data: JSON.stringify(fullDefinition),
+}
+
+```
+
+This enables:
+
+- Cross-session persistence
+- Graph-based discovery
+- Workflow-trigger relationships
+
+## Lifecycle Hooks
+
+Beyond triggers, Manowar defines **lifecycle hooks** for reactive behaviors:
+
+| Hook | Fires When |
+| --- | --- |
+| `pre-execution` | Before workflow starts |
+| `post-step` | After each step completes |
+| `on-error` | Any step fails |
+| `on-complete` | Workflow succeeds |
+| `on-context-cleanup` | Safe wipe triggered |
+| `on-restart` | Workflow resumes after cleanup |
+
+Hook actions include: `webhook`, `agent`, `memory`, `notify`, `log`.
+
+## Run Observability
+
+Every execution is tracked with:
+
+- **LangSmith Integration**: Full trace visibility, token metrics, reasoning_tokens for thinking models
+- **TrackedRun State**: pending → running → success/error/cancelled
+- **Cron Stats**: Per-trigger execution history and success rates

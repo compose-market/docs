@@ -32,16 +32,17 @@
           {
             "group": "Concepts",
             "pages": [
+              "concepts/payments",
               "concepts/agents",
               "concepts/workflows",
               "concepts/inference",
-              "concepts/payments"
+              "concepts/mcp-overview"
             ]
           }
         ]
       },
       {
-        "tab": "Manowar",
+        "tab": "Contracts Protocol",
         "groups": [
           {
             "group": "Protocol",
@@ -66,13 +67,15 @@
         ]
       },
       {
-        "tab": "MCP",
+        "tab": "Agentic Framework",
         "groups": [
           {
-            "group": "Tool Registry",
+            "group": "Framework",
             "pages": [
-              "mcp/overview",
-              "mcp/registry"
+              "framework/framework",
+              "framework/end-to-end",
+              "framework/memory-and-context",
+              "framework/global-execution"
             ]
           }
         ]
