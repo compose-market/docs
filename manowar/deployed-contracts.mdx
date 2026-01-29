@@ -23,15 +23,21 @@ description: 'Contract addresses on testnets'
 
 ### ERC-4337 Account Abstraction (v0.7)
 
-| Contract | Address |
-| :--- | :--- |
-| **EntryPoint v0.7** | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` |
-| **AccountFactory** | `0x671D97E280126AAC1c2ccD80853A5Ba71E651cee` |
-| **Paymaster** | `0xA7c85b07aBE6eE06Cd2f1268Ea22d7156C7A67D4` |
+| Contract | Address | Notes |
+| :--- | :--- | :--- |
+| **EntryPoint v0.7** | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` | Universal (CREATE2) |
+| **AccountFactory** | `0x4bE0ddfebcA9A5A4a617dee4DeCe99E7c862dceb` | Universal (CREATE2) |
+| **Account Implementation** | `0x94eC38a5d2EDA5A543Ab4c08D998338D4082beb2` | ThirdWeb Account v0.7 |
+| **Paymaster** | `0xA7c85b07aBE6eE06Cd2f1268Ea22d7156C7A67D4` | Gas sponsorship |
+
+> [!NOTE]
+> EntryPoint and AccountFactory use **universal addresses** deployed via CREATE2 with Arachnid's deployer. This ensures Smart Accounts have the same address across all chains.
 
 ---
 
 ## Avalanche Fuji (Chain ID: 43113)
+
+### Core Contracts
 
 | Contract | Address |
 | :--- | :--- |

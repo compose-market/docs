@@ -1,176 +1,144 @@
 ---
 title: 'Multichain Architecture'
-description: 'Cross-chain Account Abstraction and Facilitator infrastructure'
+description: 'Cross-chain Account Abstraction with deterministic Smart Account addresses'
 ---
 
-Compose.Market supports multiple EVM chains with a unified Smart Account experience. This page documents the infrastructure that enables users to seamlessly operate across chains with a single wallet and social login.
+Compose.Market supports multiple EVM chains with a unified Smart Account experience. Users get the **same Smart Account address** across all supported chains through deterministic CREATE2 deployment.
 
 ---
 
-## Architecture Overview
+## Cross-Chain Identity
+
+The key innovation is **universal Smart Account addresses**. A user who creates a Smart Account on Avalanche Fuji will have the **exact same address** on Cronos Testnet.
+
+```mermaid
+flowchart TB
+    subgraph User["User (Social Login)"]
+        EOA["EOA Signer<br/>(Email/Google/Passkey)"]
+    end
+    
+    subgraph Fuji["Avalanche Fuji (43113)"]
+        F_Factory["AccountFactory<br/>0x4bE0...dceb"]
+        F_Account["Smart Account<br/>0xABC...123"]
+        F_Entry["EntryPoint v0.7<br/>0x0000...a032"]
+        F_Bundler["ThirdWeb Bundler"]
+    end
+    
+    subgraph Cronos["Cronos Testnet (338)"]
+        C_Factory["AccountFactory<br/>0x4bE0...dceb"]
+        C_Account["Smart Account<br/>0xABC...123"]
+        C_Entry["EntryPoint v0.7<br/>0x0000...a032"]
+        C_Paymaster["SimplePaymaster<br/>0xA7c8...7D4"]
+    end
+    
+    EOA --> F_Factory
+    EOA --> C_Factory
+    F_Factory -->|"CREATE2(salt)"| F_Account
+    C_Factory -->|"CREATE2(salt)"| C_Account
+    F_Account --> F_Entry
+    C_Account --> C_Entry
+    F_Entry --> F_Bundler
+    C_Entry --> C_Paymaster
+```
+
+### How It Works
+
+The Smart Account address is derived from:
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                    User (Social Login)                          │
-│              Email / Google / Discord / X / Passkey             │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│                   ThirdWeb Smart Account                        │
-│         Created on Avalanche Fuji (bundler available)           │
-│   Smart Account Address = CREATE2(admin, salt, initCodeHash)   │
-└────────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-┌─────────────────────────┐     ┌─────────────────────────┐
-│    ThirdWeb Bundler     │     │    Cronos Facilitator   │
-│   (Fuji, other chains)  │     │   (Cronos Testnet/Main) │
-│                         │     │                         │
-│  - ThirdWeb Paymaster   │     │  - Custom Paymaster     │
-│  - Standard ERC-4337    │     │  - Custom AccountFactory│
-│  - Gas sponsorship      │     │  - x402 Protocol        │
-└─────────────────────────┘     └─────────────────────────┘
+address = CREATE2(factory, keccak256(admin, salt), initCodeHash)
 ```
+
+Since we deploy the **same AccountFactory** at the **same address** on all chains, users automatically get identical Smart Account addresses.
+
+| Component | Requirement | Address |
+|:----------|:------------|:--------|
+| AccountFactory | Universal | `0x4bE0ddfebcA9A5A4a617dee4DeCe99E7c862dceb` |
+| EntryPoint v0.7 | Universal | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` |
+| Account Implementation | Chain-specific | Varies per chain |
+| Paymaster | Chain-specific | Varies per chain |
+
+---
+
+## Cronos Testnet Deployment
+
+Cronos Testnet lacks a native ERC-4337 bundler, so we deployed the full AA infrastructure ourselves using CREATE2 to match ThirdWeb's universal addresses.
+
+### Deployment Method
+
+We extracted the deployment parameters from the original Ethereum mainnet transaction and replayed them on Cronos:
+
+1. **Find original deployment tx** on Etherscan/Blockscout
+2. **Extract CREATE2 salt** (first 32 bytes of input data)
+3. **Extract init code** (remaining bytes)
+4. **Call Arachnid's CREATE2 deployer** (`0x4e59b44847b379578588920cA78FbF26c0B4956C`)
+
+This produces identical addresses on any EVM chain where Arachnid's deployer exists.
+
+### Deployed Contracts
+
+| Contract | Address | Notes |
+|:---------|:--------|:------|
+| EntryPoint v0.7 | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` | Universal |
+| AccountFactory | `0x4bE0ddfebcA9A5A4a617dee4DeCe99E7c862dceb` | Universal |
+| Account Implementation | `0x94eC38a5d2EDA5A543Ab4c08D998338D4082beb2` | Chain-specific |
+| SimplePaymaster | `0xA7c85b07aBE6eE06Cd2f1268Ea22d7156C7A67D4` | Chain-specific |
 
 ---
 
 ## Supported Chains
 
-| Chain | Chain ID | Smart Account | Payment Protocol |
-|:------|:---------|:--------------|:-----------------|
-| Avalanche Fuji | 43113 | ThirdWeb + Bundler | x402 (ThirdWeb) |
-| Cronos Testnet | 338 | Custom AccountFactory | x402 (Cronos Facilitator) |
-| Cronos Mainnet | 25 | Custom AccountFactory | x402 (Cronos Facilitator) |
+| Chain | Chain ID | AA Support | Payment |
+|:------|:---------|:-----------|:--------|
+| Avalanche Fuji | 43113 | ThirdWeb Bundler | x402 |
+| Cronos Testnet | 338 | Custom (Lambda bundler) | x402 + Facilitator |
 
 ---
 
-## Cross-Chain Account Registration
+## Account Registration Flow
 
-Since ThirdWeb's bundler is not available on Cronos, we deploy **identical Smart Account contracts** on Cronos using the same deterministic formula:
+When a user connects on Cronos Testnet:
 
-```
-SmartAccountAddress = CREATE2(
-  factory,
-  keccak256(admin, salt),
-  initCodeHash
-)
-```
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Lambda as Lambda Bundler
+    participant Factory as AccountFactory
+    participant Paymaster
+    participant EntryPoint
 
-### Registration Flow
-
-1. **User connects via ThirdWeb** (social login)
-   - Smart Account created on Avalanche Fuji
-   - Account address is deterministic based on admin EOA
-
-2. **Frontend calls `/api/aa/register-cronos`** (ONE TIME)
-   - Passes the admin address to backend
-   - Backend deploys account via Cronos AccountFactory
-   - Same address due to identical CREATE2 parameters
-
-3. **User can now transact on both chains**
-   - Fuji: Uses ThirdWeb bundler
-   - Cronos: Uses our Paymaster + Lambda bundler
-
-### Code Example
-
-```typescript
-import { useActiveWallet } from "thirdweb/react";
-import { registerOnCronos } from "@/lib/cronos/aa";
-
-// After wallet connection:
-const wallet = useActiveWallet();
-const personalWallet = await wallet.getPersonalWallet();
-const adminAddress = personalWallet.address;
-
-// Register on Cronos (called ONCE, uses localStorage tracking)
-const result = await registerOnCronos(adminAddress);
-console.log("Cronos account:", result.accountAddress);
+    User->>Frontend: Connect wallet (social login)
+    Frontend->>Frontend: Get EOA admin address
+    Frontend->>Lambda: POST /api/aa/prepare
+    Lambda->>Factory: getAddress(admin, "")
+    Factory-->>Lambda: Predicted account address
+    Lambda-->>Frontend: UserOp + hash to sign
+    
+    User->>Frontend: Sign UserOpHash
+    Frontend->>Lambda: POST /api/aa/submit
+    Lambda->>Paymaster: Sign sponsorship
+    Lambda->>EntryPoint: handleOps([userOp])
+    EntryPoint->>Factory: Deploy if needed
+    EntryPoint-->>Lambda: Success
+    Lambda-->>Frontend: Transaction hash
 ```
 
 ---
 
-## Cronos Facilitator
+## API Endpoints
 
-The Cronos x402 Facilitator provides payment infrastructure for Cronos chains.
+### `POST /api/aa/prepare`
 
-### Backend Integration
+Prepare a UserOperation for signing.
 
-```typescript
-// backend/lambda/shared/config/cronos.ts
-import { Facilitator, CronosNetwork, Scheme } from "@crypto.com/facilitator-client";
+### `POST /api/aa/submit`
 
-// Create facilitator client
-const facilitator = new Facilitator({ network: CronosNetwork.CronosTestnet });
+Submit a signed UserOperation for execution.
 
-// Generate 402 response
-const response = createCronos402Response({
-  payTo: merchantWallet,
-  amount: "1000000", // 1 USDC (6 decimals)
-  chainId: 338,
-});
+### `POST /api/aa/register-cronos`
 
-// Verify and settle payment
-const result = await verifyAndSettleCronosPayment({
-  paymentHeader: request.headers["x-payment"],
-  payTo: merchantWallet,
-  amount: "1000000",
-  chainId: 338,
-});
-```
-
-### Frontend Integration
-
-```typescript
-// app/src/lib/cronos/facilitator.ts
-import { createCronosPaymentHeader, wrapFetchWithCronosPayment } from "@/lib/cronos/facilitator";
-
-// Generate payment header (EIP-712 signed via Smart Account)
-const paymentHeader = await createCronosPaymentHeader({
-  account,
-  payTo: "0x...",
-  amount: "1000000",
-  chainId: 338,
-});
-
-// Or use the wrapped fetch (handles 402 automatically)
-const response = await wrapFetchWithCronosPayment(url, {
-  account,
-  chainId: 338,
-  method: "POST",
-  body: JSON.stringify(payload),
-});
-```
-
----
-
-## ERC-4337 v0.7 Contracts
-
-We deploy ERC-4337 v0.7 compatible contracts on Cronos:
-
-### EntryPoint
-
-The **canonical EntryPoint v0.7** address is:
-```
-0x0000000071727De22E5E9d8BAf0edAc6f37da032
-```
-
-This is deployed via deterministic CREATE2 (Nick's Factory) to ensure the same address across all chains. We deployed this on Cronos Testnet by replaying the original Ethereum deployment transaction.
-
-### AccountFactory
-
-Uses ThirdWeb's AccountFactory contract pattern:
-- Deploys Smart Accounts via `createAccount(admin, data)`
-- Predicts addresses via `getAddress(admin, data)`
-- Compatible with ThirdWeb's deterministic addressing
-
-### Paymaster
-
-Verifying Paymaster that sponsors gas for users:
-- Signs UserOperations with server wallet
-- Validates user signatures
-- Sponsoring enabled for verified users
+Deploy a Smart Account on Cronos (if not already deployed).
 
 ---
 
@@ -178,62 +146,20 @@ Verifying Paymaster that sponsors gas for users:
 
 | Component | Location |
 |:----------|:---------|
-| Cronos Facilitator (Backend) | `backend/lambda/shared/config/cronos.ts` |
-| Cronos Facilitator (Frontend) | `app/src/lib/cronos/facilitator.ts` |
-| Account Abstraction Module | `backend/lambda/shared/aa/` |
-| Frontend AA Integration | `app/src/lib/cronos/aa.ts` |
-| Wallet Connector | `app/src/components/connector.tsx` |
-| Paymaster Contract | `contracts/src/cronosAA/Paymaster.sol` |
+| UserOp construction | `backend/lambda/shared/aa/userop.ts` |
+| Paymaster signing | `backend/lambda/shared/aa/paymaster.ts` |
+| Frontend AA client | `app/src/lib/cronos/aa.ts` |
+| Cronos Facilitator | `backend/lambda/shared/config/cronos.ts` |
 
 ---
 
-## API Endpoints
+## Value for Cronos Ecosystem
 
-### `POST /api/aa/register-cronos`
+This work provides **production-ready ERC-4337 v0.7 infrastructure** for Cronos Testnet:
 
-Register a Smart Account on Cronos (one-time).
+- **Universal AccountFactory**: Same address as Ethereum, Fuji, and other chains
+- **EntryPoint v0.7**: Latest standard with PackedUserOperation support
+- **Gasless transactions**: SimplePaymaster for gas sponsorship
+- **Cross-chain identity**: Users keep the same Smart Account address
 
-**Request:**
-```json
-{
-  "adminAddress": "0x..." // EOA signer from ThirdWeb personal wallet
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "accountAddress": "0x...",
-  "txHash": "0x..." // only if newly deployed
-}
-```
-
-### `POST /api/aa/submit`
-
-Submit a gasless transaction on Cronos.
-
-**Request:**
-```json
-{
-  "chainId": 338,
-  "smartAccount": "0x...",
-  "to": "0x...",
-  "data": "0x...",
-  "value": "0",
-  "signature": "0x..."
-}
-```
-
----
-
-## Security Notes
-
-The server wallet private key has permission to:
-- Deploy accounts via AccountFactory
-- Sign Paymaster data for gas sponsorship
-
-<Tip>
-Registration is idempotent - calling multiple times is safe but unnecessary. 
-The frontend uses localStorage to avoid redundant API calls.
-</Tip>
+Developers building on Cronos can reuse these contracts or follow the same CREATE2 deployment pattern.
