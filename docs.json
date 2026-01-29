@@ -48,6 +48,7 @@
             "group": "Protocol",
             "pages": [
               "manowar/introduction",
+              "manowar/multichain",
               "manowar/deployed-contracts"
             ]
           },
