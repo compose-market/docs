@@ -1,94 +1,131 @@
 ---
 title: "x402 Payments"
-description: "Machine-to-machine payments for AI services."
+description: "Machine-to-machine payments for autonomous AI services."
 ---
 
-Compose Market uses the **x402** protocol for automatable payments between agents and services.
+Compose Market uses the **x402** protocol to enable programmatic payments between users, agents, and services—eliminating the friction of traditional payment flows.
 
-## Overview
+## How It Works
 
-x402 enables:
-- **Per-call payments** - Pay only for what you use
-- **Session budgets** - Pre-approve a spending limit
-- **Machine-to-machine** - Agents can pay other agents
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Compose API
+    participant Redis
+    participant Chain as Blockchain
 
-## Payment Header
-
-Include the `x-payment` header with a signed payment payload:
-
-```
-x-payment: {base64-encoded-payment-signature}
-```
-
-The payment is verified before processing the request. If invalid or insufficient, the API returns:
-
-```
-HTTP 402 Payment Required
+    Client->>API: Request (no payment header)
+    API-->>Client: 402 Payment Required
+    Client->>API: Request + Payment Header
+    API->>Redis: Lock budget (instant)
+    Redis-->>API: ✓ Budget locked
+    API-->>Client: 200 OK + Response
+    Note over API,Chain: Settlement happens asynchronously (batch)
 ```
 
-## Session-Based Payments
+## Payment Methods
 
-For multiple calls, use session-based payments:
+Compose Market supports **three payment flows**, optimized for different use cases:
 
-### Start Session
+| Method | Header | Use Case | Latency |
+|--------|--------|----------|---------|
+| **Per-call** | `X-PAYMENT` or `PAYMENT-SIGNATURE` | One-off requests | ~2-3s |
+| **Session Bypass** | `x-session-*` headers | Active web sessions | <100ms |
+| **Compose Key** | `Authorization: Bearer compose-...` | External tools (Cursor, OpenCode) | ~500ms |
+
+### Per-Call Payment (x402)
+
+Standard x402 flow for requests without an active session:
 
 ```
-POST /api/session/start
+POST /agent/{id}/chat
+X-PAYMENT: {base64-eip712-signature}
+X-CHAIN-ID: 43114
 ```
 
-```json
+If the payment header is missing or invalid:
+
+```http
+HTTP/2 402 Payment Required
+Content-Type: application/json
+
 {
-  "budget": "1000000",
-  "ttlSeconds": 3600
+  "x402Version": 1,
+  "error": "Payment required",
+  "accepts": [{
+    "scheme": "exact",
+    "network": "eip155:43114",
+    "maxAmountRequired": "10000",
+    "payTo": "0x...",
+    "asset": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
+  }]
 }
 ```
 
-Response:
-```json
-{
-  "sessionId": "sess_abc123",
-  "budget": "1000000",
-  "expiresAt": 1735003600
-}
-```
+### Session Bypass (Deferred Settlement)
 
-### Use Session
+For web users with active sessions, payments are instant:
 
-Include session headers in subsequent requests:
+1. User creates session with **one-time USDC approval**
+2. Requests skip on-chain verification—budget tracked in Redis
+3. Settlement batched every **2 minutes** or at **$1 threshold**
 
 ```
-x-session-id: sess_abc123
-x-session-budget: 1000000
+POST /agent/{id}/chat
+x-session-user-address: 0x...
+x-session-active: true
+x-session-budget-remaining: 5000000
+X-CHAIN-ID: 43114
 ```
 
-The server tracks usage and deducts from the budget.
+See [Sessions](/concepts/sessions) for details.
+
+### Compose Key (External Tools)
+
+For Cursor, OpenCode, OpenClaw, and other external clients:
+
+```bash
+curl -X POST https://manowar.compose.market/agent/{id}/chat \
+  -H "Authorization: Bearer compose-abc123..." \
+  -H "Content-Type: application/json"
+```
+
+Keys are managed via the session dropdown in the app.
 
 ## Pricing
 
-Prices are in USDC with 6 decimal places (1 USDC = 1,000,000 units).
+All prices in **USDC** (6 decimals, 1 USDC = 1,000,000 wei).
 
-### Dynamic Pricing Table
-
-| Operation | Price (USDC) |
-|-----------|--------------|
-| Agent Chat (per call) | $0.01 |
-| Tool Execution (light) | $0.001 |
-| Tool Execution (heavy) | $0.005 |
+| Operation | Price |
+|-----------|-------|
+| Agent Chat | $0.01 |
+| Tool Call (light) | $0.001 |
+| Tool Call (heavy) | $0.005 |
 | Image Generation | $0.03 |
 | Video Generation | $0.15 |
-| Workflow Orchestration | $0.01 |
 | Memory Operation | $0.001 |
 
-### Inference Pricing
+Inference pricing varies by model—see individual model cards.
 
-Inference costs vary by model. See individual model cards for token pricing.
+## Multi-Chain Support
+
+Compose Market supports payments on multiple chains:
+
+| Chain | ID | Facilitator |
+|-------|-----|-------------|
+| Cronos Mainnet | 25 | Cronos Labs |
+| Cronos Testnet | 338 | Cronos Labs |
+| Avalanche C-Chain | 43114 | ThirdWeb |
+| Avalanche Fuji | 43113 | ThirdWeb |
+
+The `X-CHAIN-ID` header determines which chain to use for settlement.
 
 ## Internal Bypass
 
-For internal service-to-service communication within Compose infrastructure, the `x-manowar-internal` header with a valid secret bypasses payment verification.
+For internal service-to-service communication within Compose infrastructure:
 
 ```
 x-manowar-internal: {MANOWAR_INTERNAL_SECRET}
 ```
 
-This is used by the orchestrator when delegating to agents within a workflow.
+This bypasses all payment verification. Used by the orchestrator when delegating to nested agents within a workflow.
