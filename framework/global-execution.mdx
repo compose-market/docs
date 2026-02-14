@@ -11,14 +11,13 @@ Every inference, tool call, and agent execution happens through our isolated san
 ┌──────────────┐      HTTP Request      ┌──────────────┐
 │   Client     │ ───────────────────────>│   Server     │
 │  (Cursor/    │<─────── 402 ───────────│   (Lambda)   │
-│   OpenCode/    │   Payment Required      │              │
+│   OpenCode/  │   Payment Required      │              │
 │   Browser)   │                         │              │
 │              │ ────── x-payment ──────>│              │
 │              │   (signed USDC tx)      │              │
 │              │<────── 200 ────────────│              │
 │              │   (with result)         │              │
 └──────────────┘                         └──────────────┘
-
 ```
 
 ## Two-Phase Deferred Settlement
@@ -55,16 +54,17 @@ For signature-free "Compose Keys" experience:
 ┌─────────────────────────────────────────────────────────┐
 │  MANOWAR ORCHESTRATION FRAMEWORK                        │
 ├─────────────────────────────────────────────────────────┤
-│  Orchestration    │  LangChain + LangGraph              │
-│  Memory           │  Mem0 Platform API (Graph Memory)   │
-│  Observability    │  LangSmith (Traces, Evaluation)     │
-│  Settlement       │  x402 Protocol + ERC4337 Sessions   │
+│  Orchestration    │  orchestrator.ts + planner.ts       │
+│  Delegation       │  delegation.ts (HTTP to agents)     │
+│  Memory           │  Mem0 Platform API (memory.ts)      │
 │  Embeddings       │  e5-mistral-7b-instruct             │
+│  Context Tracking │  context.ts (token ledger)          │
+│  Observability    │  LangSmith (langsmith.ts)           │
+│  Run Tracking     │  run-tracker.ts + checkpoint.ts     │
+│  Settlement       │  x402 Protocol + ERC4337 Sessions   │
 │  Coordinators     │  Nemotron, Kimi K2, MiniMax M2.1    │
 │  Persistence      │  IPFS (Pinata) + Redis              │
-│  Contracts        │  Zod schemas (task-contracts.ts)    │
 └─────────────────────────────────────────────────────────┘
-
 ```
 
 ---

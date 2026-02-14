@@ -75,6 +75,7 @@
             "group": "Framework",
             "pages": [
               "framework/framework",
+              "framework/modules",
               "framework/end-to-end",
               "framework/memory-and-context",
               "framework/global-execution"

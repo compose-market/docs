@@ -3,38 +3,41 @@ title: 'Manowar Agentic Execution'
 description: 'The compose.market Orchestration Framework'
 ---
 
-Manowar is a production-grade orchestration framework designed for **fully autonomous, continuous workflows**. It leverages a dual-plane architecture that separates the execution of tasks from the maintenance of the agent's cognitive health.
+Manowar is a production-grade orchestration framework designed for **fully autonomous, continuous workflows**. It coordinates specialized agents through a unified execution loop with integrated observability, memory management, and context window optimization.
 
-## 1. Architectural Philosophy: The Dual-Plane Model
+## Architectural Overview
 
-The framework operates on the principle of separating the **Data Plane** from the **Control Plane**.\
-
-*   **Intrinsic Workflow (The Data Plane):** The "Main Stage" where specialized agents execute immutable, on-chain defined tasks using a fixed set of tools.\
-*   **Extrinsic Orchestration (The Control Plane):** The "Shadow Orchestra." A suite of background sub-agents (NoteTaker, WindowTracker, ToolBoxer) that monitor performance, manage context windows, and optimize the workflow without interfering with the task's logic.\
-
-### High-Level Orchestration Flow
+The framework consists of three main layers:
 
 ```mermaid
 graph TD
-    START((Start)) --> Reviewer[Reviewer: Apply Learnings]
-    Reviewer --> Coordinator{Coordinator}
-    subgraph "Intrinsic Workflow (Data Plane)"
-        Coordinator -->|Delegate| Agents[Specialized Agents]
-        Agents -->|Execute| Tools[Workflow Tools]
-        Tools --> Coordinator
+    subgraph "Execution Layer"
+        O[ManowarOrchestrator] --> P[TaskPlanner]
+        O --> D[delegation.ts]
+        P --> R[Reflection Loop]
     end
-
-    subgraph "Shadow Orchestra (Control Plane)"
-        Coordinator -->|Turn End| NoteTaker[NoteTaker: Token Ledger]
-        NoteTaker --> WindowTracker[WindowTracker: MECW Monitor]
-        WindowTracker -->|Threshold Hit| MemoryWipe[Memory Wipe & Summarizer]
-        WindowTracker -->|Healthy| ToolBoxer[ToolBoxer: Registry Expert]
-        MemoryWipe --> ToolBoxer
-        ToolBoxer --> Mem0[Mem0: Graph Optimizer]
+    
+    subgraph "Observability Layer"
+        O --> L[LangSmithTokenTracker]
+        O --> C[checkpoint.ts]
+        O --> RT[run-tracker.ts]
     end
-    Mem0 -->|Next Loop| Evaluator[Evaluator: Performance Score]
-    Evaluator -->|Loop N+1| Reviewer
+    
+    subgraph "Memory Layer"
+        O --> M[Mem0 via memory.ts]
+        O --> E[embeddings.ts]
+        O --> CTX[ContextWindowManager]
+    end
 ```
+
+### Execution Flow
+
+1. **Initialize**: Fetch `manowarCard` from IPFS, build coordinator system prompt
+2. **Plan**: `TaskPlanner` decomposes goal into atomic steps with dependencies
+3. **Execute**: Delegate each step to specialized agents via HTTP
+4. **Track**: Record token usage, checkpoints, and metrics
+5. **Reflect**: Evaluate quality and adjust plan if needed
+6. **Persist**: Store learnings and complete run tracking
 
 # The Thing, Not the Tool
 
@@ -65,5 +68,15 @@ manowarCard (IPFS)
 ├── edges[]            # Execution graph: Agent 0 → Agent 1 → Agent 2
 ├── coordinator        # { model: "minimax/minimax-m2.1", hasCoordinator: true }
 └── walletAddress      # Primary identifier: 0x...
-
 ```
+
+## Module Structure
+
+The framework consists of 13 production modules. See the [Module Reference](/framework/modules) for complete documentation of each module's responsibilities and interfaces.
+
+| Category | Modules |
+|----------|---------|
+| **Orchestration** | `orchestrator.ts`, `planner.ts`, `delegation.ts` |
+| **Observability** | `langsmith.ts`, `checkpoint.ts`, `run-tracker.ts` |
+| **Context & Memory** | `context.ts`, `memory.ts`, `embeddings.ts` |
+| **Configuration** | `registry.ts`, `agentic.ts`, `triggers.ts`, `types.ts` |
