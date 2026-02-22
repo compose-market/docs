@@ -30,7 +30,7 @@ Compose Market supports **three payment flows**, optimized for different use cas
 | Method | Header | Use Case | Latency |
 |--------|--------|----------|---------|
 | **Per-call** | `X-PAYMENT` or `PAYMENT-SIGNATURE` | One-off requests | ~2-3s |
-| **Session Bypass** | `x-session-*` headers | Active web sessions | <100ms |
+| **Session Bypass** | `x-session-*` headers | Active web sessions | below 100ms |
 | **Compose Key** | `Authorization: Bearer compose-...` | External tools (Cursor, OpenCode) | ~500ms |
 
 ### Per-Call Payment (x402)

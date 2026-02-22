@@ -80,6 +80,14 @@
               "framework/memory-and-context",
               "framework/global-execution"
             ]
+          },
+          {
+            "group": "Memory",
+            "pages": [
+              "framework/memory/introduction",
+              "framework/memory/architecture",
+              "framework/memory/flows"
+            ]
           }
         ]
       },

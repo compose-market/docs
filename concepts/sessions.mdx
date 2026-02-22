@@ -58,7 +58,7 @@ X-CHAIN-ID: 43114
 The server:
 1. **Validates** session exists for wallet + chain
 2. **Locks** the request amount in Redis (atomic)
-3. **Returns** response immediately (<100ms)
+3. **Returns** response immediately (below 100ms)
 4. **Queues** intent for batch settlement
 
 No on-chain verification per request means **instant responses**.
