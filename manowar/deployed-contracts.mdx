@@ -3,23 +3,29 @@ title: 'Deployed Contracts'
 description: 'Contract addresses on testnets'
 ---
 
-## Cronos Testnet (Chain ID: 338)
-
 ### Core Contracts
 
 | Contract | Address |
 | :--- | :--- |
-| **Manowar** (Core) | `0x7dC71420085B4DeE2892E4070d7594895B586B81` |
-| **Agent Factory** (Registry) | `0x29e4b813127faAfb0e0bDdbb2359453bf6D220da` |
-| **Agent Manager** | `0x25055237a0C3dcf78758ACf5175fAF23B453eb6E` |
-| **Warp** (Bridge) | `0xd83474ceB2EfB70266b8f4AF0a9232734e9c0b20` |
-| **Clone** | `0x3111Ae6a45c19ea110F69Ea1F1282F7d999BD6BC` |
-| **RFA** (Requests) | `0x74d41A2ECAc9231D51664E3B446CE7273b3e1FA4` |
-| **Lease** | `0x7a314b5821BB3F014af7b5aba26ad71803765995` |
-| **Distributor** | `0xA5654dBa41a7E6B4af25A156D7145F30889EA04a` |
-| **Royalties** | `0x2DF1C45Cd2E6Df8BC9cBCf009BD525ce37Ed3D30` |
-| **Delegation** | `0xBE49FdCfbDb05e9F4648De9B5C05279ac8c4e277` |
-| **Utils** | `0x500108101CB09b3102b11a255E0f0f75e7AAe016` |
+| **Manowar** (Core) | `0x6C277Fd54831e35eDaCd2729F5bC64e39bdCE83f` |
+| **Agent Factory** (Registry) | `0x47d2D5cfe2B75B620AfD6D73ff5FB665c650d760` |
+| **Agent Manager** | `0x1004cC7fB6DcDA6Db67A270B0E130eB46c33b210` |
+| **Warp** (Bridge) | `0x5D8badCa8EDf27ce70a100C79dd3d86B5BE305d9` |
+| **Clone** | `0x5ED9c7159dC5C6c1dDEFb5d61f0dF1277eF94EEb` |
+| **RFA** (Requests) | `0x67f0E11d1c80Cc7106A97909d1c2Aa7bfB1259aD` |
+| **Lease** | `0x56760D79d363413adc4f9F21cF4949c302270071` |
+| **Distributor** | `0xc199f85EdE4038FB6Bb32Aae9cdEbdAFBA0449e0` |
+| **Royalties** | `0xA8d8531Fe968A9cd5129b5571C06f7BdDF35836D` |
+| **Delegation** | `0xFa097fc49592Cfe1eBaF6714BE2131C3c3933E55` |
+| **Utils** | `0x6554d9A40D7b6Ed77973f2A088FFF701eC113D02` |
+|   |   |
+|  The Dispenser is a multi-chain faucet to fund initial users.
+| **Dispenser** | `0x261938c0eAFA429797dD068bA4382e5b757B4615` |
+
+> [!CAUTION]
+> These are Testnet addresses. Do not send Mainnet assets.
+
+----
 
 ### ERC-4337 Account Abstraction (v0.7)
 
@@ -31,26 +37,17 @@ description: 'Contract addresses on testnets'
 | **Paymaster** | `0xA7c85b07aBE6eE06Cd2f1268Ea22d7156C7A67D4` | Gas sponsorship |
 
 > [!NOTE]
-> EntryPoint and AccountFactory use **universal addresses** deployed via CREATE2 with Arachnid's deployer. This ensures Smart Accounts have the same address across all chains.
+> All our contracts use **universal addresses** (same address on all supported chains). 
+> We deploy them via CREATE2 with Arachnid's deployer to ensure that both core contracts and Smart Accounts have the same address across all chains. 
 
----
+> **Why Same Addresses Matter:**
+> - It dramatically increases standardization/portability (= compose.market is native on any chain)
+> - Consistent smart account addresses across chains (= less identity fragmentation)
+> - It simplifies deployment pipeline and frontend configuration (better "dev experience")
+> - Enables cross-chain account abstraction
 
-## Avalanche Fuji (Chain ID: 43113)
+> **How it works:** The address depends on:
+> - Salt (32 bytes, arbitrary value you choose)
+> - Init code (bytecode + constructor args)
 
-### Core Contracts
-
-| Contract | Address |
-| :--- | :--- |
-| **Manowar** (Core) | `0x9fCdA3E828D142e942ECba6183dC09e294C5D38d` |
-| **Agent Factory** (Registry) | `0xb6d62374Ba0076bE2c1020b6a8BBD1b3c67052F7` |
-| **Agent Manager** | `0xC4039E60391b1bFEEdfE577eB20967eD6CFd2D6e` |
-| **Warp** (Bridge) | `0xd5008675e2FeC755cfe1Fd30295309BB65A049a5` |
-| **Clone** | `0xA5D57363d55698Cf7bad6a285632d40bd6a66DA6` |
-| **RFA** (Requests) | `0xa0E3f84Ad2b2075aa36083962A4EAAB16d88227d` |
-| **Lease** | `0x5DFa23efCa811cB974177b800cA1884eFFB51692` |
-| **Distributor** | `0x1E8a036ED015b836D8543DB48f70EEEE86C77EAA` |
-| **Royalties** | `0x0f938769179f116A29FD0c7F8876089A80D4B735` |
-| **Delegation** | `0x962fC821626106c772b7F97B9Fcf7Ded3238678f` |
-
-> [!CAUTION]
-> These are Testnet addresses. Do not send Mainnet assets.
+> *If both are identical across chains, the resulting address is identical.*
