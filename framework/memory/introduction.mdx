@@ -1,0 +1,99 @@
+---
+title: 'Infinite Memory System'
+description: 'Infinite memory system for LangChain/LangGraph agents with MongoDB Atlas Vector Search, Redis caching, Mem0 graph memory, and Temporal orchestration.'
+---
+
+## Overview
+
+The memory system provides **infinite context** for autonomous agents through a multi-layer architecture:
+
+- **Hot Layer**: Redis for checkpoints, embedding cache, session state
+- **Warm Layer**: MongoDB Atlas Vector Search for semantic retrieval
+- **Cold Layer**: Mem0 for entity/fact extraction, graph relations, long-term memory
+- **Archive Layer**: IPFS via Pinata for compressed historical archives
+
+```mermaid
+graph TB
+    subgraph "Agent Runtime"
+        A[LangGraph Executor] --> B[Redis Checkpointer]
+        A --> C[Memory Callbacks]
+    end
+    
+    subgraph "Hot Layer - Redis"
+        B --> D[Thread State]
+        C --> E[Embedding Cache]
+        C --> F[Session Cache]
+    end
+    
+    subgraph "Warm Layer - MongoDB"
+        G[Atlas Vector Search] --> H[memory collection]
+        G --> I[session_transcripts]
+        H --> J[decayScore indexing]
+    end
+    
+    subgraph "Cold Layer - Mem0"
+        K[MemoryClient] --> L[Graph Extraction]
+        K --> M[Reranking]
+        K --> N[Keyword Search]
+    end
+    
+    subgraph "Archive Layer"
+        O[Pinata IPFS] --> P[Compressed Archives]
+    end
+    
+    C --> G
+    C --> K
+    A --> O
+```
+
+## Key Capabilities
+
+| Capability | Implementation | Provider |
+|------------|----------------|----------|
+| Vector Search | 1024-dim cosine similarity | MongoDB Atlas |
+| Embeddings | voyage-4-large, BGE fallback | Voyage AI / Cloudflare |
+| Semantic Cache | Content-hash keyed TTL | Redis |
+| Checkpointing | LangGraph state persistence | Redis |
+| Entity Extraction | Graph-enabled memory | Mem0 |
+| Temporal Decay | Half-life scoring (default: 30 days) | MongoDB |
+| MMR Reranking | Diversity optimization | Manowar (local) |
+| Long-term Storage | IPFS pinning | Pinata |
+
+## Data Flow
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant Manowar
+    participant Redis
+    participant MongoDB
+    participant Mem0
+    participant Voyage
+    
+    Agent->>Manowar: User message
+    Manowar->>Redis: Check embedding cache
+    alt Cache hit
+        Redis-->>Manowar: Cached embedding
+    else Cache miss
+        Manowar->>Voyage: Get embedding (MONGO_DB_API_KEY)
+        Voyage-->>Manowar: 1024-dim vector
+        Manowar->>Redis: Cache embedding (24h TTL)
+    end
+    
+    Manowar->>MongoDB: $vectorSearch with decay
+    MongoDB-->>Manowar: Ranked results
+    
+    alt MMR enabled
+        Manowar->>Manowar: MMR rerank (local)
+    end
+    
+    alt Mem0 enabled
+        Manowar->>Mem0: Graph search
+        Mem0-->>Manowar: Entity context
+    end
+    
+    Manowar-->>Agent: Retrieved context
+    Agent->>Manowar: Response
+    Manowar->>MongoDB: Index vectors
+    Manowar->>Mem0: Store with graph extraction
+```

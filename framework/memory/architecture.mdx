@@ -1,0 +1,314 @@
+---
+title: 'Memory Architecture'
+description: 'Detailed breakdown of each layer in the infinite memory system.'
+---
+
+## Layer Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      AGENT RUNTIME                              │
+│  LangGraph Executor → Memory Callbacks → Embedding Pipeline     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      HOT LAYER (Redis)                          │
+│  • Thread checkpointer (LangGraph state)                        │ 
+│  • Embedding cache (24h TTL, content-hash keyed)                │
+│  • Session metadata                                             │
+│  Latency: <1ms | Size: Limited by memory | Persistence: TTL     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      WARM LAYER (MongoDB)                       │
+│  • Atlas Vector Search (1024-dim cosine)                        │ 
+│  • Temporal decay scoring                                       │
+│  • Session transcripts                                          │
+│  Latency: 10-50ms | Size: Unlimited | Persistence: Permanent    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      COLD LAYER (Mem0)                          │
+│  • Entity/fact extraction                                       │ 
+│  • Graph relations                                              │
+│  • Cross-session memory                                         │
+│  Latency: 100-300ms | Size: Unlimited | Persistence: Permanent  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      ARCHIVE LAYER (IPFS)                       │
+│  • Compressed session archives                                  │     
+│  • Historical patterns                                          │
+│  • Skills library                                               │
+│  Latency: Variable | Size: Unlimited                            │    
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Hot Layer: Redis
+
+### Purpose
+Fast, ephemeral storage for data that needs sub-millisecond access or has natural expiration.
+
+### Components
+
+**1. Checkpointer (`manowar/src/agent/checkpoint.ts`)**
+- LangGraph state persistence for thread continuity
+- Enables pause/resume of agent conversations
+- Key format: `checkpoint:{threadId}`
+
+**2. Embedding Cache (`manowar/src/redis.ts`, `manowar/src/agent/memory/embedding.ts`)**
+- Caches Voyage/BGE embeddings by content hash
+- Avoids redundant API calls for identical content
+- TTL: 24 hours (86400s)
+- Key format: `embedding:{sha256(content).slice(0,32)}`
+
+**3. Session Cache (`lambda/shared/configs/redis.ts`)**
+- General-purpose key/value operations
+- Supports: strings, hashes, sets
+- Atomic operations: SETNX, INCR, EXPIRE
+
+### Code Example
+
+```typescript
+// manowar/src/redis.ts
+export function createContentHash(content: string): string {
+    return crypto.createHash("sha256").update(content).digest("hex").slice(0, 32);
+}
+
+// manowar/src/agent/memory/embedding.ts
+const cacheKey = `embedding:${createContentHash(text)}`;
+const cached = await redis.get(cacheKey);
+if (cached) return JSON.parse(cached);
+// ... fetch from Voyage, cache result
+```
+
+---
+
+## Warm Layer: MongoDB Atlas
+
+### Purpose
+Persistent vector storage with semantic search capabilities.
+
+### Collections
+
+**1. `memory` (vectors)**
+```typescript
+interface MemoryVector {
+    vectorId: string;           // Unique ID
+    agentWallet: string;        // Agent identifier
+    userId?: string;            // User context
+    threadId?: string;          // Conversation thread
+    content: string;            // Raw text
+    embedding: number[];        // 1024-dim vector
+    source: "session" | "knowledge" | "pattern" | "archive" | "fact";
+    decayScore: number;         // Temporal relevance (0-1)
+    accessCount: number;        // Usage tracking
+    lastAccessedAt: number;     // Last access timestamp
+    createdAt: number;
+    updatedAt: number;
+}
+```
+
+**2. `session_transcripts`**
+```typescript
+interface SessionTranscript {
+    sessionId: string;
+    threadId: string;
+    agentWallet: string;
+    userId?: string;
+    messages: Array<{
+        role: "user" | "assistant" | "system" | "tool";
+        content: string;
+        timestamp: number;
+        toolCalls?: Array<{ name: string; args: Record<string, unknown> }>;
+    }>;
+    summary?: string;
+    summaryEmbedding?: number[];
+    tokenCount: number;
+    metadata: { modelUsed, totalTokens, contextWindow };
+    createdAt: number;
+    expiresAt?: number;
+}
+```
+
+### Atlas Vector Search Index
+
+```json
+{
+  "fields": [
+    { "type": "vector", "path": "embedding", "numDimensions": 1024, "similarity": "cosine" },
+    { "type": "filter", "path": "agentWallet" },
+    { "type": "filter", "path": "userId" },
+    { "type": "filter", "path": "threadId" },
+    { "type": "filter", "path": "source" },
+    { "type": "filter", "path": "decayScore" },
+    { "type": "filter", "path": "createdAt" }
+  ]
+}
+```
+
+### Hybrid Search Pipeline
+
+```typescript
+// lambda/shared/memory/index.ts
+const pipeline = [
+    {
+        $vectorSearch: {
+            index: "vector_index",
+            path: "embedding",
+            queryVector: queryEmbedding,
+            numCandidates: limit * 10,
+            limit: limit * 2,
+            filter: { agentWallet, userId, threadId }
+        }
+    },
+    { $addFields: { rawScore: { $meta: "vectorSearchScore" } } },
+    { $addFields: { adjustedScore: { $multiply: ["$rawScore", "$decayScore"] } } },
+    { $match: { adjustedScore: { $gte: threshold } } },
+    { $sort: { adjustedScore: -1 } },
+    { $limit: limit }
+];
+```
+
+### Temporal Decay
+
+Decay formula applied at query time:
+```
+decayScore = 0.5^(ageInDays / halfLifeDays)
+adjustedScore = vectorScore * decayScore
+```
+
+Default half-life: 30 days. Configurable via `TemporalDecayConfig`.
+
+---
+
+## Cold Layer: Mem0
+
+### Purpose
+Entity extraction, fact storage, and graph-based memory relations.
+
+### Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| Graph Extraction | Extracts entities and relations from conversations |
+| Reranking | Relevance optimization after retrieval |
+| Keyword Search | Hybrid semantic + lexical matching |
+| V2 Filters | Structured filtering with AND/OR/NOT |
+| Custom Categories | Domain-specific categorization |
+
+### API
+
+```typescript
+// lambda/shared/configs/mem0.ts
+
+// Add memory with graph extraction
+await addMemory({
+    messages: [{ role: "user", content: "I prefer dark mode" }],
+    agent_id: agentWallet,
+    user_id: userId,
+    enable_graph: true,  // Extract entities/relations
+});
+
+// Search with graph context
+const results = await searchMemory({
+    query: "IDE preferences",
+    agent_id: agentWallet,
+    enable_graph: true,  // Include related entities
+    rerank: true,        // Enable reranking
+});
+```
+
+### Memory Priority Matrix
+
+Mem0 searches cascade through scopes:
+
+| Priority | Scope | Use Case |
+|----------|-------|----------|
+| 1 | `user_id` | User preferences, learned behaviors |
+| 2 | `agent_id` | Execution patterns, skill learnings |
+| 3 | `run_id` | Current execution context |
+
+---
+
+## Archive Layer: IPFS/Pinata
+
+### Purpose
+Long-term storage of compressed session archives.
+
+### Archive Schema
+
+```typescript
+interface MemoryArchive {
+    archiveId: string;
+    agentWallet: string;
+    summary: string;
+    content: string;           // Compressed
+    ipfsCid?: string;          // IPFS hash
+    compressed: boolean;
+    dateRange: { start: number; end: number };
+    metadata: {
+        entryCount: number;
+        originalSize: number;
+        compressedSize: number;
+        topics: string[];
+    };
+    createdAt: number;
+    expiresAt?: number;
+}
+```
+
+### Temporal Workflow
+
+Archives created via scheduled Temporal workflows:
+
+```typescript
+// manowar/src/temporal/memory/schedules.ts
+const archiveSchedule = {
+    spec: { cronExpressions: ["0 3 * * 0"] },  // Sundays 3 AM UTC
+    action: { workflowType: "archiveCreationWorkflow" },
+};
+```
+
+---
+
+## Temporal Orchestration
+
+### Scheduled Workflows
+
+| Workflow | Schedule | Purpose |
+|----------|----------|---------|
+| `memoryConsolidationWorkflow` | Daily 2 AM UTC | Batch consolidate agent memories |
+| `archiveCreationWorkflow` | Weekly Sunday 3 AM | Create compressed archives |
+| `decayUpdateWorkflow` | Hourly | Update decay scores |
+| `memoryCleanupWorkflow` | On-demand | Remove expired memories |
+
+### Signal/Query Interface
+
+```typescript
+// Pause/resume running workflows
+SIGNAL_PAUSE_MEMORY_WORKFLOW = "pauseMemoryWorkflow";
+SIGNAL_RESUME_MEMORY_WORKFLOW = "resumeMemoryWorkflow";
+
+// Query current state
+QUERY_GET_MEMORY_WORKFLOW_STATE = "getMemoryWorkflowState";
+```
+
+### Continue-As-New Pattern
+
+Long-running workflows use `continueAsNew` to prevent event history overflow:
+
+```typescript
+if (iterationCount >= MAX_CONTINUOUS_ITERATIONS || info.continueAsNewSuggested) {
+    await continueAsNew<typeof decayUpdateWorkflow>({
+        ...input,
+        _iterationCount: 0,
+    });
+}
+```
