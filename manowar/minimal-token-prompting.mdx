@@ -1,0 +1,48 @@
+---
+title: "Minimal Token Prompting"
+description: "How Manowar keeps agent prompts compact without hiding identity, memory, or session context."
+---
+
+Manowar uses a dynamic system block built per turn in `framework.ts`. The block is small on cold starts and grows only when memory or session context has useful data.
+
+## Prompt Sections
+
+| Section | Source | Included when |
+| --- | --- | --- |
+| Identity | `agent/identity.ts` or agent config fallback | Always. |
+| Persona | Registered `systemPrompt` | Present on the agent config. |
+| Memory | `retrieveAgentMemory()` | Ranked memory exists for the user turn. |
+| Session | Per-request execution context | Session budget, permissions, or Backpack accounts exist. |
+| Capability sentence | `agent/tools/surface.ts` | Always. |
+
+## Memory Budget
+
+The runtime retrieves all six layers but injects only compact results:
+
+| Setting | Value |
+| --- | --- |
+| Layers | `working`, `scene`, `graph`, `patterns`, `archives`, `vectors` |
+| Retrieval limit | `12` |
+| Max injected items | `6` |
+| Max chars per item | `120` |
+| Prompt budget | `900` chars |
+
+The broader memory summary formatter supports a larger 1,800 character budget for non-turn uses. The agent turn path uses the tighter 900 character budget.
+
+## Compacting Rules
+
+Memory is deduped by fingerprint, ranked by layer priority, semantic score, query overlap, confidence, recency, and access count, then packed by score-per-character. This keeps the injected context short without throwing away the layer signal.
+
+## Comparison
+
+| System | Context strategy | Manowar strategy |
+| --- | --- | --- |
+| LangGraph | State is graph-defined and persisted through checkpointers/stores. | The native turn prompt receives compact ranked context from the memory system. |
+| Google ADK | Session, State, and Memory manage conversational context. | Manowar scopes memory by agent wallet, user, thread, workflow, and local HAI id. |
+| OpenAI Agents SDK | The app supplies instructions, tools, handoffs, guardrails, and context. | The runtime assembles identity, memory, session, and tools for deployed Compose agents. |
+
+## Related
+
+- [Memory introduction](/manowar/memory/introduction)
+- [Lazy discovery](/manowar/lazy-discovery)
+- [Agent-to-agent](/manowar/agent-to-agent)

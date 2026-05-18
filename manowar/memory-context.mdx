@@ -1,0 +1,55 @@
+---
+title: "Memory Context"
+description: "How compact memory and context-window management work together in Manowar."
+---
+
+Memory context enters Manowar in two places:
+
+| Runtime path | What happens |
+| --- | --- |
+| Agent turn | Pre-turn memory retrieval injects up to six compact items into the dynamic system block. |
+| Workflow run | `ContextWindowManager` tracks coordinator tokens and can trigger safe wipe summaries through workflow memory. |
+
+## Agent Turn Context
+
+Agent memory retrieval uses:
+
+```json
+{
+  "step": "pre_turn",
+  "layers": ["working", "scene", "graph", "patterns", "archives", "vectors"],
+  "limit": 12,
+  "maxItems": 6,
+  "maxItemChars": 120,
+  "budget": { "maxCharacters": 900 }
+}
+```
+
+The result is rendered as:
+
+```text
+Memory context:
+
+[GRAPH] The user prefers short Python examples.
+
+[WORKING] Last turn focused on wallet registration.
+```
+
+## Workflow Context
+
+`workflow/context.ts` fetches model context windows from `/v1/models/{modelId}` and uses 70 percent as the effective window. The cleanup threshold is:
+
+```text
+55 + 0.5 * log10(effectiveWindow / 1024)
+```
+
+The threshold is capped at 75 percent.
+
+## Safe Wipe
+
+Workflow safe wipe stores a compact summary as memory instead of carrying every prior message forward. It is a workflow context-management path; it is separate from the agent turn's six-layer memory injection.
+
+## Related
+
+- [Memory architecture](/manowar/memory/architecture)
+- [Minimal token prompting](/manowar/minimal-token-prompting)

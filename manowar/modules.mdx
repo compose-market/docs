@@ -1,0 +1,84 @@
+---
+title: "Module Reference"
+description: "Source-grounded map of the Manowar runtime modules."
+---
+
+Manowar lives under `runtime/src/manowar`. The modules are small enough to inspect directly, but this map gives you the ownership boundaries first.
+
+## Runtime Core
+
+| Module | Responsibility |
+| --- | --- |
+| `index.ts` | Exposes the single framework id, `manowar`. |
+| `mode.ts` | Resolves local/cloud host behavior and worker initialization gates. |
+| `runtime.ts` | Registers agents and workflows, validates cards, derives wallets, warms runtimes. |
+| `framework.ts` | Creates agents, model wrappers, managed workers, streams, stop controllers, and Responses calls. |
+| `telemetry.ts` | Extracts tokens, records usage, feedback, learning records, and run metadata. |
+
+## Agent Loop
+
+| Module | Responsibility |
+| --- | --- |
+| `agent/graph.ts` | Native model/tool loop with streaming, tool repair, and turn budgets. |
+| `agent/context.ts` | Per-turn execution context via `AsyncLocalStorage`. |
+| `agent/identity.ts` | Agent identity hydration and compact identity rendering. |
+| `agent/memory.ts` | Pre-turn retrieval, post-turn persistence, and explicit remember calls. |
+| `agent/memory-scope.ts` | Global/local memory scope resolution. |
+| `agent/state.ts` | Tool leases and visibility states: `base`, `memory`, `tool`, `model`, `swarm`. |
+| `agent/tools/*` | Tool factories, tool-call parsing, model/agent/search clients, and surface sentence. |
+
+## Memory
+
+| Module | Responsibility |
+| --- | --- |
+| `memory/agent-loop.ts` | `pre_turn`, `post_turn`, and `remember` workflow. |
+| `memory/layers.ts` | Six-layer retrieval across working, scene, graph, patterns, archives, vectors. |
+| `memory/vector.ts` | Atlas vector search, keyword fallback, access-count updates. |
+| `memory/graph.ts` | Durable fact extraction and graph-layer retrieval. |
+| `memory/embedding.ts` | Voyage embeddings through MongoDB's AI gateway. |
+| `memory/ranking.ts` | Temporal decay, Cloudflare rerank, and MMR ordering. |
+| `memory/mongo.ts` | MongoDB connection, collections, and indexes. |
+| `memory/cache.ts` | Redis cache, embedding cache, and scoped invalidation. |
+| `memory/operations.ts` | Consolidation, patterns, archives, decay, cleanup, and IPFS sync. |
+| `memory/evals.ts` | Memory retrieval evaluation metrics. |
+
+## Harness
+
+| Module | Responsibility |
+| --- | --- |
+| `harness/types.ts` | Typed MAL plan, step, budget, result, and subagent contracts. |
+| `harness/interpreter.ts` | Plan parser, validator, deterministic dispatcher, checkpoint/proof orchestration. |
+| `harness/engine.ts` | Subagent execution and budget enforcement. |
+| `harness/parallel.ts` | Fanout concurrency and gather modes. |
+| `harness/registry.ts` | Registered-agent validation through the API. |
+| `harness/scratchpad.ts` | Private per-agent/run scratchpad. |
+| `harness/conclave.ts` | Shared swarm bus. |
+| `harness/checkpoint.ts` | Redis MAL checkpoints. |
+| `harness/proof.ts` | Hash proof bundles and optional Pinata pinning. |
+| `harness/sandbox.ts` | Daytona-backed isolated subagent execution. |
+| `harness/coordinators.ts` | Dynamic coordinator model discovery from the catalog. |
+
+## Workflow
+
+| Module | Responsibility |
+| --- | --- |
+| `workflow/orchestrator.ts` | Plan -> Act -> Reflect workflow execution. |
+| `workflow/planner.ts` | Structured planning, review, reflection, validation, and graph ordering. |
+| `workflow/delegation.ts` | HTTP calls to embedded agent runtime. |
+| `workflow/context.ts` | Context window lookup and cleanup thresholds. |
+| `workflow/memory.ts` | Workflow memory writes, search, reliability, and safe wipe summaries. |
+| `workflow/checkpoint.ts` | Workflow observations, decisions, insights, errors, and persistence. |
+| `workflow/run-tracker.ts` | In-memory run lifecycle and cron stats. |
+| `workflow/triggers.ts` | Natural-language trigger parsing and Temporal schedule management. |
+| `workflow/registry.ts` | Workflow card loading and connector tool discovery. |
+
+## Comparison Map
+
+| Manowar module | Closest public-frame pattern | Difference that matters |
+| --- | --- | --- |
+| Native executor | OpenAI Agents SDK runner, ADK runner | Manowar calls the Compose inference gateway and records metering evidence. |
+| MAL harness | LangGraph graph, ADK workflow agents | MAL is a typed plan language interpreted by the runtime, not a graph library embedded in user code. |
+| Memory | LangGraph store, ADK session/state/memory | Manowar stores layered memory in first-party Mongo/Redis and injects compact context automatically. |
+| Swarm delegation | OpenAI handoffs, AutoGen messages | Delegation requires registered Compose agents with wallet identity. |
+| Model store | OpenRouter-style catalog search | Model selection uses the Compose generated catalog and public model ids. |
+| Telemetry | OpenAI tracing, LangSmith, AutoGen logs | Telemetry is in-runtime usage and feedback records used by Compose billing and learning surfaces. |

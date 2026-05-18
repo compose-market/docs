@@ -1,0 +1,62 @@
+---
+title: "Strongly Typed Execution"
+description: "Where Manowar uses typed contracts instead of prompt-only control."
+---
+
+Manowar lets the model reason, but keeps execution contracts typed. The clearest example is the Manowar Agent Loop (`mal`) harness.
+
+## Typed Surfaces
+
+| Surface | Type source | Runtime behavior |
+| --- | --- | --- |
+| Tools | JSON Schema or Zod | Converted into OpenAI-style function tools. |
+| MAL plans | `harness/types.ts` plus interpreter validation | Parsed from YAML/JSON and dispatched by closed `op` enum. |
+| Subagents | `SubAgentSpec` | Requires deployed `agentWallet`, explicit model, budgets, and depth. |
+| Memory loop | `AgentMemoryScope` and workflow response types | Enforces scope and step names. |
+| Telemetry | `UsageRecord`, `FeedbackRecord`, `RunMetadataRecord` | Normalizes provider usage into runtime records. |
+
+## MAL Ops
+
+| Op | Purpose |
+| --- | --- |
+| `task` | Spawn a focused registered subagent. |
+| `delegate` | Call a registered deployed agent. |
+| `fanout` | Run branches with controlled concurrency. |
+| `tool` | Call a registered tool directly. |
+| `if` | Branch on a safe mini expression. |
+| `loop` | Repeat a bounded block. |
+| `scratch` | Read/write private run state. |
+| `synthesize` | Combine saved values with an explicit model. |
+| `stop` | Return final output. |
+| `ask_user` | Request host-provided input. |
+
+## Example
+
+```yaml
+description: "Research, draft, and synthesize"
+budget:
+  maxDepth: 3
+  maxWallMs: 300000
+steps:
+  - op: delegate
+    saveAs: research
+    agentWallet: "0x1111111111111111111111111111111111111111"
+    prompt: "Collect source-backed notes for the topic."
+
+  - op: synthesize
+    saveAs: answer
+    from: ["research"]
+    model: "gpt-5.5"
+    instruction: "Write a concise answer using only the saved notes."
+
+  - op: stop
+    output: "{{answer}}"
+```
+
+The interpreter validates the plan, resolves `{{step.path}}` references, executes each step, and records step results. The model does not parse an English instruction manual on every step.
+
+## Related
+
+- [Harness planning](/manowar/harness/planning)
+- [Harness architecture](/manowar/harness/architecture)
+- [Tool surface](/manowar/tools/overview)

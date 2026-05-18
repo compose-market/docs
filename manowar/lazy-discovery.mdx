@@ -1,0 +1,55 @@
+---
+title: "Lazy Discovery"
+description: "How Manowar exposes broad capability without dumping every tool, model, and agent into the prompt."
+---
+
+Manowar gives every agent a small default capability surface:
+
+```text
+Memory is automatic. Use card tools, harness_run, connectors_find, swarm_find, swarm_delegate, models_call, or search_call as needed.
+```
+
+The agent sees a few entry points first. It asks those entry points for the exact connector, model, agent, or search backend only when the task needs one.
+
+## Surface Tools
+
+| Tool | Discovers or runs | Backing service |
+| --- | --- | --- |
+| `connectors_find` | One MCP connector | `CONNECTORS_URL /mcps/search` |
+| `harness_run` | One typed MAL plan | In-process harness interpreter |
+| `swarm_find` | One registered agent | `API_URL /agents/search` |
+| `swarm_delegate` | One registered agent call | Harness subagent engine |
+| `models_call` | One model call | `MODELS_URL /search`, then internal inference |
+| `search_call` | One web search | Perplexity, OpenAI, or Gemini backends |
+
+## Why It Matters
+
+The model catalog, connector catalog, agent index, and tool schemas can be large. Dumping them into every prompt wastes tokens and makes tool selection worse. Lazy discovery keeps the prompt stable and asks the owning service for ranked candidates.
+
+## Tool Result Budgets
+
+Tool results are compacted before returning to the model. Defaults live in `agent/tools/index.ts`:
+
+| Env var | Default |
+| --- | --- |
+| `AGENT_TOOL_RESULT_MAX_CHARS` | `1800` |
+| `AGENT_TOOL_RESULT_ARRAY_ITEMS` | `3` |
+| `AGENT_TOOL_RESULT_OBJECT_KEYS` | `12` |
+| `AGENT_TOOL_RESULT_STRING_CHARS` | `240` |
+| `AGENT_TOOL_RESULT_MAX_DEPTH` | `5` |
+
+Large JSON results are shortened with explicit `__compose_truncated` metadata so the model knows the result was compacted.
+
+## Comparison
+
+| System | Discovery style | Manowar style |
+| --- | --- | --- |
+| OpenAI Agents SDK | Tools are supplied by the app in code. | Default tools discover service-owned catalogs on demand. |
+| OpenClaw | Gateway and plugins expose channel and capability surfaces. | Manowar exposes Compose services through compact runtime tools. |
+| LangGraph | Nodes choose from state and tool bindings defined by the graph. | The native loop keeps a small tool surface and lets ranked services expand it. |
+
+## Related
+
+- [Tools overview](/manowar/tools/overview)
+- [Model store](/manowar/tools/model-store)
+- [MCP store](/manowar/tools/connectors/mcp-store)

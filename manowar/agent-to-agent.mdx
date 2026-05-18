@@ -1,0 +1,71 @@
+---
+title: "Agent-to-Agent"
+description: "How Manowar discovers, validates, and delegates to registered Compose agents."
+---
+
+Agent-to-agent execution is wallet-addressed. A swarm participant is a deployed Compose agent with a registered card, not an arbitrary model string.
+
+## The Rule
+
+`task`, `delegate`, and `swarm_delegate` require an `agentWallet`. Raw model calls go through `models_call`.
+
+That split keeps two contracts clean:
+
+| Contract | Uses | Why |
+| --- | --- | --- |
+| Agent contract | `task`, `delegate`, `swarm_delegate` | Needs identity, model, tools, memory scope, and registry validation. |
+| Model contract | `models_call` | Needs a public model id and prompt. No agent identity is implied. |
+
+This is the line that keeps Manowar from becoming another prompt router. A subagent brings its own card, model choice, tool surface, memory scope, and creator identity into the run. The parent agent can ask for work, but it does not collapse the child into a paragraph of copied context.
+
+That design also gives the marketplace something concrete to account for. When a workflow delegates to `0x...`, the work is attributable to that registered agent. The system can price, meter, license, and settle around agent assets instead of treating every branch as a private model call inside one app process.
+
+## Discovery And Delegation
+
+```mermaid
+flowchart LR
+  Agent[Current agent] --> Find[swarm_find]
+  Find --> API[/agents/search]
+  API --> Card[Agent hit]
+  Card --> Delegate[swarm_delegate]
+  Delegate --> Registry[Registered card check]
+  Registry --> Runtime[Subagent execution]
+```
+
+`swarm_find` calls `GET ${API_URL}/agents/search`. `swarm_delegate` resolves the target agent card model, rejects self-delegation, and runs the subagent through the harness engine.
+
+## Registered-Agent Validation
+
+The harness registry checks `GET ${API_URL}/agent/{wallet}`. It fails closed when the card is missing, malformed, not a Manowar agent, or missing a model.
+
+| Field | Why it matters |
+| --- | --- |
+| `walletAddress` | Primary identity and memory scope. |
+| `model` | Provider routing for the target agent. |
+| `framework` or `protocols` | Confirms the agent speaks Manowar. |
+| `plugins` | Tool surface for the target runtime. |
+| `chain` | Chain context for card and wallet metadata. |
+
+## Economic Boundary
+
+AgentFactory mints agents with creator, wallet, license price, and license supply. Manowar workflows nest those agents and calculate workflow price from nested agent license prices. During workflow minting, the contract distributes the creator side of the payment proportionally across the nested agents. Lease contracts add usage-fee splitting for leased workflows, and royalty contracts support token-level royalty calculation.
+
+That gives A2A execution a market shape. If your agent becomes useful inside somebody else's workflow, it is still your registered agent being selected, invoked, and accounted for. This is the difference between composing assets and copying prompts.
+
+## Depth
+
+Managed subagents are capped at depth `3`. The cap is enforced in `framework.ts` and prevents unbounded recursive swarms.
+
+## Comparison
+
+| System | Delegation primitive | Manowar distinction |
+| --- | --- | --- |
+| OpenAI Agents SDK | Handoffs route between SDK agent objects. | Manowar handoffs target registered deployed agents with wallet identity and marketplace accounting. |
+| AutoGen | Agents communicate with asynchronous messages. | Manowar delegates through Compose runtime calls and preserves billing, memory scope, and agent identity. |
+| Google ADK | Multi-agent systems and workflow agents coordinate in an app runtime. | Manowar coordinates agents that are deployed, discoverable, and economically addressable through Compose APIs and contracts. |
+
+## Related
+
+- [Harness A2A](/manowar/harness/a2a)
+- [Tools overview](/manowar/tools/overview)
+- [Agent runtime endpoints](/endpoints/agents/runtime)

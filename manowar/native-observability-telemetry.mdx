@@ -1,0 +1,71 @@
+---
+title: "Native Observability"
+description: "Usage, run metadata, feedback, checkpoints, and learning records in Manowar."
+---
+
+Manowar observability is native runtime data. It does not depend on LangSmith or an external tracing SaaS to know what happened during a run.
+
+## What Gets Recorded
+
+| Data | Where | Notes |
+| --- | --- | --- |
+| Token usage | `telemetry.ts` | Extracts prompt, completion, reasoning, and total tokens from multiple provider shapes. |
+| Usage records | `UsageTracker` | Records agent wallet, run id, model, action, source, and timing. |
+| Run metadata | `upsertRunMetadata()` | Stores status, wallet, model, timing, error, and arbitrary metadata. |
+| Feedback | `recordFeedback()` and helpers | Supports quality score, error, insight, and decision feedback. |
+| Learnings | `recordLearning()` and `getRelevantLearnings()` | Lets workflow planning review prior outcomes. |
+| Workflow checkpoints | `workflow/checkpoint.ts` | Records observations, decisions, insights, outputs, and errors. |
+| MAL checkpoints | `harness/checkpoint.ts` | Redis resume snapshots for typed MAL plans. |
+
+## Usage Extraction
+
+`extractTokens()` accepts provider output shapes that expose token fields under names such as:
+
+```text
+prompt_tokens
+completion_tokens
+reasoning_tokens
+total_tokens
+inputTokens
+outputTokens
+reasoningTokens
+totalTokens
+```
+
+`resolveAuthoritativeTokens()` prefers provider-reported usage when present and falls back to tracked callback totals. This matters because streaming and tool loops can expose usage at different points depending on the model adapter.
+
+## Run Lifecycle
+
+Workflow runs use `workflow/run-tracker.ts` for lifecycle state:
+
+| Status | Meaning |
+| --- | --- |
+| `pending` | Created but not started. |
+| `running` | Execution has started. |
+| `success` | Completed with a result. |
+| `error` | Failed with an error. |
+| `cancelled` | Stopped by caller or runtime control. |
+
+Cron metadata records total executions, successes, failures, and last-run details per trigger.
+
+## Checkpoints Are Not All The Same
+
+| Checkpoint type | Storage | Purpose |
+| --- | --- | --- |
+| Agent filesystem checkpoint | Local JSON files | Local checkpoint saver in `agent/checkpoint.ts`. |
+| MAL checkpoint | Redis `cal:run:{agentWallet}:{composeRunId}` | Resume state for a typed plan. |
+| Workflow annotation checkpoint | Memory/telemetry | Human-readable observations, decisions, insights, and errors. |
+
+## Comparison
+
+| System | Observability model | Manowar model |
+| --- | --- | --- |
+| OpenAI Agents SDK | Built-in tracing around SDK runs. | Native usage, feedback, and run metadata tied to Compose agents. |
+| LangGraph plus LangSmith | Graph state traces and hosted trace UI when LangSmith is used. | Runtime-owned records and checkpoints without a graph dependency. |
+| AutoGen | Event-driven agent logs and runtime events. | Wallet-scoped run records plus Compose metering evidence. |
+
+## Related
+
+- [Harness checkpoints](/manowar/harness/checkpoints)
+- [Workflow execution](/manowar/end-to-end)
+- [Inference metering](/inference/metering)
