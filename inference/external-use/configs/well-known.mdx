@@ -1,0 +1,36 @@
+---
+title: "Remote config endpoints"
+description: "Public config documents exposed by the external inference gateway."
+---
+
+The API exposes an OpenCode remote config document:
+
+```http
+GET /.well-known/opencode
+```
+
+It also exposes an alias:
+
+```http
+GET /external/opencode
+```
+
+The canonical OpenCode path returns a config wrapper without an embedded API key. The alias includes the `"{env:COMPOSE_MARKET_API_KEY}"` placeholder for clients that read the config directly.
+
+No other `/.well-known/*` external IDE config endpoints are registered in `api/inference/external.ts`.
+
+## Generic settings
+
+Use these settings for tools that support OpenAI-compatible providers:
+
+| Setting | Value |
+| --- | --- |
+| Base URL | `https://api.compose.market/external/v1` |
+| API key | Your Compose Key |
+| Auth header | `Authorization: Bearer compose-...` |
+| Models | Use IDs from `/external/v1/models` |
+
+## Related
+
+- [OpenCode](/inference/external-use/configs/well-known-opencode)
+- [External clients](/inference/external-use/overview)

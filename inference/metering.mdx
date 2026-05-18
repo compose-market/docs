@@ -1,0 +1,104 @@
+---
+title: "Metering"
+description: "How Compose prices provider output and settles paid inference."
+---
+
+Metering turns provider output into a bill. Compose does this after execution, using the resolved catalog row and the usage or media evidence returned by the adapter.
+
+For text models, that usually means tokens. For media models, it can mean generated images, audio seconds, video seconds, or provider-specific units from the catalog pricing table.
+
+## Amounts
+
+All settlement amounts are USDC atomic units. USDC has 6 decimals:
+
+```text
+1 USDC = 1000000
+```
+
+The final amount is:
+
+```text
+provider amount + platform fee
+```
+
+The API code applies a 1% platform fee on top of the provider amount.
+
+## Meter subject
+
+Meter subjects use the resolved provider and public model ID:
+
+```text
+{provider}:{modelId}
+```
+
+Examples:
+
+```text
+azure:gpt-5.5
+openai:openai/gpt-5.5
+cloudflare:@cf/meta/llama-3.3-70b-instruct-fp8-fast
+```
+
+The public model ID stays in the subject so receipts match what the client requested.
+
+## Line items
+
+A metered quote contains one or more line items:
+
+```json
+{
+  "subject": "azure:gpt-5.5",
+  "lineItems": [
+    {
+      "key": "input",
+      "unit": "usd_per_1m_input_tokens",
+      "quantity": 1000,
+      "unitPriceUsd": 1.25,
+      "amountWei": "1250"
+    }
+  ],
+  "providerAmountWei": "1250",
+  "platformFeeWei": "13",
+  "finalAmountWei": "1263"
+}
+```
+
+Units are normalized before settlement. The metering code supports per-unit pricing, per-1k and per-1m units, and time-based units such as seconds.
+
+## Authorization and settlement
+
+Compose separates authorization from settlement:
+
+| Phase | What happens |
+| --- | --- |
+| Authorization | The request reserves an exact amount or an `upto` cap. |
+| Execution | The selected adapter runs the provider call. |
+| Settlement | The API extracts authoritative usage/media evidence, prices it, and settles the final amount. |
+| Abort | If execution fails before settlement, the prepared payment is released. |
+
+Audio requests can be quoted exactly up front when request-side billing metrics are known. Usage-priced text, image, and video calls usually use a budget cap and settle after output.
+
+## Quote a model manually
+
+```bash
+curl https://api.compose.market/api/payments/meter/model \
+  -H "Content-Type: application/json" \
+  -d '{
+    "modelId": "gpt-5.5",
+    "provider": "azure",
+    "modality": "text",
+    "usage": {
+      "promptTokens": 1000,
+      "completionTokens": 250,
+      "totalTokens": 1250
+    }
+  }'
+```
+
+Use this endpoint when you need to inspect how a catalog row prices a known usage record.
+
+## Related
+
+- [x402](/x402/introduction)
+- [Facilitator](/x402/facilitator)
+- [Model catalog](/inference/reference/specification)

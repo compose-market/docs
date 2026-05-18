@@ -1,0 +1,21 @@
+---
+title: "Anthropic"
+description: "Anthropic-family models in the Compose catalog."
+---
+
+Compose routing is catalog-driven. It does not infer Anthropic support from a model name or a docs page.
+
+If an Anthropic-family model appears in the generated catalog, select its public `modelId` exactly. If it does not appear, it is not part of the hosted catalog for that build.
+
+Use:
+
+```http
+POST /v1/models/search
+```
+
+Filter by `q` or inspect `/v1/models` for current rows.
+
+## Related
+
+- [Providers and vendors](/inference/vendors)
+- [Model families](/inference/families/overview)

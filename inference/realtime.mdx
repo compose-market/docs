@@ -1,0 +1,26 @@
+---
+title: "Realtime"
+description: "Realtime route support in the hosted inference API."
+---
+
+The hosted API does not register a realtime WebSocket endpoint.
+
+For streaming text, use Server-Sent Events on:
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/v1/chat/completions` with `"stream": true` |
+| `POST` | `/v1/responses` with `"stream": true` |
+| `POST` | `/external/v1/chat/completions` with `"stream": true` |
+| `POST` | `/external/v1/responses` with `"stream": true` |
+
+For video jobs, use:
+
+```http
+GET /v1/videos/{id}/stream
+```
+
+## Related
+
+- [Streaming](/inference/streaming)
+- [Inference API reference](/inference/reference/specification)

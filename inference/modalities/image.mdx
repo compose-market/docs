@@ -1,0 +1,49 @@
+---
+title: "Image"
+description: "Image generation and editing through native and external routes."
+---
+
+Image generation uses OpenAI-style request bodies and adapter-specific provider execution.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/v1/images/generations` | Generate images from text and optional image input. |
+| `POST` | `/v1/images/edits` | Edit an input image with a prompt. |
+| `POST` | `/external/v1/images/generations` | External OpenAI-compatible image generation. |
+
+## Generate an image
+
+```bash
+curl https://api.compose.market/v1/images/generations \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "nano-banana",
+    "prompt": "A product diagram of an HTTP payment flow",
+    "size": "1024x1024",
+    "n": 1
+  }'
+```
+
+The response returns `data[]` with either `b64_json` or `url`, depending on provider output.
+
+## Edit an image
+
+```json
+{
+  "model": "gpt-image-2",
+  "image": "data:image/png;base64,...",
+  "prompt": "Make the labels easier to read.",
+  "size": "1024x1024"
+}
+```
+
+## Metering
+
+Image metering uses provider output evidence such as generated image count, duration, generated units, or provider billing metrics when available.
+
+## Related
+
+- [Vision](/inference/modalities/vision)
+- [Metering](/inference/metering)

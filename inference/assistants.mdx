@@ -1,0 +1,34 @@
+---
+title: "Assistants"
+description: "Use Responses and stored response records instead of an Assistants API."
+---
+
+The hosted API does not register `/v1/assistants` routes.
+
+Use `/v1/responses` when you need a stateful conversation primitive. The API stores response records for 24 hours and exposes retrieval routes:
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/v1/responses` |
+| `GET` | `/v1/responses/{id}` |
+| `GET` | `/v1/responses/{id}/input_items` |
+| `POST` | `/v1/responses/{id}/cancel` |
+
+## Continue a response
+
+```json
+{
+  "model": "gpt-5.5",
+  "previous_response_id": "resp_...",
+  "input": [
+    { "role": "user", "content": "Continue from the previous answer." }
+  ]
+}
+```
+
+The gateway hydrates prior messages from the stored response chain before it calls the provider.
+
+## Related
+
+- [Inference API reference](/inference/reference/specification)
+- [Streaming](/inference/streaming)

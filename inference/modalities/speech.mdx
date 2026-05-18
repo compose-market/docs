@@ -1,0 +1,45 @@
+---
+title: "Speech"
+description: "Text-to-speech and speech-to-text routes."
+---
+
+Speech routes handle audio generation and transcription.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/v1/audio/speech` | Text to speech. Returns audio bytes. |
+| `POST` | `/v1/audio/transcriptions` | Speech to text. Returns JSON or plain text. |
+| `POST` | `/external/v1/audio/speech` | External text to speech. |
+| `POST` | `/external/v1/audio/transcriptions` | External transcription. |
+
+## Text to speech
+
+```json
+{
+  "model": "tts-1",
+  "input": "Compose settles paid model calls over HTTP.",
+  "voice": "alloy",
+  "response_format": "mp3",
+  "speed": 1
+}
+```
+
+The response body is audio. The `Content-Type` comes from provider output, usually `audio/mpeg` or another requested format.
+
+## Transcription
+
+```json
+{
+  "model": "whisper-1",
+  "file": "<base64 audio>",
+  "language": "en",
+  "response_format": "json"
+}
+```
+
+Set `response_format` to `text` when you want a plain text body.
+
+## Related
+
+- [Metering](/inference/metering)
+- [Model families](/inference/families/speech-models)

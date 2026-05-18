@@ -1,0 +1,29 @@
+---
+title: "External client configs"
+description: "OpenAI-compatible configuration patterns for external tools."
+---
+
+Use the external base URL for clients that expect an OpenAI-compatible provider:
+
+```text
+https://api.compose.market/external/v1
+```
+
+Use a Compose Key as the API key:
+
+```text
+Authorization: Bearer compose-...
+```
+
+The only remote config endpoint implemented by the API is OpenCode:
+
+```http
+GET /.well-known/opencode
+```
+
+For other tools, configure the generic OpenAI-compatible provider manually.
+
+## Related
+
+- [OpenCode](/inference/external-use/configs/well-known-opencode)
+- [External clients](/inference/external-use/overview)

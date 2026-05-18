@@ -1,0 +1,38 @@
+---
+title: "Modalities"
+description: "Text, vision, images, video, speech, and embeddings in the Compose inference API."
+---
+
+The catalog describes each model with `input` and `output` modalities. The gateway uses those fields for search, model pages, and operation lists.
+
+Common modalities:
+
+| Modality | Typical endpoints |
+| --- | --- |
+| Text | `/v1/chat/completions`, `/v1/responses` |
+| Vision | Text routes with image content parts |
+| Images | `/v1/images/generations`, `/v1/images/edits`, `/v1/responses` |
+| Video | `/v1/videos/generations`, `/v1/videos/{id}` |
+| Speech | `/v1/audio/speech`, `/v1/audio/transcriptions` |
+| Embeddings | `/v1/embeddings` |
+
+Specialized outputs such as detections, segmentation, keypoints, and classification appear in catalog metadata for providers such as Roboflow. External OpenAI-compatible configs filter those labels when the target client only accepts a smaller modality enum.
+
+## Browse modalities
+
+```http
+GET /v1/modalities
+GET /v1/modalities/{modality}
+GET /v1/modalities/{modality}/operations
+GET /v1/modalities/{modality}/operations/{operation}/models
+```
+
+Use these endpoints when you need model discovery by task instead of by provider name.
+
+## Related
+
+- [Text](/inference/modalities/text)
+- [Image](/inference/modalities/image)
+- [Video](/inference/modalities/video)
+- [Speech](/inference/modalities/speech)
+- [Embeddings](/inference/modalities/embeddings)

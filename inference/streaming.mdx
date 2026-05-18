@@ -1,0 +1,90 @@
+---
+title: "Streaming"
+description: "Server-Sent Events for chat, responses, images, video status, and receipts."
+---
+
+Compose streams over Server-Sent Events (SSE). Native routes can emit OpenAI-shaped chunks plus Compose events. External routes strip Compose events so OpenAI-compatible clients only receive the event shapes they expect.
+
+## Chat streaming
+
+```bash
+curl -N https://api.compose.market/v1/chat/completions \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "gpt-5.5",
+    "stream": true,
+    "stream_options": { "include_usage": true },
+    "messages": [
+      { "role": "user", "content": "Give me one line." }
+    ]
+  }'
+```
+
+Chat streams use OpenAI chat completion chunks:
+
+```text
+data: {"id":"resp_...","object":"chat.completion.chunk","choices":[{"delta":{"role":"assistant","content":"Hello"}}]}
+
+data: {"id":"resp_...","object":"chat.completion.chunk","choices":[{"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]
+```
+
+When usage is available, Compose emits a final usage chunk before `[DONE]`.
+
+## Responses streaming
+
+`POST /v1/responses` streams Responses-style events. Use it when you want response IDs, input item retrieval, or previous-response history.
+
+```json
+{
+  "model": "gpt-5.5",
+  "stream": true,
+  "input": [
+    { "role": "user", "content": "Summarize the deployment log." }
+  ]
+}
+```
+
+The API stores response records for retrieval through:
+
+| Method | Path |
+| --- | --- |
+| `GET` | `/v1/responses/{id}` |
+| `GET` | `/v1/responses/{id}/input_items` |
+| `POST` | `/v1/responses/{id}/cancel` |
+
+## Compose events on native routes
+
+Native streams can include named events:
+
+| Event | Meaning |
+| --- | --- |
+| `compose.receipt` | Payment settled. Contains final amount, network, line items, and optional transaction hash. |
+| `compose.error` | Structured stream error before the stream closes. |
+| `compose.video.status` | Video job status update. |
+
+External streams remove these events and keep the body OpenAI-shaped.
+
+## Video status streaming
+
+```http
+GET /v1/videos/{id}/stream
+```
+
+The endpoint polls the provider job and streams `compose.video.status` until the job is `completed` or `failed`.
+
+Optional query parameters:
+
+| Parameter | Default | Bounds |
+| --- | --- | --- |
+| `pollIntervalMs` | `2000` | `500` to `30000` |
+| `timeoutMs` | `600000` | `5000` to `3600000` |
+
+## Related
+
+- [Tools](/inference/tools)
+- [Responses and chat reference](/inference/reference/specification)
+- [Metering](/inference/metering)

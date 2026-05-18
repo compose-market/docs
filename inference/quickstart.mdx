@@ -1,0 +1,101 @@
+---
+title: "Inference quickstart"
+description: "List models, make a chat call, and stream a response."
+---
+
+This page uses the hosted API directly. You need a Compose Key for the examples.
+
+```bash
+export COMPOSE_MARKET_API_KEY="compose-..."
+export COMPOSE_API_URL="https://api.compose.market"
+```
+
+## List models
+
+```bash
+curl "$COMPOSE_API_URL/v1/models" \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY"
+```
+
+The response is a generated catalog. Use `data[].modelId` as the model string on native routes.
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "modelId": "gpt-5.5",
+      "provider": "azure",
+      "input": ["text", "image"],
+      "output": ["text"]
+    }
+  ]
+}
+```
+
+## Make a chat call
+
+```bash
+curl "$COMPOSE_API_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Write a terse deployment checklist." }
+    ]
+  }'
+```
+
+Native responses use OpenAI-compatible shapes and may include `compose_receipt` in the JSON body. Receipt data is also exposed through `X-Compose-Receipt` when available.
+
+## Stream a chat call
+
+```bash
+curl -N "$COMPOSE_API_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "gpt-5.5",
+    "stream": true,
+    "stream_options": { "include_usage": true },
+    "messages": [
+      { "role": "user", "content": "Say hello in three words." }
+    ]
+  }'
+```
+
+Streaming uses Server-Sent Events. Chat streams emit OpenAI chat completion chunks, usage chunks, optional Compose receipt events, and then `[DONE]`.
+
+## Use an external OpenAI-compatible client
+
+Use `/external/v1` when the client expects an OpenAI base URL.
+
+```bash
+curl "$COMPOSE_API_URL/external/v1/chat/completions" \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Hello from an OpenAI-compatible client." }
+    ]
+  }'
+```
+
+External responses do not include Compose receipt bodies or Compose-specific SSE events. Provider diagnostics are in headers:
+
+| Header | Meaning |
+| --- | --- |
+| `x-compose-public-model` | Public catalog ID the client requested. |
+| `x-compose-upstream-provider` | Provider selected by the resolver. |
+| `x-compose-upstream-model` | Provider wire model sent to the adapter. |
+
+## Related
+
+- [External clients](/inference/external-use/overview)
+- [OpenCode config](/inference/external-use/configs/well-known-opencode)
+- [Streaming](/inference/streaming)
+- [Metering](/inference/metering)

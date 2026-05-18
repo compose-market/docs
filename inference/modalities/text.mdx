@@ -1,0 +1,50 @@
+---
+title: "Text"
+description: "Chat completions, Responses-style calls, streaming, tools, and reasoning parameters."
+---
+
+Text models run through chat completions or Responses-style routes.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/v1/chat/completions` | OpenAI Chat Completions shape. |
+| `POST` | `/v1/responses` | Responses-style input, previous response IDs, and stored response records. |
+| `POST` | `/external/v1/chat/completions` | OpenAI-compatible external route. |
+| `POST` | `/external/v1/responses` | Responses-style external route. |
+
+## Chat request
+
+```json
+{
+  "model": "gpt-5.5",
+  "messages": [
+    { "role": "system", "content": "Be concise." },
+    { "role": "user", "content": "Write a commit summary." }
+  ],
+  "stream": true,
+  "tools": [],
+  "tool_choice": "auto"
+}
+```
+
+The normalizer preserves common OpenAI and AI SDK fields, including `stream_options`, `parallel_tool_calls`, `response_format`, and reasoning fields where the selected adapter supports them.
+
+## Responses request
+
+```json
+{
+  "model": "gpt-5.5",
+  "input": [
+    { "role": "user", "content": "Summarize this log." }
+  ],
+  "stream": false
+}
+```
+
+Responses can be retrieved by ID after creation.
+
+## Related
+
+- [Tools](/inference/tools)
+- [Streaming](/inference/streaming)
+- [Inference API reference](/inference/reference/specification)

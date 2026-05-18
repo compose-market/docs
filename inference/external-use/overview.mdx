@@ -1,0 +1,74 @@
+---
+title: "External OpenAI-compatible clients"
+description: "Use Compose inference from IDEs, agents, SDKs, and apps that expect an OpenAI-compatible API."
+---
+
+External routes exist for clients that already know the OpenAI API shape. Think OpenCode, Cline, Zed, AI SDK, or your own app with an OpenAI-compatible provider setting.
+
+Use this base URL:
+
+```text
+https://api.compose.market/external/v1
+```
+
+Authenticate with a Compose Key:
+
+```text
+Authorization: Bearer compose-...
+```
+
+## What external routes do
+
+| Behavior | External route |
+| --- | --- |
+| Model IDs | Public catalog IDs such as `gpt-5.5` and `openai/gpt-5.5`. |
+| Auth | Compose Key bearer auth only. |
+| Payment | Prepared and settled by Compose behind the route. |
+| Response shape | OpenAI-compatible JSON and SSE. |
+| Receipts | Kept out of bodies and streams; native clients can use `/v1/*` for receipt bodies. |
+| Diagnostics | Provider/model headers are exposed when safe. |
+
+The external gateway accepts the same public IDs returned by the generated catalog.
+
+## Basic request
+
+```bash
+curl https://api.compose.market/external/v1/chat/completions \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Write a deployment note." }
+    ]
+  }'
+```
+
+## Model aliases
+
+When multiple providers expose the same upstream model ID, the generated catalog keeps the priority winner on the bare ID and gives non-primary rows a provider-prefixed public ID.
+
+```text
+gpt-5.5         -> azure / gpt-5.5
+openai/gpt-5.5  -> openai / gpt-5.5
+```
+
+That keeps the model list readable while still allowing exact provider selection.
+
+## Diagnostic headers
+
+External responses can include:
+
+| Header | Meaning |
+| --- | --- |
+| `x-compose-public-model` | Public model ID from the request. |
+| `x-compose-upstream-provider` | Provider selected by catalog resolution. |
+| `x-compose-upstream-model` | Provider model ID sent to the adapter. |
+
+These headers are useful when a provider rejects a request, rate limits, or applies its own content filter.
+
+## Related
+
+- [OpenCode config](/inference/external-use/configs/well-known-opencode)
+- [AI SDK migration](/inference/guides/migration-from-ai-sdk)
+- [Compose Keys](/x402/compose-key)

@@ -1,0 +1,21 @@
+---
+title: "Zed"
+description: "Configure Zed with the Compose external OpenAI-compatible API."
+---
+
+Use Compose as an OpenAI-compatible provider in Zed.
+
+| Setting | Value |
+| --- | --- |
+| Base URL | `https://api.compose.market/external/v1` |
+| API key | Your Compose Key |
+| Model | Any public ID from `/external/v1/models` |
+
+External responses stay OpenAI-shaped, so Zed does not need to understand Compose receipts or x402 headers.
+
+The API does not expose a Zed-specific remote config endpoint.
+
+## Related
+
+- [External clients](/inference/external-use/overview)
+- [OpenCode config](/inference/external-use/configs/well-known-opencode)

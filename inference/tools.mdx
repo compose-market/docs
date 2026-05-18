@@ -1,0 +1,96 @@
+---
+title: "Tools"
+description: "OpenAI-shaped function tools through Compose chat and responses routes."
+---
+
+Compose accepts OpenAI-style function tools on text models that support tool calling. The gateway passes tool definitions to the selected provider adapter and returns tool calls in OpenAI-compatible response shapes.
+
+Compose does not execute your tools. Your client or runtime owns permissions, sandboxing, side effects, and the next request.
+
+## Chat completions example
+
+```bash
+curl https://api.compose.market/v1/chat/completions \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "What is the weather in Rome?" }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Get current weather for a city.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": { "type": "string" }
+            },
+            "required": ["city"]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  }'
+```
+
+Tool calls return as:
+
+```json
+{
+  "tool_calls": [
+    {
+      "id": "call_...",
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "arguments": "{\"city\":\"Rome\"}"
+      }
+    }
+  ]
+}
+```
+
+Send the tool result back as a `tool` message:
+
+```json
+{
+  "role": "tool",
+  "tool_call_id": "call_...",
+  "content": "{\"temperature_c\":18,\"condition\":\"clear\"}"
+}
+```
+
+## Provider behavior
+
+The gateway normalizes tool requests, but providers still differ:
+
+| Provider family | Notes |
+| --- | --- |
+| OpenAI | Chat requests with function tools and reasoning parameters may use the Responses wire internally when required by the model. |
+| Azure OpenAI | Uses the same OpenAI-style message lowering path for tools, tool choice, response format, and custom params. |
+| Gemini | Tool-call state can include provider metadata needed for later turns; Compose preserves it where the adapter exposes it. |
+| OpenAI-compatible providers | Tool support depends on the selected model and provider. Check the catalog row before relying on it. |
+
+## External clients
+
+OpenCode and similar IDEs send large tool payloads. The external gateway keeps those fields intact and passes AI SDK wrapper fields through canonical normalization where the core understands them.
+
+External content-filter errors are sanitized in the response body. Diagnostic headers still show the selected provider and model when safe:
+
+```text
+x-compose-upstream-provider: azure
+x-compose-upstream-model: gpt-5.5
+x-compose-public-model: gpt-5.5
+```
+
+## Related
+
+- [Streaming](/inference/streaming)
+- [External clients](/inference/external-use/overview)
+- [Model families](/inference/families/overview)

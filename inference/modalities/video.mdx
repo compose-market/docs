@@ -1,0 +1,50 @@
+---
+title: "Video"
+description: "Submit video generations and poll or stream job status."
+---
+
+Video generation can complete synchronously or return a provider job ID. The API stores the job state and exposes polling and SSE status routes.
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/v1/videos/generations` | Submit a video generation. |
+| `GET` | `/v1/videos/{id}` | Poll job status. |
+| `GET` | `/v1/videos/{id}/stream` | Stream job status over SSE. |
+| `POST` | `/external/v1/videos/generations` | External video submission. |
+
+## Submit a job
+
+```json
+{
+  "model": "sora-2",
+  "prompt": "A slow pan across a clean product dashboard",
+  "duration": 5,
+  "aspect_ratio": "16:9",
+  "size": "1280x720",
+  "image_url": "data:image/png;base64,..."
+}
+```
+
+Accepted async response:
+
+```json
+{
+  "id": "provider-job-id",
+  "object": "video.generation",
+  "status": "queued",
+  "model": "sora-2"
+}
+```
+
+## Stream status
+
+```http
+GET /v1/videos/{id}/stream?pollIntervalMs=2000&timeoutMs=600000
+```
+
+The stream emits `compose.video.status` events and then `[DONE]`.
+
+## Related
+
+- [Streaming](/inference/streaming)
+- [Metering](/inference/metering)

@@ -1,0 +1,64 @@
+---
+title: "Use Compose from AI SDK"
+description: "Configure AI SDK with Compose's OpenAI-compatible external API."
+---
+
+Use the AI SDK OpenAI-compatible provider when you want AI SDK ergonomics with Compose billing and model routing.
+
+## Install
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+## Configure the provider
+
+```ts
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+
+export const compose = createOpenAICompatible({
+  name: "compose-market",
+  baseURL: "https://api.compose.market/external/v1",
+  apiKey: process.env.COMPOSE_MARKET_API_KEY,
+  includeUsage: true,
+});
+```
+
+## Generate text
+
+```ts
+import { generateText } from "ai";
+import { compose } from "./compose";
+
+const result = await generateText({
+  model: compose("gpt-5.5"),
+  messages: [
+    { role: "user", content: "Write a short release note." },
+  ],
+});
+
+console.log(result.text);
+```
+
+## Use provider aliases
+
+Use public catalog IDs exactly as Compose exposes them.
+
+```ts
+const azure = compose("gpt-5.5");
+const openai = compose("openai/gpt-5.5");
+```
+
+`gpt-5.5` and `openai/gpt-5.5` are different public IDs because they resolve to different provider rows.
+
+## Keep receipts out of AI SDK streams
+
+Use `/external/v1` with AI SDK. External routes keep response bodies OpenAI-shaped and do not inject Compose receipt events into the stream.
+
+If your backend needs receipts, call native `/v1/*` directly and read `X-Compose-Receipt`.
+
+## Related
+
+- [External clients](/inference/external-use/overview)
+- [OpenCode config](/inference/external-use/configs/well-known-opencode)
+- [Tools](/inference/tools)

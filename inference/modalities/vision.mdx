@@ -1,0 +1,46 @@
+---
+title: "Vision"
+description: "Use image inputs with chat and Responses-style text models."
+---
+
+Vision is image input on a text route. Pick a model whose catalog row includes `image` in `input` and `text` in `output`.
+
+## Chat completions
+
+```json
+{
+  "model": "gpt-5.5",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "What changed in this screenshot?" },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/png;base64,...",
+            "detail": "auto"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Legacy attachment fields
+
+Native chat routes also normalize legacy top-level fields:
+
+| Field | Meaning |
+| --- | --- |
+| `image_url` | Adds an image part to the last user message. |
+| `audio_url` | Adds an audio part to the last user message. |
+| `video_url` | Adds a video part to the last user message. |
+
+Use content parts for new integrations. They are clearer and closer to OpenAI-compatible client behavior.
+
+## Related
+
+- [Text](/inference/modalities/text)
+- [Images](/inference/modalities/image)

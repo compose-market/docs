@@ -1,0 +1,100 @@
+---
+title: "Inference API reference"
+description: "Route map, auth modes, headers, and response behavior for hosted inference."
+---
+
+## Auth modes
+
+| Route family | Raw x402 | Compose Key | Notes |
+| --- | --- | --- | --- |
+| `/v1/*` | Yes | Yes | Native Compose inference. |
+| `/external/v1/*` | No | Yes | OpenAI-compatible external clients. |
+| `/.well-known/opencode` | No | No | Public config document. |
+
+## Model routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/v1/models` | Generated model catalog. |
+| `GET` | `/v1/models/all` | Extended generated catalog when bundled. |
+| `POST` | `/v1/models/search` | Catalog search and filters. |
+| `GET` | `/v1/models/{model}` | One model row. |
+| `GET` | `/v1/models/{model}/params` | Optional parameter metadata for a model. |
+| `GET` | `/external/v1/models` | OpenAI-shaped model list. |
+| `GET` | `/external/v1/models/{model}` | One OpenAI-shaped model row. Slash-containing IDs are supported. |
+
+## Generation routes
+
+| Method | Path | Streaming | Notes |
+| --- | --- | --- | --- |
+| `POST` | `/v1/chat/completions` | Yes | OpenAI Chat Completions shape. |
+| `POST` | `/v1/responses` | Yes | Responses-style input and output. |
+| `GET` | `/v1/responses/{id}` | No | Retrieves a stored response record. |
+| `GET` | `/v1/responses/{id}/input_items` | No | Returns stored input items. |
+| `POST` | `/v1/responses/{id}/cancel` | No | Cancels a response or async job. |
+| `POST` | `/v1/embeddings` | No | OpenAI embeddings shape. |
+| `POST` | `/v1/images/generations` | Provider-dependent | Image generation. |
+| `POST` | `/v1/images/edits` | No | Image editing. |
+| `POST` | `/v1/audio/speech` | No | Returns audio bytes. |
+| `POST` | `/v1/audio/transcriptions` | No | Returns text or JSON. |
+| `POST` | `/v1/videos/generations` | No | Submits video generation. |
+| `GET` | `/v1/videos/{id}` | No | Polls video job status. |
+| `GET` | `/v1/videos/{id}/stream` | Yes | Streams video job status. |
+
+External generation routes mirror the supported OpenAI-compatible subset under `/external/v1`.
+
+## Request fields
+
+The core normalizer understands standard OpenAI fields and keeps provider-specific pass-through fields in `customParams` when possible.
+
+Common fields:
+
+| Field | Routes | Notes |
+| --- | --- | --- |
+| `model` | All generation routes | Public catalog ID. |
+| `messages` | Chat completions | OpenAI chat message array. |
+| `input` | Responses and embeddings | Responses-style content or embedding input. |
+| `tools` | Text routes | OpenAI function tools. |
+| `tool_choice` | Text routes | `none`, `auto`, `required`, or named function choice. |
+| `response_format` | Text routes | `text`, `json_object`, or `json_schema`. |
+| `stream` | Text and streamable media routes | Must be boolean. |
+| `stream_options` | Streaming routes | Preserved; usage inclusion is forced where metering requires it. |
+| `parallel_tool_calls` | Text routes | Preserved for providers that support it. |
+| `reasoning_effort` | Text routes | Passed through when compatible with the selected provider/model. |
+
+## Response headers
+
+| Header | Description |
+| --- | --- |
+| `X-Request-Id` | Request ID minted or accepted by the root middleware. |
+| `X-Compose-Receipt` | Native Compose receipt. |
+| `x-compose-response-id` | Response ID for streaming native responses. |
+| `x-routing-primary-model` | Primary model selected by routing policy. |
+| `x-routing-final-model` | Final model after retry policy. |
+| `x-routing-attempts` | Number of provider attempts. |
+| `x-routing-fallback-used` | `false` with the single-target routing policy. |
+| `x-compose-public-model` | External route public model ID. |
+| `x-compose-upstream-provider` | External route provider selected by resolver. |
+| `x-compose-upstream-model` | External route provider wire model. |
+
+## Error shape
+
+Native and external routes return OpenAI-style errors:
+
+```json
+{
+  "error": {
+    "message": "model is required",
+    "type": "invalid_request_error",
+    "code": "missing_model"
+  }
+}
+```
+
+External routes sanitize upstream content-filter messages and redact URLs. Diagnostic provider/model headers remain available when safe.
+
+## Related
+
+- [Inference overview](/inference/introduction)
+- [External clients](/inference/external-use/overview)
+- [Streaming](/inference/streaming)

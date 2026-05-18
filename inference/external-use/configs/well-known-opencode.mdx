@@ -1,0 +1,70 @@
+---
+title: "OpenCode"
+description: "Use Compose.Market as a remote OpenCode provider."
+---
+
+OpenCode can load organization config from:
+
+```http
+GET https://api.compose.market/.well-known/opencode
+```
+
+The config defines one provider, `compose-market`, backed by `@ai-sdk/openai-compatible`. OpenCode's provider docs describe `/connect` as the credential setup path; the remote config supplies the provider and model map.
+
+## Provider config shape
+
+The remote config uses this shape:
+
+```json
+{
+  "config": {
+    "$schema": "https://opencode.ai/config.json",
+    "provider": {
+      "compose-market": {
+        "name": "Compose.Market",
+        "npm": "@ai-sdk/openai-compatible",
+        "options": {
+          "baseURL": "https://api.compose.market/external/v1",
+          "includeUsage": true,
+          "timeout": false,
+          "chunkTimeout": 120000
+        }
+      }
+    }
+  }
+}
+```
+
+The public endpoint does not include an `apiKey` field. Use OpenCode's `/connect` flow for the `compose-market` provider so OpenCode stores the credential locally, outside the remote config.
+
+## Models
+
+OpenCode model keys are public catalog IDs.
+
+Examples:
+
+```text
+gpt-5.5
+openai/gpt-5.5
+@cf/meta/llama-3.3-70b-instruct-fp8-fast
+```
+
+OpenCode metadata is smaller than `/external/v1/models` because the remote config has a stricter schema. The full catalog stays available at `/external/v1/models`.
+
+## Debug
+
+If OpenCode starts but a model call fails, check the response headers:
+
+```text
+x-compose-public-model
+x-compose-upstream-provider
+x-compose-upstream-model
+```
+
+They show which catalog row the request reached.
+
+## Related
+
+- [External clients](/inference/external-use/overview)
+- [Compose Keys](/x402/compose-key)
+- [OpenCode providers](https://opencode.ai/docs/providers/)

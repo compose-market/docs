@@ -1,0 +1,33 @@
+---
+title: "Specialized outputs"
+description: "Detections, segmentation, keypoints, classification, metadata, and other catalog outputs."
+---
+
+Some provider rows are not ordinary chat, image, audio, video, or embedding models. Roboflow rows, for example, can expose outputs such as:
+
+- `detections`
+- `segmentation`
+- `keypoints`
+- `classification`
+- `metadata`
+
+These labels are catalog metadata. They help discovery and pricing, but they are not part of OpenCode's allowed modality enum and are not emitted in the OpenCode remote config.
+
+## How to discover them
+
+Use catalog search and modality operation routes:
+
+```http
+POST /v1/models/search
+GET /v1/modalities
+GET /v1/modalities/{modality}/operations
+```
+
+## External config behavior
+
+`/external/v1/models` can expose richer Compose metadata. `/.well-known/opencode` removes unsupported modality labels so OpenCode can validate the config.
+
+## Related
+
+- [Modalities](/inference/modalities/overview)
+- [External clients](/inference/external-use/overview)

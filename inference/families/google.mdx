@@ -1,0 +1,24 @@
+---
+title: "Google"
+description: "Gemini and Vertex model routes in Compose."
+---
+
+Google-family adapters cover Gemini and Vertex-style endpoints. They use provider-native request bodies under the hood, while the public API stays OpenAI-shaped.
+
+Supported routes depend on the catalog row and adapter path:
+
+| Route type | Notes |
+| --- | --- |
+| Text | Chat and Responses-style requests map into Google content parts. |
+| Embeddings | Gemini and Vertex embedding endpoints are supported by adapter code. |
+| Images | Google image generation and streaming image events are supported where the model row allows it. |
+| Speech | Google speech generation is supported by the adapter. |
+| Video | Video submission uses provider job IDs when generation is async. |
+
+Google model IDs can include provider-native prefixes such as `models/`; the adapter cleans these for the wire where needed.
+
+## Related
+
+- [Video](/inference/modalities/video)
+- [Images](/inference/modalities/image)
+- [Text](/inference/modalities/text)

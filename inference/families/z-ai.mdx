@@ -1,0 +1,23 @@
+---
+title: "Z.AI"
+description: "GLM-family rows exposed through Compose providers."
+---
+
+Z.AI and GLM-family rows can appear through several catalog providers. The provider row matters more than the family label.
+
+Examples in the generated catalog include:
+
+| Public ID | Provider | Notes |
+| --- | --- | --- |
+| `z-ai/glm-4.5-air` | `asicloud` | Text model row. |
+| `@cf/zai-org/glm-4.7-flash` | `cloudflare` | Workers AI row. |
+| `roboflow/glm-ocr` | `roboflow` | Image-to-text OCR-style row. |
+| `accounts/fireworks/models/glm-5p1` | `fireworks` | Fireworks-hosted GLM row. |
+
+Use `/v1/models` or `/external/v1/models` for the exact row before sending a request. Model IDs with slashes are normal public catalog IDs.
+
+## Related
+
+- [Model families](/inference/families/overview)
+- [Other providers](/inference/families/others)
+- [External clients](/inference/external-use/overview)

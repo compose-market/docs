@@ -1,0 +1,23 @@
+---
+title: "Stability AI"
+description: "Stability-family image rows in the Compose catalog."
+---
+
+Stability-family models are selected by catalog ID, not by a hardcoded provider list.
+
+Search for the model:
+
+```http
+POST /v1/models/search
+```
+
+Then call image generation with the returned `modelId`.
+
+```http
+POST /v1/images/generations
+```
+
+## Related
+
+- [Images](/inference/modalities/image)
+- [Model families](/inference/families/overview)

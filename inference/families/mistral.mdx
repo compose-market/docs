@@ -1,0 +1,19 @@
+---
+title: "Mistral"
+description: "Mistral-family models in the Compose catalog."
+---
+
+Mistral-family model names can appear through different providers. Compose does not route them through a hardcoded Mistral bucket.
+
+Search the generated catalog and use the returned public ID:
+
+```http
+POST /v1/models/search
+```
+
+The selected catalog row determines the provider and adapter.
+
+## Related
+
+- [Model families](/inference/families/overview)
+- [Providers and vendors](/inference/vendors)

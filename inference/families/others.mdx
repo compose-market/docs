@@ -1,0 +1,20 @@
+---
+title: "Other providers"
+description: "Cloudflare, Fireworks, ASI Cloud, Roboflow, and other non-core provider rows."
+---
+
+This page covers provider rows that are not better described by OpenAI, Google, Alibaba, or speech-specific pages.
+
+| Provider | Notes |
+| --- | --- |
+| Cloudflare | Workers AI rows, including text and selected media tasks. Model IDs often start with `@cf/`. |
+| Fireworks | OpenAI-compatible text and selected media routes. Some model IDs use full Fireworks account paths. |
+| ASI Cloud | OpenAI-compatible text rows. |
+| Roboflow | Computer-vision rows with outputs such as detections, segmentation, classification, keypoints, and metadata. |
+
+These providers stay selectable through public catalog IDs. The external OpenCode config includes only OpenCode-valid metadata, but `/external/v1/models` keeps richer Compose metadata.
+
+## Related
+
+- [Specialized outputs](/inference/modalities/others)
+- [External clients](/inference/external-use/overview)

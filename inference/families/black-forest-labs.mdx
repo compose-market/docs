@@ -1,0 +1,23 @@
+---
+title: "Black Forest Labs"
+description: "Black Forest Labs and FLUX-family image rows."
+---
+
+FLUX-family image rows can appear through providers such as Cloudflare, Vertex, or other catalog sources. Compose does not route by the family name alone.
+
+Search the catalog for `flux` and use the returned public ID:
+
+```http
+POST /v1/models/search
+```
+
+For image generation, call:
+
+```http
+POST /v1/images/generations
+```
+
+## Related
+
+- [Images](/inference/modalities/image)
+- [Providers and vendors](/inference/vendors)

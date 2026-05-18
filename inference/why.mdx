@@ -1,0 +1,44 @@
+---
+title: "Why Compose inference"
+description: "Where Compose inference fits beside OpenRouter, LiteLLM, provider APIs, and AI SDK."
+---
+
+Most inference products solve routing. Compose routes model calls and attaches payment to the HTTP request.
+
+That distinction matters when the caller is an agent, a workflow, or an external IDE spending a user-controlled budget. A normal gateway can tell you which model answered. Compose can also tell you what was authorized, what was reserved, what the provider reported, what was settled, and which receipt belongs to the call.
+
+## Market fit
+
+| Product style | Good at | Different from Compose |
+| --- | --- | --- |
+| OpenAI, Gemini, Anthropic, provider APIs | Direct provider access and first-party model features. | You manage provider accounts, payment rails, catalog differences, and per-provider metering yourself. |
+| [OpenRouter](https://openrouter.ai/docs/api/reference/overview) | OpenAI-compatible access and provider routing across many models. | Payment is account/API-key based, not x402 settlement per paid HTTP request. |
+| [LiteLLM](https://docs.litellm.ai/docs/) | Self-hosted proxying, provider normalization, and budget controls. | It is a proxy layer, not the Compose x402 facilitator or receipt model. |
+| [AI SDK](https://ai-sdk.dev/providers/openai-compatible-providers) | App-side TypeScript abstractions for model calls. | It is a client library. Compose is a paid HTTP gateway the AI SDK can call. |
+| Cloudflare Workers AI, Together AI, Fireworks, Hugging Face Inference Providers | Provider or router-specific inference APIs. | They are upstreams or peers in routing. Compose adds session budget, x402, and receipt handling around calls. |
+
+Use Compose when billing needs to be part of the request lifecycle: budgeted keys, raw x402, receipts, and generated multimodal catalog metadata. If you only need a generic LLM router, use the router that fits that job.
+
+## What Compose keeps explicit
+
+| Concern | Compose behavior |
+| --- | --- |
+| Model choice | The public model ID resolves to one catalog row. Duplicate provider rows use public aliases such as `openai/gpt-5.5`. |
+| Provider execution | The adapter receives the selected provider and provider wire model. No prompt rewriting, no provider guessing. |
+| External compatibility | `/external/v1/*` keeps OpenAI-compatible response bodies for IDEs and apps. |
+| Payment | Native routes support raw x402 and Compose Keys. External routes use Compose Keys. |
+| Metering | The final bill comes from provider usage or media evidence plus catalog pricing. |
+| Receipts | Native routes expose Compose receipts; external routes keep receipts out of response bodies. |
+
+## Trade-offs
+
+Compose does not hide every provider difference. Some models support tools, some do not. Some stream usage, some only return final usage. Some support image input, some only text. The catalog exposes those differences so clients can choose before sending work.
+
+That is less tidy than pretending every model is identical. It is easier to debug.
+
+## Related
+
+- [Model families](/inference/families/overview)
+- [Modalities](/inference/modalities/overview)
+- [External clients](/inference/external-use/overview)
+- [x402](/x402/introduction)

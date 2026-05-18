@@ -1,0 +1,24 @@
+---
+title: "Alibaba"
+description: "Alibaba model routes in Compose."
+---
+
+Alibaba rows run through provider-specific adapter code rather than the OpenAI-family fallback.
+
+The adapter supports several modalities when the catalog row exposes them:
+
+| Modality | Routes |
+| --- | --- |
+| Text | `/v1/chat/completions`, `/v1/responses` |
+| Embeddings | `/v1/embeddings` |
+| Images | `/v1/images/generations`, `/v1/images/edits` |
+| Speech | `/v1/audio/speech` |
+| Transcription | `/v1/audio/transcriptions` |
+| Video | `/v1/videos/generations`, `/v1/videos/{id}` |
+
+Use catalog search to select the exact Alibaba row instead of relying on provider-family guesses.
+
+## Related
+
+- [Providers and vendors](/inference/vendors)
+- [Modalities](/inference/modalities/overview)

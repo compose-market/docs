@@ -1,0 +1,38 @@
+---
+title: "Providers and vendors"
+description: "How the generated catalog maps public model IDs to provider adapters."
+---
+
+Compose does not maintain provider lists by hand in docs. The generated catalog lists the available provider rows.
+
+Use:
+
+```http
+GET /v1/models
+POST /v1/models/search
+```
+
+Each model row includes a provider and public model ID. The engine resolves that row, computes the provider wire model with `upstreamModelId ?? modelId`, and calls the matching adapter.
+
+## Adapter families
+
+The API includes adapters for providers and OpenAI-compatible families such as:
+
+| Provider or family | Used for |
+| --- | --- |
+| OpenAI | Chat, responses, embeddings, images, audio, video. |
+| Azure OpenAI | Chat, embeddings, images. |
+| Gemini and Vertex | Text, embeddings, images, speech, video, native Google wire formats. |
+| Alibaba | Text, embeddings, images, speech, transcription, video. |
+| Cloudflare | Workers AI model rows, including text, image, speech, transcription. |
+| Fireworks | OpenAI-compatible text and selected media routes. |
+| ASI Cloud | OpenAI-compatible text rows. |
+| Deepgram, ElevenLabs, Cartesia | Speech and transcription. |
+| Roboflow | Vision and computer-vision outputs such as detections and segmentation. |
+
+Provider support comes from source data and adapters, not from a docs page. If the catalog row exists and the adapter supports that modality, the route can execute it.
+
+## Related
+
+- [Model families](/inference/families/overview)
+- [Modalities](/inference/modalities/overview)

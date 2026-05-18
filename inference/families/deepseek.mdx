@@ -1,0 +1,19 @@
+---
+title: "DeepSeek"
+description: "DeepSeek-family models in the Compose catalog."
+---
+
+DeepSeek-family names can be served by different upstream providers. Compose does not special-case them by name.
+
+Use catalog search:
+
+```http
+POST /v1/models/search
+```
+
+Then call the returned public `modelId`. The catalog row decides the provider and upstream model ID.
+
+## Related
+
+- [Model families](/inference/families/overview)
+- [Text](/inference/modalities/text)

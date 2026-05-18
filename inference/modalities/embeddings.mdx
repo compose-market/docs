@@ -1,0 +1,53 @@
+---
+title: "Embeddings"
+description: "Generate vector embeddings with catalog-backed pricing."
+---
+
+Embeddings use the OpenAI-style `/v1/embeddings` shape.
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/v1/embeddings` |
+| `POST` | `/external/v1/embeddings` |
+
+## Request
+
+```json
+{
+  "model": "text-embedding-3-large",
+  "input": [
+    "Compose routes paid model calls.",
+    "x402 turns payment into an HTTP concern."
+  ],
+  "dimensions": 1024
+}
+```
+
+## Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [0.0123, -0.0456],
+      "index": 0
+    }
+  ],
+  "model": "text-embedding-3-large",
+  "usage": {
+    "prompt_tokens": 12,
+    "total_tokens": 12
+  }
+}
+```
+
+## Metering
+
+Embedding calls are metered from input usage. The adapter normalizes provider output into an embeddings array plus usage.
+
+## Related
+
+- [Metering](/inference/metering)
+- [Inference API reference](/inference/reference/specification)
