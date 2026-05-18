@@ -16,7 +16,7 @@ Common modalities:
 | Speech | `/v1/audio/speech`, `/v1/audio/transcriptions` |
 | Embeddings | `/v1/embeddings` |
 
-Specialized outputs such as detections, segmentation, keypoints, and classification appear in catalog metadata for providers such as Roboflow. External OpenAI-compatible configs filter those labels when the target client only accepts a smaller modality enum.
+Specialized outputs such as detections, segmentation, keypoints, and classification appear in catalog metadata for providers such as Roboflow. External configs filter those labels when the target client only accepts a smaller modality enum.
 
 ## Browse modalities
 
@@ -27,7 +27,7 @@ GET /v1/modalities/{modality}/operations
 GET /v1/modalities/{modality}/operations/{operation}/models
 ```
 
-Use these endpoints when you need model discovery by task instead of by provider name.
+Use these endpoints when you need model discovery by task instead of provider name.
 
 ## Related
 

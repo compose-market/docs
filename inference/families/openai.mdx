@@ -3,7 +3,7 @@ title: "OpenAI and OpenAI-compatible"
 description: "How OpenAI-style providers run through Compose."
 ---
 
-OpenAI-style providers share a common wire shape: chat completions, Responses-style requests, embeddings, images, audio, and tool calls.
+OpenAI-style providers share a familiar wire shape: chat completions, Responses-style requests, embeddings, images, audio, and tool calls.
 
 Compose uses that family for OpenAI itself and for providers whose API follows the OpenAI wire closely enough to use the shared lowering path.
 
@@ -20,7 +20,7 @@ The public ID is used for catalog responses, receipts, and metering subjects. Th
 
 ## Tools and reasoning
 
-Some OpenAI-family models require the Responses wire when function tools and reasoning parameters are combined. Compose handles that switch inside the adapter while keeping the external response shape OpenAI-compatible.
+Some OpenAI-family models require the Responses wire when function tools and reasoning parameters are combined. The adapter handles that switch and still returns an OpenAI-compatible response shape to external clients.
 
 ## Related
 

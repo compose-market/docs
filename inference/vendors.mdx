@@ -3,7 +3,7 @@ title: "Providers and vendors"
 description: "How the generated catalog maps public model IDs to provider adapters."
 ---
 
-Compose does not maintain provider lists by hand in docs. The generated catalog lists the available provider rows.
+The generated catalog is the source of truth for provider rows. Docs can name the adapter families, but the catalog decides what is available in a build.
 
 Use:
 
@@ -30,7 +30,7 @@ The API includes adapters for providers and OpenAI-compatible families such as:
 | Deepgram, ElevenLabs, Cartesia | Speech and transcription. |
 | Roboflow | Vision and computer-vision outputs such as detections and segmentation. |
 
-Provider support comes from source data and adapters, not from a docs page. If the catalog row exists and the adapter supports that modality, the route can execute it.
+Provider support comes from source data and adapter code. If the catalog row exists and the adapter supports that modality, the route can execute it.
 
 ## Related
 

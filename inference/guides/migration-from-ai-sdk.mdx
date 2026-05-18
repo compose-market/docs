@@ -3,7 +3,7 @@ title: "Use Compose from AI SDK"
 description: "Configure AI SDK with Compose's OpenAI-compatible external API."
 ---
 
-Use the AI SDK OpenAI-compatible provider when you want AI SDK ergonomics with Compose billing and model routing.
+Use the AI SDK OpenAI-compatible provider when you want AI SDK calls to run through Compose billing and catalog routing.
 
 ## Install
 
@@ -42,14 +42,14 @@ console.log(result.text);
 
 ## Use provider aliases
 
-Use public catalog IDs exactly as Compose exposes them.
+Use public catalog IDs exactly as Compose exposes them:
 
 ```ts
 const azure = compose("gpt-5.5");
 const openai = compose("openai/gpt-5.5");
 ```
 
-`gpt-5.5` and `openai/gpt-5.5` are different public IDs because they resolve to different provider rows.
+`gpt-5.5` and `openai/gpt-5.5` are different public IDs. They resolve to different provider rows.
 
 ## Keep receipts out of AI SDK streams
 

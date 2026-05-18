@@ -3,7 +3,7 @@ title: "Model families"
 description: "Provider families and how Compose keeps family labels out of routing heuristics."
 ---
 
-Model family pages are for orientation, not routing. The API does not decide provider execution from a marketing family name such as "Mistral" or "DeepSeek". It resolves the public model ID through the generated catalog.
+Model family pages are for orientation. Routing comes from the generated catalog, not from a marketing family name such as "Mistral" or "DeepSeek".
 
 That rule keeps routing predictable:
 
@@ -24,7 +24,7 @@ The generated catalog handles duplicate upstream IDs during sync:
 | `gpt-5.5` | `azure` | `gpt-5.5` |
 | `openai/gpt-5.5` | `openai` | `gpt-5.5` |
 
-The bare ID follows provider priority. A provider-prefixed alias selects a non-primary duplicate.
+The bare ID follows provider priority. A provider-prefixed alias selects a non-primary duplicate without changing the provider wire model.
 
 ## Related
 

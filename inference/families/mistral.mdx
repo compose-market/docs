@@ -3,15 +3,15 @@ title: "Mistral"
 description: "Mistral-family models in the Compose catalog."
 ---
 
-Mistral-family model names can appear through different providers. Compose does not route them through a hardcoded Mistral bucket.
+Mistral-family model names appear through different catalog sources. Compose routes the selected catalog row, not a hardcoded Mistral bucket.
 
-Search the generated catalog and use the returned public ID:
+Search the catalog and use the returned public ID:
 
 ```http
 POST /v1/models/search
 ```
 
-The selected catalog row determines the provider and adapter.
+The selected catalog row determines the provider, adapter, and upstream model ID.
 
 ## Related
 

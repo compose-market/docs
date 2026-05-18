@@ -3,6 +3,8 @@ title: "Inference API reference"
 description: "Route map, auth modes, headers, and response behavior for hosted inference."
 ---
 
+This is the compact route map for hosted inference. For request examples, start with the quickstart and modality pages.
+
 ## Auth modes
 
 | Route family | Raw x402 | Compose Key | Notes |
@@ -42,6 +44,8 @@ description: "Route map, auth modes, headers, and response behavior for hosted i
 | `GET` | `/v1/videos/{id}/stream` | Yes | Streams video job status. |
 
 External generation routes mirror the supported OpenAI-compatible subset under `/external/v1`.
+
+The API also registers `POST /api/inference` as a legacy alias for chat completions.
 
 ## Request fields
 

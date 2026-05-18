@@ -9,7 +9,7 @@ OpenCode can load organization config from:
 GET https://api.compose.market/.well-known/opencode
 ```
 
-The config defines one provider, `compose-market`, backed by `@ai-sdk/openai-compatible`. OpenCode's provider docs describe `/connect` as the credential setup path; the remote config supplies the provider and model map.
+The config defines one provider, `compose-market`, backed by `@ai-sdk/openai-compatible`. The remote config supplies the provider and model map. Credentials stay in OpenCode's local `/connect` flow.
 
 ## Provider config shape
 
@@ -49,7 +49,7 @@ openai/gpt-5.5
 @cf/meta/llama-3.3-70b-instruct-fp8-fast
 ```
 
-OpenCode metadata is smaller than `/external/v1/models` because the remote config has a stricter schema. The full catalog stays available at `/external/v1/models`.
+OpenCode accepts a smaller model metadata schema than `/external/v1/models`. The remote config only includes fields OpenCode can validate; the full external catalog remains available at `/external/v1/models`.
 
 ## Debug
 

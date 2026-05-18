@@ -5,7 +5,7 @@ description: "OpenAI-shaped function tools through Compose chat and responses ro
 
 Compose accepts OpenAI-style function tools on text models that support tool calling. The gateway passes tool definitions to the selected provider adapter and returns tool calls in OpenAI-compatible response shapes.
 
-Compose does not execute your tools. Your client or runtime owns permissions, sandboxing, side effects, and the next request.
+Compose does not run the function. Your client or runtime owns permissions, sandboxing, side effects, and the follow-up request.
 
 ## Chat completions example
 
@@ -68,7 +68,7 @@ Send the tool result back as a `tool` message:
 
 ## Provider behavior
 
-The gateway normalizes tool requests, but providers still differ:
+The gateway normalizes the request shape. Provider behavior still differs:
 
 | Provider family | Notes |
 | --- | --- |
@@ -79,7 +79,7 @@ The gateway normalizes tool requests, but providers still differ:
 
 ## External clients
 
-OpenCode and similar IDEs send large tool payloads. The external gateway keeps those fields intact and passes AI SDK wrapper fields through canonical normalization where the core understands them.
+OpenCode and similar IDEs send large tool payloads. The external gateway keeps those fields intact and passes AI SDK wrapper fields through the core normalizer where they are supported.
 
 External content-filter errors are sanitized in the response body. Diagnostic headers still show the selected provider and model when safe:
 

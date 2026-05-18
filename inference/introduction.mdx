@@ -1,33 +1,33 @@
 ---
 title: "Inference"
-description: "Paid multi-provider inference through native Compose routes and OpenAI-compatible external routes."
+description: "Model calls with catalog routing, metering, and payment on the same HTTP request."
 ---
 
-Compose.Market inference is a hosted API for model calls that need provider routing, usage metering, and payment on the same request.
+Compose.Market inference is a hosted API for paid model calls. It resolves a model from the generated catalog, calls the right provider adapter, meters the result, and settles the payment attached to the request.
 
-You can use it two ways:
+There are two public surfaces:
 
 | Surface | Base path | Who it is for |
 | --- | --- | --- |
 | Native Compose inference | `/v1` | Clients that want x402 negotiation, Compose receipts, response retrieval, and full model metadata. |
 | External OpenAI-compatible inference | `/external/v1` | IDEs and apps that already speak the OpenAI API shape and only support bearer auth. |
 
-Both surfaces use the same generated catalog and the same provider adapters. The external surface keeps bodies OpenAI-compatible; the native surface can include Compose receipt metadata.
+Both surfaces use the same catalog and adapters. The difference is the contract around the call: native routes can expose Compose receipts and x402 details, while external routes keep response bodies compatible with OpenAI-style clients.
 
 ## How models route
 
-Every call resolves through the generated catalog. A catalog row carries the public model ID, provider, pricing, limits, modalities, capabilities, and optional `upstreamModelId` for provider aliases.
+Every call starts with a public model ID from the generated catalog. The catalog row carries the provider, pricing, limits, modalities, capabilities, and optional `upstreamModelId` for duplicate provider rows.
 
-Duplicate provider rows use public aliases instead of hidden fallback. For example:
+Duplicate upstream IDs are explicit. The priority winner keeps the bare ID; the other provider rows get readable public aliases:
 
 | Public model ID | Provider selected | Provider wire model |
 | --- | --- | --- |
 | `gpt-5.5` | `azure` | `gpt-5.5` |
 | `openai/gpt-5.5` | `openai` | `gpt-5.5` |
 
-The model string is the contract. The client sends a public catalog ID, the engine resolves one provider row, and the adapter sends the provider wire ID.
+The model string is the contract. Compose does not inspect the prompt to guess a provider, and it does not silently fall back to a duplicate provider row.
 
-## Core endpoints
+## Native endpoints
 
 | Method | Path | Description |
 | --- | --- | --- |
@@ -46,6 +46,8 @@ The model string is the contract. The client sends a public catalog ID, the engi
 | `GET` | `/v1/videos/{id}` | Video job status. |
 | `GET` | `/v1/videos/{id}/stream` | Video job status over SSE. |
 
+Native routes accept Compose Keys and raw x402 payment flows. Use them when your integration wants receipts, retrieval routes, or payment negotiation as part of the API contract.
+
 ## External endpoints
 
 | Method | Path | Description |
@@ -59,6 +61,8 @@ The model string is the contract. The client sends a public catalog ID, the engi
 | `POST` | `/external/v1/audio/transcriptions` | Transcription with Compose Key auth. |
 | `POST` | `/external/v1/videos/generations` | Video generation with Compose Key auth. |
 | `GET` | `/.well-known/opencode` | Remote OpenCode config. |
+
+External routes use Compose Key bearer auth. They return OpenAI-shaped JSON and SSE, and keep Compose receipts out of the response body.
 
 ## How a request runs
 
@@ -74,7 +78,7 @@ flowchart LR
   Settle --> Client
 ```
 
-The route does not pick providers by guessing from prompt text. It resolves the public model ID through the catalog, then executes the provider adapter for that row.
+That flow is intentionally plain: resolve the catalog row, authorize the spend, call the adapter, meter the result, settle the payment.
 
 ## Related
 

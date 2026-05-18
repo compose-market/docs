@@ -3,11 +3,11 @@ title: "Why Compose inference"
 description: "Where Compose inference fits beside OpenRouter, LiteLLM, provider APIs, and AI SDK."
 ---
 
-Most inference products solve routing. Compose routes model calls and attaches payment to the HTTP request.
+Most inference gateways answer one question: "Which provider should handle this model call?"
 
-That distinction matters when the caller is an agent, a workflow, or an external IDE spending a user-controlled budget. A normal gateway can tell you which model answered. Compose can also tell you what was authorized, what was reserved, what the provider reported, what was settled, and which receipt belongs to the call.
+Compose answers that, then keeps the payment state attached to the same HTTP request. That matters when the caller is an agent, a workflow, or an IDE spending from a user-controlled budget. The API can tell you which model answered, what was authorized, what the provider reported, what was settled, and which receipt belongs to the call.
 
-## Market fit
+## Where it fits
 
 | Product style | Good at | Different from Compose |
 | --- | --- | --- |
@@ -17,9 +17,9 @@ That distinction matters when the caller is an agent, a workflow, or an external
 | [AI SDK](https://ai-sdk.dev/providers/openai-compatible-providers) | App-side TypeScript abstractions for model calls. | It is a client library. Compose is a paid HTTP gateway the AI SDK can call. |
 | Cloudflare Workers AI, Together AI, Fireworks, Hugging Face Inference Providers | Provider or router-specific inference APIs. | They are upstreams or peers in routing. Compose adds session budget, x402, and receipt handling around calls. |
 
-Use Compose when billing needs to be part of the request lifecycle: budgeted keys, raw x402, receipts, and generated multimodal catalog metadata. If you only need a generic LLM router, use the router that fits that job.
+Use Compose when billing is part of the request lifecycle: budgeted keys, raw x402, receipts, and catalog-backed metering. If you only need a generic LLM router, use the router that fits that job.
 
-## What Compose keeps explicit
+## What stays explicit
 
 | Concern | Compose behavior |
 | --- | --- |
@@ -30,11 +30,11 @@ Use Compose when billing needs to be part of the request lifecycle: budgeted key
 | Metering | The final bill comes from provider usage or media evidence plus catalog pricing. |
 | Receipts | Native routes expose Compose receipts; external routes keep receipts out of response bodies. |
 
-## Trade-offs
+## Trade-offs, plainly
 
 Compose does not hide every provider difference. Some models support tools, some do not. Some stream usage, some only return final usage. Some support image input, some only text. The catalog exposes those differences so clients can choose before sending work.
 
-That is less tidy than pretending every model is identical. It is easier to debug.
+That is less tidy than pretending every model is identical, but it is much easier to debug.
 
 ## Related
 

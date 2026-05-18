@@ -3,7 +3,9 @@ title: "External client configs"
 description: "OpenAI-compatible configuration patterns for external tools."
 ---
 
-Use the external base URL for clients that expect an OpenAI-compatible provider:
+Most external tools only need three values: base URL, API key, and model ID.
+
+Use the external base URL:
 
 ```text
 https://api.compose.market/external/v1
@@ -15,13 +17,13 @@ Use a Compose Key as the API key:
 Authorization: Bearer compose-...
 ```
 
-The only remote config endpoint implemented by the API is OpenCode:
+OpenCode also has a remote config endpoint:
 
 ```http
 GET /.well-known/opencode
 ```
 
-For other tools, configure the generic OpenAI-compatible provider manually.
+For other tools, configure the generic OpenAI-compatible provider manually and choose a model from `/external/v1/models`.
 
 ## Related
 

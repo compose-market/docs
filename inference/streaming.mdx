@@ -3,7 +3,7 @@ title: "Streaming"
 description: "Server-Sent Events for chat, responses, images, video status, and receipts."
 ---
 
-Compose streams over Server-Sent Events (SSE). Native routes can emit OpenAI-shaped chunks plus Compose events. External routes strip Compose events so OpenAI-compatible clients only receive the event shapes they expect.
+Compose uses Server-Sent Events for streaming. Native routes can include Compose events alongside OpenAI-shaped chunks. External routes remove Compose events so OpenAI-compatible clients only see the stream shape they expect.
 
 ## Chat streaming
 
@@ -32,11 +32,11 @@ data: {"id":"resp_...","object":"chat.completion.chunk","choices":[{"delta":{},"
 data: [DONE]
 ```
 
-When usage is available, Compose emits a final usage chunk before `[DONE]`.
+When usage is available, Compose sends a final usage chunk before `[DONE]`.
 
 ## Responses streaming
 
-`POST /v1/responses` streams Responses-style events. Use it when you want response IDs, input item retrieval, or previous-response history.
+`POST /v1/responses` streams Responses-style events. Use it when you want response IDs, input item retrieval, or `previous_response_id` history.
 
 ```json
 {
@@ -66,7 +66,7 @@ Native streams can include named events:
 | `compose.error` | Structured stream error before the stream closes. |
 | `compose.video.status` | Video job status update. |
 
-External streams remove these events and keep the body OpenAI-shaped.
+External streams remove these events and keep the stream OpenAI-shaped.
 
 ## Video status streaming
 
@@ -74,7 +74,7 @@ External streams remove these events and keep the body OpenAI-shaped.
 GET /v1/videos/{id}/stream
 ```
 
-The endpoint polls the provider job and streams `compose.video.status` until the job is `completed` or `failed`.
+The endpoint polls the provider job and sends `compose.video.status` until the job is `completed` or `failed`.
 
 Optional query parameters:
 

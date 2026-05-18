@@ -3,7 +3,7 @@ title: "Z.AI"
 description: "GLM-family rows exposed through Compose providers."
 ---
 
-Z.AI and GLM-family rows can appear through several catalog providers. The provider row matters more than the family label.
+Z.AI and GLM-family rows can appear through several catalog providers. The provider row is the part that matters for execution.
 
 Examples in the generated catalog include:
 
@@ -14,7 +14,7 @@ Examples in the generated catalog include:
 | `roboflow/glm-ocr` | `roboflow` | Image-to-text OCR-style row. |
 | `accounts/fireworks/models/glm-5p1` | `fireworks` | Fireworks-hosted GLM row. |
 
-Use `/v1/models` or `/external/v1/models` for the exact row before sending a request. Model IDs with slashes are normal public catalog IDs.
+Use `/v1/models` or `/external/v1/models` for the exact row before sending a request. Slashes are normal inside public catalog IDs.
 
 ## Related
 

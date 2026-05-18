@@ -3,7 +3,7 @@ title: "Metering"
 description: "How Compose prices provider output and settles paid inference."
 ---
 
-Metering turns provider output into a bill. Compose does this after execution, using the resolved catalog row and the usage or media evidence returned by the adapter.
+Metering is the part of the request that turns provider output into a bill. Compose does it after execution, using the resolved catalog row and the usage or media evidence returned by the adapter.
 
 For text models, that usually means tokens. For media models, it can mean generated images, audio seconds, video seconds, or provider-specific units from the catalog pricing table.
 
@@ -21,7 +21,7 @@ The final amount is:
 provider amount + platform fee
 ```
 
-The API code applies a 1% platform fee on top of the provider amount.
+The API applies a 1% platform fee on top of the raw amount. Our fees are the lowest in the space, minimum 5.5x times lower than other aggregators (e.g., OpenRouter charges 5.5%).
 
 ## Meter subject
 

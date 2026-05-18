@@ -3,12 +3,14 @@ title: "Inference quickstart"
 description: "List models, make a chat call, and stream a response."
 ---
 
-This page uses the hosted API directly. You need a Compose Key for the examples.
+These examples use a Compose Key against the hosted API.
 
 ```bash
 export COMPOSE_MARKET_API_KEY="compose-..."
 export COMPOSE_API_URL="https://api.compose.market"
 ```
+
+Use `/v1/*` when you want Compose receipts or x402 behavior. Use `/external/v1/*` when you are configuring an OpenAI-compatible IDE, SDK, or app.
 
 ## List models
 
@@ -35,6 +37,8 @@ The response is a generated catalog. Use `data[].modelId` as the model string on
 
 ## Make a chat call
 
+Native routes are OpenAI-shaped, with Compose payment metadata added where it belongs.
+
 ```bash
 curl "$COMPOSE_API_URL/v1/chat/completions" \
   -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
@@ -48,7 +52,7 @@ curl "$COMPOSE_API_URL/v1/chat/completions" \
   }'
 ```
 
-Native responses use OpenAI-compatible shapes and may include `compose_receipt` in the JSON body. Receipt data is also exposed through `X-Compose-Receipt` when available.
+The response is an OpenAI-compatible chat completion. Native responses may include `compose_receipt` in the JSON body, and receipt data is also exposed through `X-Compose-Receipt` when available.
 
 ## Stream a chat call
 
@@ -67,7 +71,7 @@ curl -N "$COMPOSE_API_URL/v1/chat/completions" \
   }'
 ```
 
-Streaming uses Server-Sent Events. Chat streams emit OpenAI chat completion chunks, usage chunks, optional Compose receipt events, and then `[DONE]`.
+Streaming uses Server-Sent Events. Native chat streams emit OpenAI chat completion chunks, usage chunks, optional Compose receipt events, and then `[DONE]`.
 
 ## Use an external OpenAI-compatible client
 
@@ -85,7 +89,7 @@ curl "$COMPOSE_API_URL/external/v1/chat/completions" \
   }'
 ```
 
-External responses do not include Compose receipt bodies or Compose-specific SSE events. Provider diagnostics are in headers:
+External responses keep the body clean for OpenAI-compatible clients. Provider diagnostics are still available in headers:
 
 | Header | Meaning |
 | --- | --- |

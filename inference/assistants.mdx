@@ -3,7 +3,7 @@ title: "Assistants"
 description: "Use Responses and stored response records instead of an Assistants API."
 ---
 
-The hosted API does not register `/v1/assistants` routes.
+The hosted API does not clone the OpenAI Assistants API. There are no `/v1/assistants` routes.
 
 Use `/v1/responses` when you need a stateful conversation primitive. The API stores response records for 24 hours and exposes retrieval routes:
 
@@ -26,7 +26,7 @@ Use `/v1/responses` when you need a stateful conversation primitive. The API sto
 }
 ```
 
-The gateway hydrates prior messages from the stored response chain before it calls the provider.
+Before the provider call, the gateway hydrates prior messages from the stored response chain.
 
 ## Related
 
