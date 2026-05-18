@@ -1,0 +1,79 @@
+---
+title: "Models"
+api: "GET https://api.compose.market/v1/models"
+description: "List, retrieve, search, and price the generated model catalog."
+---
+
+Model routes use public catalog IDs. Duplicate upstream model names are resolved by the generated catalog, so callers send the public ID shown by these endpoints.
+
+## Routes
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/v1/models` | None | Native generated model catalog. |
+| `GET` | `/v1/models/all` | None | Extended catalog when bundled. |
+| `GET` | `/v1/models/{model}` | None | One native model card. |
+| `GET` | `/v1/models/{model}/params` | None | Optional parameter metadata for one model. |
+| `POST` | `/v1/models/search` | None | Search and filter native model cards. |
+| `GET` | `/api/models` | None | Public catalog proxy backed by the models service. |
+| `GET` | `/api/pricing` | None | Compact pricing table from the bundled inference catalog. |
+
+## Search body
+
+<ParamField body="q" type="string">
+  Search text matched against model metadata.
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Provider slug. Invalid providers return `400`.
+</ParamField>
+
+<ParamField body="modality" type="string">
+  Canonical modality such as `text`, `image`, `audio`, `video`, or `embedding`.
+</ParamField>
+
+<ParamField body="operation" type="string">
+  Canonical operation for the selected modality.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum models to return.
+</ParamField>
+
+<ParamField body="cursor" type="string">
+  Cursor returned by the previous search page.
+</ParamField>
+
+## Response
+
+<ResponseField name="object" type="string">
+  `list` for list and search routes.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Model cards from the generated catalog.
+</ResponseField>
+
+<ResponseField name="next_cursor" type="string">
+  Search cursor when more results are available.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "modelId": "gpt-5.5",
+      "provider": "azure",
+      "name": "gpt-5.5"
+    }
+  ],
+  "total": 1,
+  "next_cursor": null
+}
+```
+
+</ResponseExample>
+

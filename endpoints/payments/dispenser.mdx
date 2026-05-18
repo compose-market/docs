@@ -1,0 +1,41 @@
+---
+title: "Dispenser"
+api: "POST https://api.compose.market/api/dispenser/claim"
+description: "Claim and inspect test funding dispenser status."
+---
+
+Dispenser routes support the public funding flow used by development and onboarding clients.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/dispenser/claim` | Claim USDC for one address and chain. |
+| `GET` | `/api/dispenser/status` | Return status for all configured dispensers. |
+| `GET` | `/api/dispenser/status/{chainId}` | Return status for one chain. |
+| `GET` | `/api/dispenser/check/{address}` | Check whether an address has claimed. |
+
+## Claim body
+
+<ParamField body="address" type="string" required>
+  EVM address. Invalid formats return `400`.
+</ParamField>
+
+<ParamField body="chainId" type="number" required>
+  Chain ID to claim on.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Whether the claim succeeded.
+</ResponseField>
+
+<ResponseField name="alreadyClaimed" type="boolean">
+  Present when the address already claimed.
+</ResponseField>
+
+<ResponseField name="claimAmount" type="number">
+  The all-chain status route returns `1000000`, equal to `$1.00 USDC`.
+</ResponseField>
+

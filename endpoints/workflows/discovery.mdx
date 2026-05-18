@@ -1,0 +1,47 @@
+---
+title: "Workflow discovery"
+api: "GET https://api.compose.market/workflows"
+description: "List and fetch public workflow metadata."
+---
+
+Workflow discovery routes are public. Runtime execution routes are documented separately.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/workflows` | Lists public workflow metadata. |
+| `GET` | `/workflow/{walletAddress}` | Returns one workflow by wallet address. |
+| `GET` | `/frameworks` | Lists runtime framework IDs exposed by the gateway. |
+
+## Path parameters
+
+<ParamField path="walletAddress" type="string" required>
+  Workflow wallet address. Must be an EVM address.
+</ParamField>
+
+## Response
+
+<ResponseField name="workflows" type="array">
+  Workflow list.
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Number of workflows returned.
+</ResponseField>
+
+<ResponseExample>
+
+```json Response
+{
+  "workflows": [
+    {
+      "walletAddress": "0xba04fa4baacbac0d93bb73a7fd473a41aa7f2815",
+      "name": "Research flow"
+    }
+  ],
+  "total": 1
+}
+```
+
+</ResponseExample>

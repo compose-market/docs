@@ -1,0 +1,56 @@
+---
+title: "Sessions"
+api: "GET https://api.compose.market/api/session"
+description: "Read session budget state and subscribe to session state changes."
+---
+
+Session routes let apps monitor an active session-backed Compose Key.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/session` | Returns the active session state for a wallet and chain. |
+| `GET` | `/api/session/events` | Streams session-active and session-expired events over SSE. |
+
+## Headers
+
+<ParamField header="x-session-user-address" type="string" required>
+  Wallet address for the session lookup.
+</ParamField>
+
+<ParamField header="x-chain-id" type="number" required>
+  Chain ID for the session.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="userAddress" type="string">
+  Alternative to `x-session-user-address` for `/api/session/events`.
+</ParamField>
+
+<ParamField query="chainId" type="number">
+  Alternative to `x-chain-id` for `/api/session/events`.
+</ParamField>
+
+## SSE events
+
+| Event | Description |
+| --- | --- |
+| `session-active` | Current active session budget and expiry. |
+| `session-expired` | Terminal event when no active session remains. |
+| `error` | Stream sync failure. |
+
+## Response
+
+<ResponseField name="hasSession" type="boolean">
+  Whether an active session exists.
+</ResponseField>
+
+<ResponseField name="budgetRemaining" type="string">
+  Available budget in USDC atomic units.
+</ResponseField>
+
+<ResponseField name="status" type="object">
+  Live status flags and warnings for active sessions.
+</ResponseField>

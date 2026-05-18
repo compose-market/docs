@@ -1,0 +1,88 @@
+---
+title: "Chat and Responses"
+api: "POST https://api.compose.market/v1/chat/completions"
+description: "Generate text, tool calls, and Responses-style outputs through native paid inference."
+---
+
+Use these routes when you want native Compose receipts, raw x402 support, or Compose Key billing.
+
+## Routes
+
+| Method | Path | Streaming | Description |
+| --- | --- | --- | --- |
+| `POST` | `/v1/chat/completions` | Yes | OpenAI Chat Completions-shaped request and response. |
+| `POST` | `/v1/responses` | Yes | Responses-shaped input, tools, multimodal content, and stored response IDs. |
+| `GET` | `/v1/responses/{id}` | No | Retrieve a stored response record. |
+| `GET` | `/v1/responses/{id}/input_items` | No | Return stored input items for a response. |
+| `POST` | `/v1/responses/{id}/cancel` | No | Cancel a stored response or async media job. |
+| `POST` | `/api/inference` | Yes | Legacy alias for `/v1/chat/completions`. |
+
+## Headers
+
+<ParamField header="Authorization" type="string">
+  `Bearer compose-...` for Compose Key billing.
+</ParamField>
+
+<ParamField header="PAYMENT-SIGNATURE" type="string">
+  Raw x402 payment signature for x402-aware clients.
+</ParamField>
+
+<ParamField header="x-x402-max-amount-wei" type="string">
+  Maximum USDC atomic amount for raw x402 `upto` payments.
+</ParamField>
+
+## Chat body
+
+<ParamField body="model" type="string" required>
+  Public catalog model ID.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Non-empty OpenAI-style chat message array.
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  Enables SSE streaming. Non-boolean values return `400 invalid_stream`.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  OpenAI function tool definitions for models that support tool calling.
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  `none`, `auto`, `required`, or a named function choice.
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  Text, JSON object, or JSON schema response format when the provider supports it.
+</ParamField>
+
+## Responses body
+
+<ParamField body="model" type="string" required>
+  Public catalog model ID.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Responses-style input. Required unless `previous_response_id` supplies history.
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  Response ID to hydrate prior messages.
+</ParamField>
+
+<ParamField body="modalities" type="array">
+  Requested output modalities.
+</ParamField>
+
+## Streaming events
+
+Native streams send OpenAI-compatible data frames plus Compose events:
+
+| Event | Description |
+| --- | --- |
+| `data: {...}` | Chat or Responses chunk. |
+| `event: compose.receipt` | In-band settlement receipt before stream close. |
+| `event: compose.error` | Structured Compose error frame. |
+| `data: [DONE]` | Stream terminator. |
+

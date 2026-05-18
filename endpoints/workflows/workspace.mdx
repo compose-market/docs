@@ -1,0 +1,19 @@
+---
+title: "Workspace"
+api: "POST https://api.compose.market/api/workspace/index"
+description: "Index and search workspace data through the runtime proxy."
+---
+
+Workspace routes are pass-through JSON routes to the runtime service.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/workspace/index` | Indexes workspace content. |
+| `POST` | `/api/workspace/search` | Searches indexed workspace content. |
+
+## Body
+
+The gateway does not reshape these bodies. It forwards caller JSON to the runtime service.
+

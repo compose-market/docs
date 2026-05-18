@@ -1,0 +1,47 @@
+---
+title: "Model registry"
+api: "GET https://api.compose.market/api/registry/models"
+description: "Inspect the dynamic model registry used by API diagnostics and admin tooling."
+---
+
+Registry routes expose registry state from the inference catalog module.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/registry/debug` | Registry totals, sources, update time, and process environment metadata. |
+| `GET` | `/api/registry/models` | Full model registry payload. |
+| `GET` | `/api/registry/models/available` | Paginated available models with filters. |
+| `GET` | `/api/registry/models/{source}` | Models for one source. |
+
+## Query parameters
+
+<ParamField query="refresh" type="boolean">
+  On `/api/registry/models/available`, set `true` to refresh before listing.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number. Minimum `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Page size. Clamped to `1..500`; default `100`.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  Filter by provider.
+</ParamField>
+
+<ParamField query="task" type="string">
+  Filter by model task/type.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by model ID or name.
+</ParamField>
+
+## Source path values
+
+`hugging%20face`, `vertex`, `fireworks`, `openai`, `gemini`, `cloudflare`, and `asicloud`.
+

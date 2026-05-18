@@ -1,0 +1,42 @@
+---
+title: "Metrics"
+api: "GET https://api.compose.market/api/metrics"
+description: "Read public metrics snapshots, health, download metrics, and live metric events."
+---
+
+Metrics routes are JSON by default. `/api/metrics/events` is a Server-Sent Events stream.
+
+## Routes
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/metrics` | None | Returns the current metrics snapshot. |
+| `GET` | `/api/metrics/health` | None | Returns metrics service health. |
+| `GET` | `/api/metrics/downloads` | None | Refreshes or returns download metrics. |
+| `POST` | `/api/metrics/reindex` | Internal | Runs an on-chain metrics backfill. |
+| `GET` | `/api/metrics/events` | None | Streams metrics snapshots and updates over SSE. |
+
+## Query parameters
+
+<ParamField query="refresh" type="boolean">
+  On `/api/metrics` and `/api/metrics/downloads`, set to `true` or `1` to force a refresh.
+</ParamField>
+
+<ParamField query="maxRanges" type="number">
+  On `/api/metrics/reindex`, limits how many backfill ranges to process.
+</ParamField>
+
+## Headers
+
+<ParamField header="x-internal-secret" type="string">
+  Required for `POST /api/metrics/reindex`.
+</ParamField>
+
+## SSE events
+
+| Event | Description |
+| --- | --- |
+| `metrics.snapshot` | Current metrics payload. |
+| `metrics.changed` | Update notification from Redis pub/sub. |
+| `metrics.heartbeat` | Heartbeat every 25 seconds. |
+

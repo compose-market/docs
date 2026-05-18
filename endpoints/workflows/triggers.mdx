@@ -1,0 +1,32 @@
+---
+title: "Workflow triggers"
+api: "POST https://api.compose.market/api/workflow/triggers/parse"
+description: "Parse, list, create, update, and delete workflow triggers through the runtime proxy."
+---
+
+Trigger routes are pass-through JSON routes to the runtime service.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/workflow/triggers/parse` | Parses trigger input. |
+| `GET` | `/api/workflow/{walletAddress}/triggers` | Lists triggers for a workflow. |
+| `POST` | `/api/workflow/{walletAddress}/triggers` | Creates a trigger. |
+| `PUT` | `/api/workflow/{walletAddress}/triggers/{triggerId}` | Updates a trigger. |
+| `DELETE` | `/api/workflow/{walletAddress}/triggers/{triggerId}` | Deletes a trigger. |
+
+## Path parameters
+
+<ParamField path="walletAddress" type="string" required>
+  Workflow wallet address.
+</ParamField>
+
+<ParamField path="triggerId" type="string">
+  Trigger ID.
+</ParamField>
+
+## Body
+
+The gateway does not reshape trigger bodies. It forwards caller JSON to the runtime service.
+

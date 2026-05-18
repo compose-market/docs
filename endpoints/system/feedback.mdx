@@ -1,0 +1,66 @@
+---
+title: "Feedback"
+api: "POST https://api.compose.market/v1/feedback"
+description: "Submit, list, and summarize feedback for Compose targets."
+---
+
+Feedback can be anonymous, tied to a wallet session header, or tied to a Compose Key when the bearer token is valid.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/v1/feedback` | Submit feedback. |
+| `GET` | `/v1/feedback` | List feedback for one target. |
+| `GET` | `/v1/feedback/summary` | Return aggregate feedback for one target. |
+
+## Request body
+
+<ParamField body="targetType" type="string" required>
+  Feedback target type. Must match one of the target types accepted by the API validator.
+</ParamField>
+
+<ParamField body="targetId" type="string" required>
+  Target identifier.
+</ParamField>
+
+<ParamField body="rating" type="number">
+  Numeric rating when the selected target accepts ratings.
+</ParamField>
+
+<ParamField body="comment" type="string">
+  Free-form feedback text.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="targetType" type="string" required>
+  Required by `GET /v1/feedback` and `GET /v1/feedback/summary`.
+</ParamField>
+
+<ParamField query="targetId" type="string" required>
+  Required by `GET /v1/feedback` and `GET /v1/feedback/summary`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum feedback records to return. Clamped to `1..100`; default is `50`.
+</ParamField>
+
+<ParamField query="recentLimit" type="number">
+  Maximum recent records included in the summary. Clamped to `1..100`; default is `10`.
+</ParamField>
+
+## Headers
+
+<ParamField header="Authorization" type="string">
+  Optional `Bearer compose-...`; valid keys attach the reviewer wallet to the feedback.
+</ParamField>
+
+<ParamField header="x-session-user-address" type="string">
+  Optional wallet address fallback when no Compose Key is present.
+</ParamField>
+
+<ParamField header="x-chain-id" type="number">
+  Optional chain ID paired with `x-session-user-address`.
+</ParamField>
+

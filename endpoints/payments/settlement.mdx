@@ -1,0 +1,39 @@
+---
+title: "Settlement"
+api: "GET https://api.compose.market/api/settlement/status"
+description: "Inspect session settlement state and run internal batch settlement."
+---
+
+Settlement routes are operational endpoints for deferred payment state.
+
+## Routes
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/settlement/status` | Session headers | Returns pending settlement state for one user and chain. |
+| `POST` | `/api/settlement/batch` | Internal | Runs batch settlement. |
+
+## Headers
+
+<ParamField header="x-session-user-address" type="string" required>
+  Required for `GET /api/settlement/status`.
+</ParamField>
+
+<ParamField header="x-chain-id" type="number">
+  Chain ID for `GET /api/settlement/status`. Defaults to the active chain when omitted.
+</ParamField>
+
+<ParamField header="x-internal-secret" type="string">
+  Required for `POST /api/settlement/batch`.
+</ParamField>
+
+## Response
+
+<ResponseField name="hasActiveBudget" type="boolean">
+  Whether a session budget exists for the requested wallet and chain.
+</ResponseField>
+
+<ResponseField name="budget" type="object">
+  Budget details when `hasActiveBudget` is `true`.
+</ResponseField>
+

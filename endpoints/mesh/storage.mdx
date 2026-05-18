@@ -1,0 +1,59 @@
+---
+title: "Local storage sessions"
+api: "POST https://api.compose.market/api/local/synapse/session"
+description: "Provision local Synapse and Filecoin Pin sessions for active Compose sessions."
+---
+
+Storage routes are POST-only and require a valid active session Compose Key.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/local/synapse/session` | Ensures a local Synapse storage session. |
+| `POST` | `/api/local/filecoin-pin/session` | Ensures a local Filecoin Pin session. |
+
+## Common body
+
+<ParamField body="agentWallet" type="string" required>
+  Agent wallet address.
+</ParamField>
+
+<ParamField body="deviceId" type="string" required>
+  Local device ID.
+</ParamField>
+
+<ParamField body="sessionKeyAddress" type="string" required>
+  Session key wallet address.
+</ParamField>
+
+<ParamField body="sessionKeyExpiresAt" type="number" required>
+  Requested expiry timestamp. The route caps it to the active session expiry.
+</ParamField>
+
+<ParamField body="depositAmount" type="string">
+  Synapse deposit amount as a non-negative integer string.
+</ParamField>
+
+<ParamField body="fileSizeBytes" type="number">
+  Required by `/api/local/filecoin-pin/session`.
+</ParamField>
+
+<ParamField body="copies" type="number">
+  Optional Filecoin Pin copy count. Defaults to `2`.
+</ParamField>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer compose-...` for the active session key.
+</ParamField>
+
+<ParamField header="x-session-user-address" type="string" required>
+  Wallet address that owns the active session.
+</ParamField>
+
+<ParamField header="x-chain-id" type="number">
+  Chain ID. Defaults to the active chain when omitted.
+</ParamField>
+

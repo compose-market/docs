@@ -1,0 +1,79 @@
+---
+title: "Memory"
+api: "POST https://api.compose.market/api/memory/context/assemble"
+description: "Proxy Manowar memory, pattern, transcript, archive, schedule, item, job, and eval routes."
+---
+
+Memory routes are pass-through JSON routes to the runtime service. The gateway preserves the body and forwards runtime response headers except hop-by-hop headers.
+
+## Context and turns
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/memory/context/assemble` | Assemble context. |
+| `POST` | `/api/memory/turns/record` | Record a turn. |
+| `POST` | `/api/memory/remember` | Persist a memory. |
+| `POST` | `/api/memory/loop` | Run a memory loop. |
+
+## Workflows, patterns, and skills
+
+| Method | Path |
+| --- | --- |
+| `GET` | `/api/memory/workflows` |
+| `GET` | `/api/memory/workflows/{workflowId}` |
+| `GET` | `/api/memory/patterns` |
+| `GET` | `/api/memory/patterns/{patternId}` |
+| `POST` | `/api/memory/patterns/{patternId}/validate` |
+| `POST` | `/api/memory/patterns/{patternId}/promote` |
+| `GET` | `/api/memory/skills` |
+| `GET` | `/api/memory/skills/{skillId}` |
+
+## Sessions and archives
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/api/memory/transcripts/index` |
+| `GET` | `/api/memory/sessions/{sessionId}/working` |
+| `PATCH` | `/api/memory/sessions/{sessionId}/working` |
+| `POST` | `/api/memory/sessions/{sessionId}/compress` |
+| `POST` | `/api/memory/archives/{archiveId}/sync` |
+
+## Schedules
+
+| Method | Path |
+| --- | --- |
+| `GET` | `/api/memory/schedules` |
+| `POST` | `/api/memory/schedules` |
+| `DELETE` | `/api/memory/schedules` |
+| `POST` | `/api/memory/schedules/{scheduleId}/pause` |
+| `POST` | `/api/memory/schedules/{scheduleId}/resume` |
+| `POST` | `/api/memory/schedules/{scheduleId}/trigger` |
+
+## Legacy memory tools
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/api/memory/add` |
+| `POST` | `/api/memory/search` |
+| `POST` | `/api/memory/vector-search` |
+| `POST` | `/api/memory/vector-index` |
+| `POST` | `/api/memory/transcript-store` |
+| `GET` | `/api/memory/transcript-get/{id}` |
+| `POST` | `/api/memory/rerank` |
+| `POST` | `/api/memory/layers/search` |
+| `GET` | `/api/memory/stats/{agentWallet}` |
+
+## Items, conflicts, jobs, and evals
+
+| Method | Path |
+| --- | --- |
+| `POST` | `/api/memory/items/search` |
+| `GET` | `/api/memory/items/{id}` |
+| `PATCH` | `/api/memory/items/{id}` |
+| `DELETE` | `/api/memory/items/{id}` |
+| `POST` | `/api/memory/conflicts/{id}/resolve` |
+| `POST` | `/api/memory/jobs` |
+| `GET` | `/api/memory/jobs/{jobId}` |
+| `POST` | `/api/memory/evals/runs` |
+| `GET` | `/api/memory/{agentWallet}` |
+

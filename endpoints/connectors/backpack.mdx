@@ -1,0 +1,66 @@
+---
+title: "Backpack"
+api: "POST https://api.compose.market/api/backpack/connect"
+description: "Manage Composio-backed toolkit permissions, connections, actions, and Telegram linking."
+---
+
+Backpack routes are JSON routes handled by the Cloud Run API.
+
+## Permissions
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/backpack/permissions` | Lists permissions for a user. |
+| `POST` | `/api/backpack/permissions/grant` | Grants one permission. |
+| `POST` | `/api/backpack/permissions/revoke` | Revokes one permission. |
+
+## Connections and actions
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/backpack/connect` | Starts a toolkit connection. |
+| `GET` | `/api/backpack/connections` | Lists user connections. |
+| `GET` | `/api/backpack/status/{toolkit}` | Checks one toolkit connection. |
+| `POST` | `/api/backpack/disconnect` | Disconnects a toolkit. |
+| `POST` | `/api/backpack/execute` | Runs one toolkit action. |
+| `GET` | `/api/backpack/toolkits` | Searches toolkits. |
+| `GET` | `/api/backpack/toolkits/{toolkit}/actions` | Lists toolkit actions. |
+
+## Telegram
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/backpack/telegram/link` | Starts Telegram linking. |
+| `GET` | `/api/backpack/telegram/status` | Checks Telegram binding. |
+| `POST` | `/api/backpack/webhook/telegram` | Telegram webhook receiver. |
+
+## Common fields
+
+<ParamField body="userAddress" type="string">
+  Required by most mutation routes.
+</ParamField>
+
+<ParamField body="toolkit" type="string">
+  Toolkit slug for connection, status, disconnect, and execute routes.
+</ParamField>
+
+<ParamField body="action" type="string">
+  Toolkit action for `/api/backpack/execute`.
+</ParamField>
+
+<ParamField body="params" type="object">
+  Toolkit action parameters.
+</ParamField>
+
+<ParamField query="userAddress" type="string">
+  Required by list, status, and Telegram status routes.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search text for `/api/backpack/toolkits`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Toolkit or action limit. Defaults to `20` for toolkits and `40` for actions.
+</ParamField>
+

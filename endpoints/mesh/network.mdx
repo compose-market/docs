@@ -1,0 +1,57 @@
+---
+title: "Local network peers"
+api: "POST https://api.compose.market/api/local/network/peers/upsert"
+description: "Publish and list local peer summaries for Manowar local networking."
+---
+
+Peer records are short-lived. Upsert is rate limited per user and chain.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/local/network/peers/upsert` | Publishes current peer summaries. |
+| `GET` | `/api/local/network/peers` | Lists current peers for one user and chain. |
+
+## Upsert body
+
+<ParamField body="userAddress" type="string" required>
+  Wallet address. Must match `x-session-user-address`.
+</ParamField>
+
+<ParamField body="chainId" type="number">
+  Chain ID. Defaults to the active chain.
+</ParamField>
+
+<ParamField body="agentWallet" type="string">
+  Optional agent wallet associated with the peers.
+</ParamField>
+
+<ParamField body="deviceId" type="string">
+  Optional local device ID.
+</ParamField>
+
+<ParamField body="peers" type="array" required>
+  Up to 512 peer summaries with `peerId`, `lastSeenAt`, `stale`, `caps`, and `listenMultiaddrs`.
+</ParamField>
+
+## List query
+
+<ParamField query="userAddress" type="string" required>
+  Wallet address. Must match `x-session-user-address`.
+</ParamField>
+
+<ParamField query="chainId" type="number">
+  Chain ID. Defaults to the active chain.
+</ParamField>
+
+<ParamField query="agentWallet" type="string">
+  Optional agent wallet filter.
+</ParamField>
+
+## Headers
+
+<ParamField header="x-session-user-address" type="string" required>
+  Must match `userAddress`.
+</ParamField>
+

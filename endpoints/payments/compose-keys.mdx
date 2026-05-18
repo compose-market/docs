@@ -1,0 +1,68 @@
+---
+title: "Compose Keys"
+api: "POST https://api.compose.market/api/keys"
+description: "Create, list, inspect, settle, and revoke Compose Keys."
+---
+
+Compose Keys are bearer credentials with a budget, expiry, purpose, owner wallet, and chain ID. They are used by native routes, paid runtime routes, and external OpenAI-compatible routes.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/keys` | Create a Compose Key. |
+| `GET` | `/api/keys` | List keys owned by a wallet. |
+| `GET` | `/api/keys/{keyId}` | Inspect one key. |
+| `DELETE` | `/api/keys/{keyId}` | Revoke one key. |
+| `POST` | `/api/keys/settle` | Legacy direct settlement using a Compose Key. |
+
+## Create body
+
+<ParamField body="budgetLimit" type="number | string" required>
+  Positive integer budget in USDC atomic units.
+</ParamField>
+
+<ParamField body="expiresAt" type="number | string" required>
+  Unix timestamp in milliseconds. Must be in the future.
+</ParamField>
+
+<ParamField body="chainId" type="number | string" required>
+  Chain ID used for key settlement.
+</ParamField>
+
+<ParamField body="purpose" type="string" required>
+  `session` or `api`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Optional display name.
+</ParamField>
+
+## Headers
+
+<ParamField header="x-session-user-address" type="string" required>
+  Owner wallet address for create and list operations.
+</ParamField>
+
+<ParamField header="Authorization" type="string">
+  Required for inspecting and revoking a key: `Bearer compose-...` for the target key or another live key owned by the same wallet.
+</ParamField>
+
+## Response
+
+<ResponseField name="keyId" type="string">
+  Key identifier.
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  Bearer token returned when a key is created. List and inspect routes do not return token material.
+</ResponseField>
+
+<ResponseField name="budgetLimit" type="string | number">
+  Configured budget in USDC atomic units.
+</ResponseField>
+
+<ResponseField name="budgetRemaining" type="string | number">
+  Available budget after used and reserved amounts.
+</ResponseField>
+

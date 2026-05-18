@@ -1,0 +1,62 @@
+---
+title: "External OpenAI-compatible inference"
+api: "POST https://api.compose.market/external/v1/chat/completions"
+description: "Use Compose models from OpenAI-compatible IDEs, agent tools, and inference wrappers."
+---
+
+External routes are for clients that can set an OpenAI-compatible `baseURL` and bearer token but do not understand x402 challenge flows. They use Compose Key auth only.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/.well-known/opencode` | Remote OpenCode config document. |
+| `GET` | `/external/opencode` | Compose provider config with env-based API key placeholder. |
+| `GET` | `/external/v1/models` | OpenAI-shaped model list. |
+| `GET` | `/external/v1/models/{model}` | One OpenAI-shaped model row. Slash-containing IDs are supported. |
+| `POST` | `/external/v1/chat/completions` | OpenAI-compatible chat completions. |
+| `POST` | `/external/v1/responses` | OpenAI-compatible Responses-style requests. |
+| `POST` | `/external/v1/embeddings` | OpenAI-compatible embeddings. |
+| `POST` | `/external/v1/images/generations` | Image generation. |
+| `POST` | `/external/v1/audio/speech` | Speech generation. |
+| `POST` | `/external/v1/audio/transcriptions` | Audio transcription. |
+| `POST` | `/external/v1/videos/generations` | Video generation. |
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer compose-...`. Missing or invalid keys return an OpenAI-shaped `401`.
+</ParamField>
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Public catalog model ID exactly as returned by `/external/v1/models`.
+</ParamField>
+
+<ParamField body="messages" type="array">
+  Chat Completions message array.
+</ParamField>
+
+<ParamField body="input" type="string | array">
+  Responses or embeddings input.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  OpenAI function tool definitions. Tool calls are returned in OpenAI shape when the provider emits them.
+</ParamField>
+
+<ParamField body="stream_options" type="object">
+  Preserved for streaming clients. Usage inclusion is forced when needed for metering.
+</ParamField>
+
+## Diagnostic headers
+
+| Header | Description |
+| --- | --- |
+| `x-compose-public-model` | Public catalog ID requested by the client. |
+| `x-compose-upstream-provider` | Provider selected by the catalog resolver. |
+| `x-compose-upstream-model` | Provider wire model used upstream. |
+
+External response bodies do not include `compose_receipt`. Upstream content-filter errors are sanitized while keeping the diagnostic headers above.
+

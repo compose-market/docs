@@ -1,0 +1,31 @@
+---
+title: "Decorative generation"
+api: "POST https://api.compose.market/api/generate-avatar"
+description: "Generate decorative avatar and banner images for Compose UI objects."
+---
+
+These routes generate UI artwork with the configured image model. They are not the general-purpose image generation API; use `/v1/images/generations` for product inference calls.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/generate-avatar` | Generates a square avatar image. |
+| `POST` | `/api/generate-banner` | Generates a wide banner image. |
+
+## Body
+
+<ParamField body="title" type="string" required>
+  Agent name for avatars or workflow title for banners.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Text used to guide image generation.
+</ParamField>
+
+## Response
+
+<ResponseField name="imageUrl" type="string">
+  Data URL or remote image URL returned by the generation adapter.
+</ResponseField>
+

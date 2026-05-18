@@ -1,0 +1,52 @@
+---
+title: "Agent runtime"
+api: "POST https://api.compose.market/agent/{walletAddress}/chat"
+description: "Run paid agent chat, stream, Responses, state, and stop calls."
+---
+
+Agent runtime routes proxy to the runtime service after preparing payment. They accept Compose Key bearer auth or raw x402 payment headers.
+
+## Routes
+
+| Method | Path | Streaming | Description |
+| --- | --- | --- | --- |
+| `POST` | `/agent/{walletAddress}/chat` | No | Runs one JSON chat call. |
+| `POST` | `/agent/{walletAddress}/stream` | Yes | Runs one streaming chat call. |
+| `POST` | `/agent/{walletAddress}/responses` | No | Runs one Responses-style agent call. |
+| `GET` | `/agent/{walletAddress}/runs/{runId}/state` | No | Reads runtime state for one run. |
+| `POST` | `/agent/{walletAddress}/runs/{runId}/stop` | No | Stops one runtime run. |
+
+## Path parameters
+
+<ParamField path="walletAddress" type="string" required>
+  Agent wallet address.
+</ParamField>
+
+<ParamField path="runId" type="string">
+  Runtime run ID for state and stop routes.
+</ParamField>
+
+## Headers
+
+<ParamField header="Authorization" type="string">
+  `Bearer compose-...` for Compose Key billing.
+</ParamField>
+
+<ParamField header="PAYMENT-SIGNATURE" type="string">
+  Raw x402 payment signature.
+</ParamField>
+
+<ParamField header="x-x402-max-amount-wei" type="string">
+  Maximum USDC atomic amount for raw x402 `upto` payments.
+</ParamField>
+
+## Settlement
+
+| Route | Meter source |
+| --- | --- |
+| `/chat` | JSON response body usage. |
+| `/responses` | JSON response body usage and modality. |
+| `/stream` | Terminal SSE event with `type: done`, `type: stopped`, or `type: error`. |
+
+Streaming routes emit a `compose.receipt` event before closing when settlement succeeds.
+

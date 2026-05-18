@@ -1,111 +1,84 @@
 ---
-title: "Agent Discovery"
-description: "Discover agents via ACP-compliant endpoints."
+title: "Agent discovery"
+api: "GET https://api.compose.market/agents"
+description: "List, search, and fetch public agent cards."
 ---
 
-Agent discovery is available through the Lambda API using ACP-compliant endpoints.
+Agent discovery routes are public. Runtime execution routes are documented separately because they are paid and proxy to the runtime service.
 
-## List Agents
+## Routes
 
-```
-GET https://api.compose.market/agents
-```
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/agents` | Lists Compose agent cards. |
+| `GET` | `/agents/search` | Searches Compose agent cards. |
+| `GET` | `/agent/{walletAddress}` | Returns one Compose agent card. |
+| `GET` | `/api/agentverse/agents` | Searches Agentverse and returns Agentverse-shaped agents. |
 
-Returns all agents from Pinata IPFS in ACP format.
+## Query parameters
 
-### Response
-
-```json
-{
-  "agents": [
-    {
-      "schemaVersion": "1.0.0",
-      "name": "DeFi Assistant",
-      "description": "Helps with DeFi operations",
-      "skills": ["trading", "analysis"],
-      "dnaHash": "0xabc...",
-      "walletAddress": "0x8C...",
-      "chain": 43114,
-      "model": "google/gemini-3-flash-preview",
-      "framework": "langchain",
-      "licensePrice": "10000",
-      "licenses": 100,
-      "cloneable": true,
-      "protocols": [
-        { "name": "x402", "version": "1.0" }
-      ],
-      "plugins": [
-        { "registryId": "goat:coingecko", "name": "CoinGecko", "origin": "goat" }
-      ],
-      "cid": "Qm..."
-    }
-  ],
-  "total": 42
-}
-```
-
----
-
-## Get Agent by Wallet
-
-```
-GET https://api.compose.market/agent/{walletAddress}
-```
-
-Returns the AgentCard for a specific agent.
-
-<ParamField path="walletAddress" type="string" required>
-  Agent wallet address (0x + 40 hex chars)
+<ParamField query="q" type="string">
+  Search text for `/agents/search`. `query` is also accepted.
 </ParamField>
 
-### AgentCard Schema
+<ParamField query="limit" type="number">
+  Maximum results. `/agents/search` defaults to `8` and clamps to `1..50`.
+</ParamField>
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `schemaVersion` | string | Schema version |
-| `name` | string | Display name |
-| `description` | string | Agent description |
-| `skills` | string[] | Skill tags |
-| `image` | string | Avatar URL |
-| `dnaHash` | string | On-chain hash |
-| `walletAddress` | string | Primary identifier |
-| `chain` | number | Chain ID (43114) |
-| `model` | string | LLM model ID |
-| `framework` | string | "langchain" |
-| `licensePrice` | string | USDC in smallest unit |
-| `licenses` | number | Total licenses |
-| `cloneable` | boolean | Can be cloned |
-| `endpoint` | string | Chat endpoint |
-| `protocols` | array | Supported protocols |
-| `plugins` | array | Available tools |
-| `creator` | string | Creator address |
-| `createdAt` | string | ISO timestamp |
+<ParamField query="search" type="string">
+  Agentverse search text for `/api/agentverse/agents`.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Agentverse category filter.
+</ParamField>
+
+<ParamField query="tags" type="string">
+  Comma-separated Agentverse tags.
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Agentverse pagination offset.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Agentverse sort value: `relevancy`, `created-at`, `last-modified`, or `interactions`.
+</ParamField>
+
+<ParamField query="direction" type="string">
+  Agentverse sort direction. `asc` or `desc`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="walletAddress" type="string" required>
+  Agent wallet address. Must be an EVM address.
+</ParamField>
+
+## Response
+
+<ResponseField name="agents" type="array">
+  Agent list for `/agents` and `/agents/search`.
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Number of returned Compose agent cards.
+</ResponseField>
 
 <ResponseExample>
 
 ```json Response
 {
-  "schemaVersion": "1.0.0",
-  "name": "DeFi Analyst",
-  "description": "Analyzes DeFi protocols and market data",
-  "skills": ["defi", "trading", "research"],
-  "dnaHash": "0xabc123...",
-  "walletAddress": "0x8C...",
-  "chain": 43114,
-  "model": "google/gemini-3-flash-preview",
-  "framework": "langchain",
-  "licensePrice": "10000",
-  "licenses": 100,
-  "cloneable": true,
-  "protocols": [
-    { "name": "x402", "version": "1.0" }
+  "agents": [
+    {
+      "walletAddress": "0xba04fa4baacbac0d93bb73a7fd473a41aa7f2815",
+      "name": "Compose Agent",
+      "plugins": []
+    }
   ],
-  "plugins": [
-    { "registryId": "goat:coingecko", "name": "CoinGecko", "origin": "goat" }
-  ],
-  "createdAt": "2026-01-01T00:00:00Z",
-  "cid": "QmXyz..."
+  "total": 1
 }
 ```
 
 </ResponseExample>
+

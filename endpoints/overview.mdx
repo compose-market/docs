@@ -1,0 +1,52 @@
+---
+title: "Endpoint reference"
+description: "Base URLs, auth modes, response conventions, and route families for the Compose.Market API."
+---
+
+The endpoint reference is a lookup map for the hosted API at `https://api.compose.market`.
+
+Compose exposes two inference surfaces:
+
+- Native `/v1/*` routes for Compose SDKs and x402-aware clients.
+- External `/external/v1/*` routes for OpenAI-compatible IDEs, agents, and wrappers that use a Compose Key as bearer auth.
+
+Most other `/api/*`, `/agent/*`, and `/workflow/*` routes either return public catalog data or proxy paid runtime work after preparing a Compose payment.
+
+## Auth modes
+
+| Mode | Where | Header |
+| --- | --- | --- |
+| Compose Key | `/v1/*`, `/external/v1/*`, paid `/agent/*`, paid `/workflow/*` | `Authorization: Bearer compose-...` |
+| Raw x402 | Native `/v1/*` and paid runtime routes | `PAYMENT-SIGNATURE`, plus `x-x402-max-amount-wei` for `upto` flows |
+| Session context | Session, local, and runtime routes | `x-session-user-address`, `x-chain-id` |
+| Internal admin | Metrics reindex and batch settlement | `x-internal-secret` |
+
+## Response conventions
+
+| Header | Description |
+| --- | --- |
+| `X-Request-Id` | Request ID accepted or minted by the root HTTP middleware. |
+| `X-Compose-Receipt` | Native Compose settlement receipt when a JSON route settles after work. |
+| `PAYMENT-REQUIRED` | Raw x402 challenge returned when a paid route needs a signed payment. |
+| `PAYMENT-RESPONSE` | x402 settlement response header when the facilitator settles a payment. |
+| `x-compose-response-id` | Response ID for native streaming inference. |
+
+## Route families
+
+| Family | Paths |
+| --- | --- |
+| System | `/health`, `/api/metrics/*`, `/v1/feedback/*` |
+| Native inference | `/v1/models`, `/v1/responses`, `/v1/chat/completions`, media routes |
+| External inference | `/.well-known/opencode`, `/external/v1/*` |
+| Payments and keys | `/api/payments/*`, `/api/keys/*`, `/api/session*`, `/api/x402/facilitator/*` |
+| Agents | `/agents`, `/agent/{walletAddress}/*`, `/api/agentverse/agents` |
+| Workflows | `/workflows`, `/workflow/*`, `/api/workflow/*`, `/api/workspace/*`, `/api/memory/*` |
+| Connectors | `/api/mcps/*`, `/api/onchain/*`, `/api/backpack/*`, `/api/registry/*` |
+| Local client support | `/api/local/*`, `/api/dispenser/*`, `/api/generate-*` |
+
+## Compatibility notes
+
+OpenAI-style clients usually expect a single `baseURL`, bearer auth, OpenAI request fields, and Server-Sent Events for streaming. The external inference routes keep that shape and strip Compose receipt bodies while preserving diagnostic headers.
+
+Native routes keep x402 payment challenges, receipt headers, and Compose-specific response events.
+

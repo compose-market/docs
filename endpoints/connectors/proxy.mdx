@@ -1,0 +1,25 @@
+---
+title: "Connector proxy"
+api: "GET https://api.compose.market/api/mcps/*"
+description: "Proxy MCP and on-chain connector requests to the connector service."
+---
+
+Connector proxy routes map API paths to the connector service and forward the caller body. The gateway adds the runtime internal token when it calls the connector service.
+
+## Routes
+
+| Method | Path | Connector target |
+| --- | --- | --- |
+| Any | `/api/mcps/*` | `/mcps/*` |
+| Any | `/api/onchain/*` | `/onchain/*` |
+
+## Headers
+
+<ParamField header="Authorization" type="string">
+  Forwarded to the connector service. The gateway also adds its internal bearer token.
+</ParamField>
+
+## Body
+
+The gateway does not reshape connector bodies. For non-`GET` and non-`HEAD` requests, it forwards the raw JSON body.
+

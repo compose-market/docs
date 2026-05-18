@@ -1,0 +1,49 @@
+---
+title: "Modalities"
+api: "GET https://api.compose.market/v1/modalities"
+description: "Inspect modality catalogs, operations, and matching models."
+---
+
+The modality endpoints describe what the generated catalog can do without calling a model.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/v1/modalities` | Lists canonical modality catalogs. |
+| `GET` | `/v1/modalities/{modality}` | Returns one modality catalog. |
+| `GET` | `/v1/modalities/{modality}/operations` | Lists operations for one modality. |
+| `GET` | `/v1/modalities/{modality}/operations/{operation}/models` | Lists models that support one operation. |
+
+## Path parameters
+
+<ParamField path="modality" type="string" required>
+  Canonical modality. Invalid values return `400 invalid_modality`.
+</ParamField>
+
+<ParamField path="operation" type="string" required>
+  Canonical operation. Invalid values return `400 invalid_operation`.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="q" type="string">
+  Search text for model results.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  Filter model results by provider slug.
+</ParamField>
+
+<ParamField query="streaming" type="boolean">
+  Filter model results by streaming support.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum models to return.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Cursor for the next page.
+</ParamField>
+

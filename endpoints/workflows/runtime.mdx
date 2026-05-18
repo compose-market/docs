@@ -1,0 +1,48 @@
+---
+title: "Workflow runtime"
+api: "POST https://api.compose.market/workflow/{walletAddress}/chat"
+description: "Run paid workflow execution, streaming chat, state, approvals, and stops."
+---
+
+Workflow runtime routes proxy to the runtime service after preparing payment. They accept Compose Key bearer auth or raw x402 payment headers.
+
+## Routes
+
+| Method | Path | Streaming | Description |
+| --- | --- | --- | --- |
+| `POST` | `/workflow/execute` | No | Executes a workflow and settles from returned usage records. |
+| `GET` | `/workflow/prices` | No | Returns runtime workflow prices. |
+| `POST` | `/workflow/{walletAddress}/chat` | Yes | Runs streaming workflow chat. |
+| `POST` | `/workflow/{walletAddress}/stop` | No | Stops the active workflow. |
+| `GET` | `/workflow/{walletAddress}/runs/{runId}/state` | No | Reads runtime state for one workflow run. |
+| `POST` | `/workflow/{walletAddress}/runs/{runId}/approval` | No | Sends an approval decision to a run. |
+| `POST` | `/workflow/{id}/run` | Yes | Runs a workflow by ID. |
+
+## Path parameters
+
+<ParamField path="walletAddress" type="string">
+  Workflow wallet address.
+</ParamField>
+
+<ParamField path="id" type="string">
+  Workflow ID accepted by the runtime.
+</ParamField>
+
+<ParamField path="runId" type="string">
+  Runtime run ID.
+</ParamField>
+
+## Headers
+
+<ParamField header="Authorization" type="string">
+  `Bearer compose-...` for Compose Key billing.
+</ParamField>
+
+<ParamField header="PAYMENT-SIGNATURE" type="string">
+  Raw x402 payment signature.
+</ParamField>
+
+## Settlement
+
+Workflow settlement requires `usageRecords` from the runtime response or `result` SSE event. The settlement subject is `workflow:{walletAddress}`.
+

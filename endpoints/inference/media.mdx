@@ -1,0 +1,69 @@
+---
+title: "Media and embeddings"
+api: "POST https://api.compose.market/v1/images/generations"
+description: "Generate or transform image, audio, video, and embedding outputs through native paid inference."
+---
+
+Media routes use the same native payment behavior as text inference. Status polling routes are not billable; the charge happens on generation submission.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/v1/images/generations` | Generate images from a prompt. |
+| `POST` | `/v1/images/edits` | Edit an image with a prompt. |
+| `POST` | `/v1/audio/speech` | Generate speech audio bytes. |
+| `POST` | `/v1/audio/transcriptions` | Transcribe base64 audio. |
+| `POST` | `/v1/embeddings` | Generate embeddings. |
+| `POST` | `/v1/videos/generations` | Submit video generation. |
+| `GET` | `/v1/videos/{id}` | Poll video generation status. |
+| `GET` | `/v1/videos/{id}/stream` | Stream video status until terminal state. |
+
+## Common headers
+
+<ParamField header="Authorization" type="string">
+  `Bearer compose-...` for Compose Key billing.
+</ParamField>
+
+<ParamField header="PAYMENT-SIGNATURE" type="string">
+  Raw x402 payment signature for x402-aware clients.
+</ParamField>
+
+## Common fields
+
+<ParamField body="model" type="string" required>
+  Public catalog model ID.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Required for image and video generation.
+</ParamField>
+
+<ParamField body="input" type="string | array">
+  Required for speech and embeddings.
+</ParamField>
+
+<ParamField body="file" type="string">
+  Required for audio transcription. The route expects base64 content.
+</ParamField>
+
+<ParamField body="image" type="string">
+  Required for image edits; also accepted as an initial image for some video models.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL form of an input image.
+</ParamField>
+
+## Video status stream
+
+<ParamField query="pollIntervalMs" type="number">
+  Poll interval for `/v1/videos/{id}/stream`. Default `2000`, minimum `500`, maximum `30000`.
+</ParamField>
+
+<ParamField query="timeoutMs" type="number">
+  Stream timeout. Default `600000`, minimum `5000`, maximum `3600000`.
+</ParamField>
+
+The stream emits `compose.video.status`, `compose.error`, and `data: [DONE]`.
+

@@ -1,0 +1,48 @@
+---
+title: "x402 facilitator"
+api: "POST https://api.compose.market/api/x402/facilitator/verify"
+description: "Verify and settle x402 payments through the Compose facilitator."
+---
+
+The facilitator routes expose Compose's x402-compatible verification and settlement surface.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/x402/facilitator/supported` | Returns supported x402 versions, schemes, and networks. |
+| `GET` | `/api/x402/facilitator/chains` | Returns configured chain metadata, USDC address, explorer, and default chain. |
+| `POST` | `/api/x402/facilitator/verify` | Verifies a payment payload against requirements. |
+| `POST` | `/api/x402/facilitator/settle` | Settles a verified payment payload. |
+
+## Verify and settle body
+
+<ParamField body="paymentPayload" type="object" required>
+  x402 payment payload supplied by the payer.
+</ParamField>
+
+<ParamField body="paymentRequirements" type="object" required>
+  x402 payment requirements issued by the paid resource.
+</ParamField>
+
+## Chain metadata response
+
+<ResponseField name="chains" type="array">
+  Configured chains with `chainId`, `network`, `shortName`, `explorer`, `usdcAddress`, `schemes`, `asset`, and `decimals`.
+</ResponseField>
+
+<ResponseField name="defaultChainId" type="number">
+  Active default chain ID.
+</ResponseField>
+
+## Errors
+
+Malformed verify or settle payloads return `400` with:
+
+```json
+{
+  "error": "Failed to verify payment",
+  "details": "..."
+}
+```
+

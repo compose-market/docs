@@ -1,0 +1,62 @@
+---
+title: "Local linking"
+api: "POST https://api.compose.market/api/local/link-token"
+description: "Create and redeem deep-link tokens for local Manowar clients."
+---
+
+Local linking routes bind the web session, local device, agent wallet, and active session context.
+
+## Routes
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/local/link-token` | Creates a short-lived local link token. |
+| `POST` | `/api/local/link-token/redeem` | Redeems a local link token from a device. |
+| `POST` | `/api/local/deployments/register` | Registers a local deployment for an active session. |
+
+## Create link body
+
+<ParamField body="userAddress" type="string" required>
+  Wallet address. Must match `x-session-user-address`.
+</ParamField>
+
+<ParamField body="agentWallet" type="string">
+  Agent wallet address.
+</ParamField>
+
+<ParamField body="agentCardCid" type="string">
+  Agent card CID-like identifier.
+</ParamField>
+
+<ParamField body="chainId" type="number">
+  Chain ID. Defaults to the active chain.
+</ParamField>
+
+<ParamField body="deviceId" type="string">
+  Optional local device ID. When present, the link token is local-first and bound to the device.
+</ParamField>
+
+## Redeem body
+
+<ParamField body="token" type="string" required>
+  Link token returned by `/api/local/link-token`.
+</ParamField>
+
+<ParamField body="deviceId" type="string" required>
+  Local device ID.
+</ParamField>
+
+<ParamField body="connectedUserAddress" type="string">
+  Optional connected wallet check.
+</ParamField>
+
+## Headers
+
+<ParamField header="x-session-user-address" type="string" required>
+  Must match the `userAddress` body field.
+</ParamField>
+
+<ParamField header="Authorization" type="string">
+  Optional for link-token creation, required for deployment registration. When present, it must be a valid active session Compose Key.
+</ParamField>
+
