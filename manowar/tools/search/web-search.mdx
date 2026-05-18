@@ -1,0 +1,47 @@
+---
+title: "Web Search"
+description: "How Manowar agents use provider-backed web search through search_call."
+---
+
+`search_call` gives agents a compact web-search tool. It supports several provider modes but exposes one runtime contract: send a query, receive text plus citations when the provider returns them.
+
+## Modes
+
+| Mode | Provider path | Default model env |
+| --- | --- | --- |
+| `general` | Perplexity Sonar | `SEARCH_GENERAL_MODEL` or `sonar` |
+| `openai` | OpenAI Responses API with `web_search` | `SEARCH_OPENAI_MODEL` or `gpt-4.1-mini` |
+| `gemini` | Gemini `generateContent` with Google Search | `SEARCH_GEMINI_MODEL` or `gemini-2.5-flash` |
+
+If `mode` is omitted, Manowar uses `general`.
+
+## Tool Shape
+
+```json
+{
+  "query": "latest filing requirements for Base USDC payments",
+  "mode": "general"
+}
+```
+
+The result is compacted with a larger text budget than ordinary tools because search answers often need citations and source snippets.
+
+## Credentials
+
+| Mode | Required env |
+| --- | --- |
+| `general` | `PERPLEXITY_API_KEY` |
+| `openai` | `OPENAI_API_KEY` |
+| `gemini` | `GOOGLE_GENERATIVE_AI_API_KEY` or `GEMINI_API_KEY` |
+
+Missing credentials return a structured unsuccessful result rather than crashing the agent run.
+
+## When To Use
+
+Use `search_call` for current public information, source-backed research, or quick factual checks. Use `models_call` for pure model generation. Use connectors when the agent needs private account data, authenticated APIs, or a specific MCP/onchain capability.
+
+## Related
+
+- [Deep search](/manowar/tools/search/deep-search)
+- [Tools overview](/manowar/tools/overview)
+- [Model store](/manowar/tools/model-store)

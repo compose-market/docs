@@ -1,0 +1,60 @@
+---
+title: "Deep Search"
+description: "How Manowar runs longer provider-backed research through search_call mode=deep."
+---
+
+Deep search is the long-running search mode inside `search_call`. It uses Perplexity's deep research model path by default and allows a longer timeout than ordinary search.
+
+## Runtime Contract
+
+```json
+{
+  "query": "compare ERC-8004 agent identity with hosted SDK agent handoff models",
+  "mode": "deep"
+}
+```
+
+The runtime sends the query as a single user message, applies `SEARCH_DEEP_REASONING_EFFORT` when set, and waits up to 120 seconds. The response is returned as compact text plus citations when available.
+
+## Configuration
+
+| Setting | Default |
+| --- | --- |
+| `PERPLEXITY_API_KEY` | Required for `deep`. |
+| `SEARCH_DEEP_MODEL` | `sonar-deep-research`. |
+| `SEARCH_DEEP_REASONING_EFFORT` | `low`. |
+
+## When To Use
+
+Use deep search when the agent needs a slower research pass with public sources: market checks, regulatory summaries, technical comparisons, or source collection before synthesis.
+
+Do not use deep search for private account data, authenticated user actions, or deterministic workflow state. Those belong to connectors, Backpack, scratchpad, conclave, or CAL steps.
+
+## Search vs Synthesis
+
+Deep search gathers and summarizes public information. It is not the final authority for a workflow. In a CAL plan, the usual pattern is:
+
+```yaml
+steps:
+  - op: tool
+    saveAs: research
+    toolName: search_call
+    args:
+      mode: deep
+      query: "market evidence for agent-to-agent workflow runtimes"
+
+  - op: synthesize
+    saveAs: answer
+    from: ["research"]
+    instruction: "Write a concise technical comparison. Do not invent claims."
+    model: "gpt-5.5"
+
+  - op: stop
+    output: "{{answer}}"
+```
+
+## Related
+
+- [Web search](/manowar/tools/search/web-search)
+- [Harness planning](/manowar/harness/planning)
+- [Certificates and receipts](/manowar/harness/certificates-receipts)

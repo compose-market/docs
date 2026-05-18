@@ -1,0 +1,52 @@
+---
+title: "Accounts"
+description: "How Manowar uses Backpack account connections and cloud permissions inside agent tools."
+---
+
+Backpack tools let agents inspect and use user-connected accounts without handling OAuth credentials directly in the agent loop.
+
+The runtime exposes three account tools when a user address is available:
+
+| Tool | Purpose |
+| --- | --- |
+| `backpack_list_accounts` | List connected Backpack accounts for the user. |
+| `backpack_list_actions` | List available actions for one connected toolkit. |
+| `backpack_execute_action` | Execute one toolkit action with structured parameters. |
+
+## Internal Routes
+
+The tools call API routes over trusted internal headers:
+
+| Runtime operation | API route |
+| --- | --- |
+| Permissions | `GET /api/backpack/permissions` |
+| Connected accounts | `GET /api/backpack/connections` |
+| Toolkit actions | `GET /api/backpack/toolkits/{toolkit}/actions` |
+| Action execution | `POST /api/backpack/execute` |
+
+The API integration uses Composio-backed connected accounts. Manowar receives account/action metadata and execution results; it does not place raw provider secrets in the prompt.
+
+## Session Context
+
+Per-request session data flows through `AsyncLocalStorage` in the agent context. That lets concurrent requests keep separate views of:
+
+| Field | Use |
+| --- | --- |
+| `sessionActive` | Indicates an active authorized session. |
+| `sessionBudgetRemaining` | Remaining budget exposed to the runtime. |
+| `cloudPermissions` | Permission grants for sensitive tool categories. |
+| `backpackAccounts` | Connected account summaries already known by the API. |
+
+If account summaries are not present in session context, the tool loads them through `/api/backpack/connections`.
+
+## Consent
+
+Tools that imply filesystem, camera, microphone, geolocation, clipboard, or notifications can require cloud permission grants. Missing grants return a structured `CONSENT_REQUIRED` error.
+
+This keeps external accounts usable by agents while preserving the user's account and permission boundary.
+
+## Related
+
+- [Backpack endpoints](/endpoints/connectors/backpack)
+- [Tools overview](/manowar/tools/overview)
+- [Minimal token prompting](/manowar/minimal-token-prompting)

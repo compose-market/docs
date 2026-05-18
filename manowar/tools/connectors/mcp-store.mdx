@@ -1,0 +1,51 @@
+---
+title: "MCP Store"
+description: "How Manowar discovers and loads MCP connector tools for deployed agents."
+---
+
+Manowar treats MCP servers as connector bindings. The connector catalog owns discovery, ranking, and server metadata. The runtime asks for compact results and loads exact tools only when an agent card or runtime action needs them.
+
+## Discovery
+
+`connectors_find` calls:
+
+```text
+GET ${CONNECTORS_URL}/mcps/search?q={query}&limit={limit}
+Authorization: Bearer ${RUNTIME_INTERNAL_SECRET}
+```
+
+The result is compacted to the fields an agent needs to choose a connector:
+
+| Field | Meaning |
+| --- | --- |
+| `bindingId` | Runtime binding id, usually `mcp:{slug}`. |
+| `name` | Connector name. |
+| `description` | Short capability summary. |
+| `score` | Search ranking score when returned by the catalog. |
+
+`CONNECTORS_URL` and `RUNTIME_INTERNAL_SECRET` are required. The runtime does not hardcode connector partitions or model sets.
+
+## Loading Card Tools
+
+When an agent card includes an MCP plugin binding, `createAgentTools()` calls `getServerTools(id)`. Each returned server action becomes a Manowar `Tool` with:
+
+| Runtime field | Source |
+| --- | --- |
+| Tool name | MCP tool name, sanitized and deduplicated. |
+| Description | MCP tool description or a generated fallback. |
+| Schema | MCP `inputSchema`, converted to Zod and JSON Schema. |
+| Executor | `executeServerTool(id, toolName, args)`. |
+
+If a server has too many actions for the prompt, Manowar exposes a `card` selector instead of every action. The selector returns the exact schema when required arguments are missing, so the agent can repair the call without reloading the whole catalog.
+
+## Failure Behavior
+
+MCP loading is fail-soft at agent startup. A slow or unavailable MCP server is skipped so the agent can still run with other tools. During execution, retryable failures are cached briefly to prevent repeated calls to a broken tool in the same run.
+
+Non-retryable credential and consent errors are returned directly. That makes missing user setup visible instead of hiding it behind generic tool failure text.
+
+## Related
+
+- [Tools overview](/manowar/tools/overview)
+- [Accounts](/manowar/tools/connectors/accounts)
+- [Connectors endpoints](/endpoints/connectors/registry)
