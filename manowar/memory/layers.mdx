@@ -1,0 +1,110 @@
+---
+title: "Layers"
+description: "Reference for working, scene, graph, patterns, archives, and vectors."
+---
+
+Layer search lives in `runtime/src/manowar/memory/layers.ts`. Each layer has its own source and filter shape. `searchMemoryLayers()` runs selected layers concurrently and returns raw hits plus per-layer totals.
+
+## Layer reference
+
+| Layer | Source | Query behavior | Scope |
+| --- | --- | --- | --- |
+| `working` | `sessions.workingMemory.context` | Substring match over recent working context, newest first. | Thread-scoped. |
+| `scene` | `session_transcripts` | Substring match over transcript messages or summary, newest first. | Thread-scoped. |
+| `graph` | `memory` rows with `source: "fact"` | Vector search over durable facts, then decay, rerank, and MMR. | Durable agent/user scope. |
+| `patterns` | `patterns` | Substring match over pattern summary or trigger, sorted by success rate. | Durable agent/user scope. |
+| `archives` | `archives` | Substring match over summary or content, newest first. | Durable agent/user scope. |
+| `vectors` | `memory` rows | Atlas vector search over semantic rows, then ranking unless graph is also selected. | Durable agent/user scope. |
+
+If `layers` is omitted, Manowar searches all six layers.
+
+## Working
+
+`working` is the hot session buffer. `rememberSessionMessages()` appends user and assistant messages to `workingMemory.context`, ignores system and tool messages, and keeps only the last `MEMORY_SESSION_CONTEXT_LIMIT` entries. The default limit is `12`.
+
+The session row also stores `entities`, `state`, metadata, `lastAccessedAt`, and an `expiresAt` date. MongoDB deletes expired rows through the `idx_session_ttl` index.
+
+## Scene
+
+`scene` is the transcript layer. `storeTranscript()` upserts a `session_transcripts` row by `sessionId`, including messages, summary, token count, model metadata, and scope fields.
+
+Scene retrieval does not embed the whole transcript on every read. It searches recent scoped transcript rows and keeps rows whose message text or summary contains the query.
+
+## Graph
+
+`graph` stores durable facts. Facts land in the same `memory` collection as vectors, with:
+
+```json
+{
+  "source": "fact",
+  "metadata": {
+    "layer": "graph",
+    "factType": "preference",
+    "confidence": 0.92
+  }
+}
+```
+
+Fact extraction is asynchronous on `post_turn`. Explicit saves through `remember` bypass extraction and index the supplied fact directly.
+
+Allowed fact types are:
+
+| Type | Use |
+| --- | --- |
+| `preference` | Stable user preferences. |
+| `identity` | Durable identity facts about the user. |
+| `context` | Durable situational context. |
+| `skill` | User or agent skill facts. |
+| `relationship` | Stable relationship facts. |
+| `event` | Dated or durable events. |
+
+Unknown explicit fact types default to `context`.
+
+## Patterns
+
+`patterns` stores procedural memory extracted from transcripts. `extractExecutionPatterns()` looks for repeated tool-call sequences, counts occurrences, assigns confidence from frequency, and stores `tool_sequence` patterns when they pass the configured threshold.
+
+Pattern validation requires:
+
+| Condition | Threshold |
+| --- | --- |
+| Execution count | `>= 2` |
+| Success rate | `>= 0.55` |
+| Confidence | `>= 0.2` |
+
+Validated patterns can become learned skills through `promotePatternToSkill()`.
+
+## Archives
+
+`archives` is cold memory. `createMemoryArchive()` collects vector rows for an agent and date range, serializes them into JSON, compresses the payload by default, and stores it in `archives`.
+
+`syncArchiveToPinata()` can pin an archive payload to IPFS through Pinata and store the returned CID as `ipfsCid`.
+
+## Vectors
+
+`vectors` is the general semantic layer. It covers session summaries, knowledge rows, pattern rows, archive rows, and fact rows. Retrieval embeds the query with `input_type: "query"` and searches Atlas `$vectorSearch`.
+
+When both `graph` and `vectors` are requested, the vector layer disables local ranking options for `vectors`. The graph layer already calls the ranked vector pipeline for facts, so the combined result avoids double-ranking the same candidate family.
+
+## Filters
+
+Memory filters are intentionally allowlisted. The runtime accepts primitive values or arrays of primitive values for:
+
+| Input path | Stored path |
+| --- | --- |
+| `appId`, `app_id` | `metadata.app_id` |
+| `hai_id` | `haiId` |
+| `user_id` | `userAddress` |
+| `thread_id` | `threadId` |
+| `agentWallet`, `userAddress`, `threadId`, `mode`, `haiId`, `scopeKind`, `scopeId`, `source` | Same path. |
+| `metadata.*` | Same path. |
+| `workingMemory.state.*` | Same path. |
+| `workingMemory.entities.*` | Same path. |
+
+Other paths are ignored. Retrieval filters stay predictable, and callers cannot turn arbitrary document fields into query controls.
+
+## Related
+
+- [Retrieval and ranking](/manowar/memory/retrieval-ranking)
+- [Memory flows](/manowar/memory/flows)
+- [Operations](/manowar/memory/operations)

@@ -1,0 +1,126 @@
+---
+title: "Flows"
+description: "Pre-turn retrieval, post-turn persistence, explicit saves, workflow memory, and knowledge indexing."
+---
+
+These are the runtime paths behind Manowar memory: `runtime/src/manowar/memory`, `runtime/src/manowar/agent/memory.ts`, and `runtime/src/manowar/workflow/memory.ts`.
+
+## Pre-turn retrieval
+
+Agent execution calls `retrieveAgentMemory()` before the model/tool loop.
+
+```json
+{
+  "step": "pre_turn",
+  "query": "Continue the deployment checklist",
+  "agentWallet": "0x1234567890abcdef1234567890abcdef12345678",
+  "userAddress": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+  "threadId": "run:deploy-42",
+  "layers": ["working", "scene", "graph", "patterns", "archives", "vectors"],
+  "limit": 12,
+  "maxItems": 6,
+  "maxItemChars": 120,
+  "budget": {
+    "maxCharacters": 900
+  }
+}
+```
+
+The response includes the compact prompt, selected items, totals, omitted counts, and character accounting. `framework.ts` places the prompt into the agent execution context. The model sees the `Memory context:` block, not raw Mongo records.
+
+## Post-turn persistence
+
+Agent execution calls `persistAgentConversationTurn()` after the assistant response. The native framework queues this work and does not wait for it before returning to the caller.
+
+`recordAgentMemoryTurn()` stores four artifacts:
+
+| Artifact | Function | Timing |
+| --- | --- | --- |
+| Transcript | `storeTranscript()` | In-band. |
+| Working memory | `rememberSessionMessages()` | In-band. |
+| Session vector | `indexMemoryContent(source: "session")` | In-band. |
+| Graph facts | `indexAgentMemoryFacts()` | Queued with `queueMicrotask()`. |
+
+The response reports `stored.graph: false` because graph extraction has not completed at response time. Extracted facts appear in later `pre_turn` calls.
+
+## Explicit remember
+
+Explicit saves use the `remember` step. This is the path behind `persistExplicitAgentMemory()`.
+
+```json
+{
+  "step": "remember",
+  "agentWallet": "0x1234567890abcdef1234567890abcdef12345678",
+  "userAddress": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+  "threadId": "run:deploy-42",
+  "content": "The user prefers Terraform examples over console instructions.",
+  "type": "preference",
+  "retention": "pinned",
+  "confidence": 1
+}
+```
+
+The runtime does not call a fact extractor here. It indexes the supplied content directly as `source: "fact"` with `metadata.layer: "graph"` and `metadata.extractor: "explicit"`.
+
+## Fact extraction
+
+`indexAgentMemoryFacts()` extracts durable facts from the last six user/assistant messages in a turn. Tool messages are stored in transcripts and working state, but the extractor prompt only includes user and assistant text.
+
+Extraction defaults:
+
+| Setting | Default |
+| --- | --- |
+| Model | `gemini-3.1-flash-lite-preview` |
+| API path | `${API_URL}/v1/chat/completions` |
+| Timeout | `8000` ms |
+| Max facts per turn | `5` |
+| Min confidence | `0.6` |
+| Max fact length | `240` characters |
+| Response format | JSON object |
+
+Facts are deduped by a hash of `(agentWallet, userAddress, fact text)`. Exact duplicates increment `accessCount` instead of inserting a second row.
+
+## Workflow memory
+
+Workflow memory uses the same vector and graph stack but has workflow-specific metadata.
+
+| Function | Behavior |
+| --- | --- |
+| `addMemoryWithGraph()` | Stores a workflow turn, checkpoint, or evaluation as a `source: "session"` vector and queues fact extraction. |
+| `searchMemoryWithGraph()` | Recalls workflow memory with vector search, decay, rerank, and MMR. |
+| `getAgentReliability()` | Aggregates quality and success metadata for a workflow agent. |
+| `performSafeWipe()` | Stores a compact context-window summary as a session vector. |
+| `getAllMemories()` | Lists recent workflow memories for admin/debug use. |
+
+Workflow memory rows include `metadata.workflow_wallet`. That lets the vector layer keep workflow recall separate from ordinary agent/user recall while sharing the same underlying collection.
+
+## Knowledge indexing
+
+Knowledge uses the same memory index.
+
+| Source | Path | Behavior |
+| --- | --- | --- |
+| Genesis knowledge | `runtime/src/manowar/knowledge/genesis.ts` | Reads agent-card knowledge URIs through Pinata, parses PDF/JSON/text, chunks around `1400` characters with `180` overlap. |
+| Workspace knowledge | `runtime/src/manowar/knowledge/workspace.ts` | Accepts files, URLs, or pasted text per agent/user. Callers can provide embeddings or let memory index content. |
+
+`searchKnowledge()` searches genesis knowledge for the agent and workspace knowledge when a user address is present.
+
+## Low-level routes
+
+The runtime also exposes lower-level routes for older callers and admin tools:
+
+| Route family | Use |
+| --- | --- |
+| `/api/memory/add`, `/api/memory/search`, `/api/memory/{agentWallet}` | Fact-style graph memory compatibility. |
+| `/api/memory/vector-search`, `/api/memory/vector-index` | Direct vector search/index operations. |
+| `/api/memory/transcript-store`, `/api/memory/transcript-get/{id}` | Direct transcript storage and lookup. |
+| `/api/memory/rerank` | Direct document reranking. |
+| `/api/memory/layers/search` | Direct six-layer search. |
+
+These routes call the same underlying modules as the canonical loop routes.
+
+## Related
+
+- [Architecture](/manowar/memory/architecture)
+- [Operations](/manowar/memory/operations)
+- [Endpoints memory reference](/endpoints/workflows/memory)

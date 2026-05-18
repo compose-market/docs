@@ -1,0 +1,141 @@
+---
+title: "Retrieval and Ranking"
+description: "How Manowar searches, reranks, dedupes, and packs memory for an agent turn."
+---
+
+Retrieval has two stages. Each selected layer returns candidates. Then `summary.ts` reduces those candidates into the compact prompt block used by the agent turn.
+
+## Retrieval pipeline
+
+```mermaid
+sequenceDiagram
+  participant Runtime
+  participant Loop as agent-loop.ts
+  participant Layers as layers.ts
+  participant Vector as vector.ts
+  participant Rank as ranking.ts
+  participant Pack as summary.ts
+  participant Redis
+
+  Runtime->>Loop: pre_turn query + scope
+  Loop->>Layers: search selected layers
+  Layers->>Redis: read scoped layer cache
+  Layers->>Vector: graph and vector layers
+  Vector->>Redis: read scoped vector cache
+  Vector->>Vector: query embedding
+  Vector->>Vector: Atlas vector search
+  Vector->>Rank: decay, optional rerank, optional MMR
+  Rank-->>Vector: ranked candidates
+  Layers-->>Loop: layer hits + totals
+  Loop->>Pack: summarize, score, dedupe, budget
+  Pack-->>Runtime: Memory context block
+```
+
+`pre_turn` requires a `query`. If the caller omits limits, the lower-level loop defaults to `limit: 5`, `maxItems: 8`, and `maxItemChars: 500`. The native agent turn passes tighter values: `limit: 12`, `maxItems: 6`, `maxItemChars: 120`, and `budget.maxCharacters: 900`.
+
+## Embeddings
+
+`embedding.ts` uses MongoDB's AI gateway to reach Voyage embeddings.
+
+| Setting | Value |
+| --- | --- |
+| Default model | `voyage-4-large` |
+| Default dimensions | `1024` |
+| Default timeout | `8000` ms |
+| Document input type | `document` |
+| Query input type | `query` |
+| Cache TTL | `86400` seconds |
+
+Query and document embeddings use separate Redis keys. The same text can produce different vectors because Voyage's asymmetric retrieval models treat query and document inputs differently.
+
+The embedder has no silent provider fallback. If embeddings are unavailable, the operation fails instead of mixing vector spaces.
+
+## Vector search
+
+`hybridVectorSearch()` builds a durable Mongo filter, runs Atlas `$vectorSearch`, applies a score threshold, and bumps access counters for returned rows.
+
+If Atlas vector search fails, or if the vector query returns no usable results, the runtime falls back to keyword search over recent scoped documents. That fallback keeps recall available during vector-index outages, but it is not treated as equivalent to semantic retrieval.
+
+Optional Atlas prefilter fields come from `MEMORY_VECTOR_PREFILTER_FIELDS`. The runtime still applies memory filters after search, so prefilter configuration is an optimization, not the trust boundary.
+
+## Ranking
+
+`applyVectorRanking()` applies ranking in this order:
+
+| Stage | Default | Behavior |
+| --- | --- | --- |
+| Temporal decay | On | Multiplies scores by a half-life decay curve. Default half-life is `30` days. |
+| Rerank | On | Uses Cloudflare Workers AI with `@cf/baai/bge-reranker-base` by default. |
+| Rerank skip | On | Skips rerank when candidate count is below `3` or top-1 beats top-2 by at least `0.05`. |
+| MMR | Off unless requested | Reduces near-duplicate results with lambda `0.7` by default. |
+
+Rerank is fail-soft. Missing Cloudflare credentials, timeouts, or upstream failures log a warning and keep the decayed order.
+
+## Prompt packing
+
+Layer search returns records. The prompt packer turns them into text.
+
+| Signal | Weight in packing |
+| --- | --- |
+| Layer priority | Working and patterns get the highest priority multipliers; archives get the lowest. |
+| Semantic score | Uses vector or layer score when present. |
+| Query overlap | Rewards candidates whose text contains query terms. |
+| Confidence | Uses fact confidence or metadata confidence. |
+| Importance | Reads `metadata.importance` when present. |
+| Recency | Uses a 30 day recency score. |
+| Access count | Adds a capped logarithmic boost. |
+| Character cost | Ranks by score per character before packing. |
+
+Layer priorities are:
+
+| Layer | Priority |
+| --- | --- |
+| `working` | `1.15` |
+| `patterns` | `1.12` |
+| `graph` | `1.08` |
+| `vectors` | `1.02` |
+| `scene` | `0.96` |
+| `archives` | `0.88` |
+
+The packer dedupes candidates by a normalized fingerprint. It has a specific user-turn fingerprint for transcript-like rows so repeated session summaries do not crowd out durable facts.
+
+## Output shape
+
+The final prompt always starts with the same header:
+
+```text
+Memory context:
+
+[GRAPH] The user prefers short TypeScript examples.
+
+[WORKING] user: Continue the deployment checklist.
+```
+
+`pre_turn` also returns structured accounting:
+
+| Field | Meaning |
+| --- | --- |
+| `contextUsage.characters` | Characters in the returned prompt. |
+| `contextUsage.rawCharacters` | Approximate characters in the raw layer payload. |
+| `contextUsage.savedCharactersVsRaw` | Raw payload size minus compact prompt size. |
+| `contextUsage.items` | Number of selected compact items. |
+| `omitted` | Per-layer raw hits not selected for the prompt. |
+| `totals` | Per-layer hit counts before packing. |
+
+## Comparison notes
+
+A common memory path is "retrieve top-K vectors, paste snippets into the prompt." Manowar does a little more before the model sees memory:
+
+| Concern | Common approach | Manowar approach |
+| --- | --- | --- |
+| Cross-thread durable memory | Store all turns in one retriever or manually choose a namespace. | Durable layers ignore `threadId`; hot layers keep `threadId`. |
+| Prompt growth | Return top-K snippets and let the caller format them. | Score, dedupe, and pack by character budget before the model sees memory. |
+| Rerank failure | Upstream reranker can fail the retrieval path. | Rerank is optional and fail-soft. |
+| Fresh writes | Cache can serve stale results until TTL. | Namespace tokens invalidate scoped query keys after writes. |
+| Fact extraction | Inline LLM extraction can slow the turn response. | Graph extraction is queued after `post_turn`; explicit saves index directly. |
+
+## Related
+
+- [Layers](/manowar/memory/layers)
+- [Memory flows](/manowar/memory/flows)
+- [Operations](/manowar/memory/operations)

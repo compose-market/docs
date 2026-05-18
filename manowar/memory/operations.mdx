@@ -1,0 +1,129 @@
+---
+title: "Operations"
+description: "Maintenance jobs, schedules, item lifecycle, conflicts, patterns, skills, and archives."
+---
+
+Memory operations keep the retrieval corpus small enough to search and explicit enough to repair. The implementation lives in `operations.ts`, `jobs.ts`, `items.ts`, and `runtime/src/temporal/memory`.
+
+## Job types
+
+`runMemoryMaintenanceJob()` supports five job types.
+
+| Type | Required scope | Behavior |
+| --- | --- | --- |
+| `consolidate` | `agentWallets` or `agentWallet` | Marks duplicate content/source rows as `metadata.status: "superseded"` and lowers their `decayScore` to at most `0.05`. |
+| `patterns_extract` | `agentWallet` | Reads transcripts in a time window and extracts repeated tool-call sequences. |
+| `archive_create` | `agentWallet` | Creates a compressed archive from vector rows in a date range. |
+| `decay_update` | None | Recomputes vector `decayScore` with the requested half-life. |
+| `cleanup` | None | Deletes stale low-decay vectors, expired sessions, and old transcripts. |
+
+Jobs are stored in `memory_jobs` with `running`, `completed`, or `failed` status.
+
+## Inline and Temporal execution
+
+The low-level `jobs.ts` runner executes maintenance inline. The Temporal service runs the same jobs through Temporal when `execution: "temporal"` is requested and Temporal is configured.
+
+| Execution | Runtime behavior |
+| --- | --- |
+| `inline` | Runs in the runtime process and writes one `memory_jobs` record. |
+| `temporal` | Starts a Temporal workflow, stores workflow ids on the job record, and refreshes state from Temporal queries. |
+
+Temporal memory workflows send heartbeats, retry activities, support pause/resume signals, and continue-as-new during long consolidation batches.
+
+## Schedules
+
+Memory schedules are managed through `/api/memory/schedules`.
+
+| Schedule | Frequency | Workflow |
+| --- | --- | --- |
+| Daily consolidation | `MEMORY_DAILY_CONSOLIDATION_CRON` | `memoryConsolidationWorkflow` |
+| Daily pattern extraction per agent | `MEMORY_DAILY_CONSOLIDATION_CRON` | `patternExtractionWorkflow` |
+| Weekly archive per agent | `MEMORY_WEEKLY_ARCHIVE_CRON` | `archiveCreationWorkflow` |
+| Hourly decay | `MEMORY_HOURLY_DECAY_CRON` | `decayUpdateWorkflow` |
+| Daily cleanup | `MEMORY_DAILY_CONSOLIDATION_CRON` | `memoryCleanupWorkflow` |
+
+The default overlap policy is `SKIP`, except weekly per-agent archives use `BUFFER_ONE`.
+
+## Pattern extraction
+
+`extractExecutionPatterns()` reads `session_transcripts`, extracts tool-call names, groups identical sequences, and stores frequent sequences as `tool_sequence` patterns.
+
+```json
+{
+  "patternType": "tool_sequence",
+  "trigger": {
+    "type": "context",
+    "value": "search_call"
+  },
+  "steps": [
+    { "action": "search_call", "order": 0 },
+    { "action": "models_call", "order": 1 }
+  ],
+  "successRate": 0.65,
+  "executionCount": 3
+}
+```
+
+The runtime can validate a pattern and promote it into a `skills` document. Promotion creates a learned skill with a pattern trigger, the extracted tool list, and success metadata.
+
+## Archives
+
+`createMemoryArchive()` serializes selected vector rows into a JSON payload, compresses the payload with gzip by default, and stores it in `archives`.
+
+Archive rows contain:
+
+| Field | Meaning |
+| --- | --- |
+| `archiveId` | Runtime-generated archive id. |
+| `agentWallet` | Agent scope. |
+| `dateRange` | Source vector range. |
+| `content` | JSON payload or gzip base64 payload. |
+| `compressed` | Whether gzip compression was used. |
+| `metadata.entryCount` | Number of vector rows included. |
+| `ipfsCid` | Optional Pinata IPFS CID after sync. |
+
+`syncArchiveToPinata()` accepts `PINATA_JWT` or `PINATA_API_KEY` plus `PINATA_API_SECRET`.
+
+## Item lifecycle
+
+The item APIs work against `memory` collection rows.
+
+| Operation | Behavior |
+| --- | --- |
+| `getMemoryItem()` | Reads an active row by `vectorId` and optional scope. |
+| `updateMemoryItem()` | Updates content, metadata, retention, confidence, or status. Re-embeds when content changes. |
+| `deleteMemoryItem()` | Soft-deletes by setting `metadata.status: "deleted"` and `decayScore: 0`; `hardDelete` removes the row. |
+| `resolveMemoryConflict()` | Records conflict metadata and can mark a row `superseded`. |
+
+Soft-deleted and superseded rows are excluded by active-layer filters. Hard deletes remove the row permanently.
+
+## Cleanup
+
+`cleanupExpiredMemories()` deletes:
+
+| Data | Condition |
+| --- | --- |
+| Vectors | `createdAt` older than the cutoff, `decayScore < 0.2`, and `metadata.retention != "pinned"`. |
+| Sessions | `expiresAt` in the past or `lastAccessedAt` older than the cutoff. |
+| Transcripts | `createdAt` older than the cutoff. |
+
+After cleanup, the runtime invalidates memory caches globally.
+
+## Endpoint map
+
+| Family | Routes |
+| --- | --- |
+| Loop | `POST /api/memory/context/assemble`, `POST /api/memory/turns/record`, `POST /api/memory/remember`, `POST /api/memory/loop` |
+| Manifests | `GET /api/memory/workflows`, `GET /api/memory/workflows/{workflowId}` |
+| Patterns and skills | `GET /api/memory/patterns`, `GET /api/memory/patterns/{patternId}`, `POST /api/memory/patterns/{patternId}/validate`, `POST /api/memory/patterns/{patternId}/promote`, `GET /api/memory/skills`, `GET /api/memory/skills/{skillId}` |
+| Sessions and archives | `POST /api/memory/transcripts/index`, `GET/PATCH /api/memory/sessions/{sessionId}/working`, `POST /api/memory/sessions/{sessionId}/compress`, `POST /api/memory/archives/{archiveId}/sync` |
+| Schedules | `GET/POST/DELETE /api/memory/schedules`, `POST /api/memory/schedules/{scheduleId}/pause`, `resume`, `trigger` |
+| Items | `POST /api/memory/items/search`, `GET/PATCH/DELETE /api/memory/items/{id}`, `POST /api/memory/conflicts/{id}/resolve` |
+| Jobs and evals | `POST /api/memory/jobs`, `GET /api/memory/jobs/{jobId}`, `POST /api/memory/evals/runs` |
+| Compatibility | `POST /api/memory/add`, `POST /api/memory/search`, `GET /api/memory/{agentWallet}`, `POST /api/memory/vector-search`, `POST /api/memory/vector-index`, `POST /api/memory/transcript-store`, `GET /api/memory/transcript-get/{id}`, `POST /api/memory/rerank`, `POST /api/memory/layers/search` |
+
+## Related
+
+- [Evaluation](/manowar/memory/evaluation)
+- [Retrieval](/manowar/memory/retrieval-ranking)
+- [Endpoints memory reference](/endpoints/workflows/memory)

@@ -1,0 +1,82 @@
+---
+title: "Evaluation"
+description: "Memory eval inputs, metrics, and interpretation."
+---
+
+`runMemoryEval()` tests retrieval, not model quality. It asks the six-layer memory system a set of queries and checks whether the returned records contain the expected evidence.
+
+## Eval request
+
+```json
+{
+  "agentWallet": "0x1234567890abcdef1234567890abcdef12345678",
+  "userAddress": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+  "threadId": "run:deploy-42",
+  "layers": ["working", "scene", "graph", "patterns", "archives", "vectors"],
+  "testCases": [
+    {
+      "query": "Which deployment style does the user prefer?",
+      "expected": "Terraform"
+    },
+    {
+      "query": "What was the last production incident?",
+      "expectedMemoryId": "vec_1234"
+    }
+  ]
+}
+```
+
+`agentWallet` and `testCases` are required. The endpoint also accepts `agent_id` as an alias for `agentWallet`.
+
+## What the eval does
+
+For each test case, the harness:
+
+1. Calls `searchMemoryLayers()` with the requested scope.
+2. Serializes the layer payload.
+3. Marks the case as a hit when the payload contains `expected`, contains `expectedMemoryId`, or returns any memory when neither expectation is supplied.
+4. Records returned item count, payload character count, and search latency.
+
+This keeps evals deterministic enough for regression checks. Use concrete substring expectations: stable facts, memory ids, or distinctive phrases.
+
+## Metrics
+
+| Metric | Formula | Meaning |
+| --- | --- | --- |
+| `recallAtK` | `hits / cases` | Fraction of test cases where expected evidence appeared. |
+| `precisionAtK` | `hits / returned` | Coarse signal for how much returned context matched expectations. |
+| `avgContextCharacters` | `sum(contextCharacters) / cases` | Average raw retrieved payload size. |
+| `avgSearchLatencyMs` | `sum(latencyMs) / cases` | Average layer search latency. |
+| `results[].returned` | Sum of per-layer totals | How many raw layer hits came back. |
+| `results[].contextCharacters` | Serialized layer payload length | Size before prompt packing. |
+
+## What it does not prove
+
+| Limit | Practical effect |
+| --- | --- |
+| It checks retrieval, not generation. | A good eval run does not prove the model used the memory correctly. |
+| It uses substring or id matching. | Paraphrased correct memories can fail if the expected string is too narrow. |
+| It measures raw layer payload size. | It does not directly measure the compact prompt produced by `summary.ts`. |
+| It runs live retrieval. | Embedding, Mongo, Redis, and rerank configuration affect results. |
+
+Use evals as regression tests for indexing, scoping, filtering, and retrieval. Use separate answer-quality evals when you need to measure model behavior after memory is injected.
+
+## Useful cases
+
+| Case | Setup |
+| --- | --- |
+| Fact recall | Save a fact with `remember`, then query by a paraphrase and assert a distinctive phrase. |
+| Thread isolation | Store working memory in one thread and confirm another thread does not return it through `working` or `scene`. |
+| Durable recall | Store a fact in one thread and confirm another thread can return it through `graph` or `vectors`. |
+| Filter behavior | Add `metadata.app_id` or `source` filters and assert only scoped rows return. |
+| Cache invalidation | Query, write a new fact, query again, and assert the new fact appears before TTL expiration. |
+
+## Comparison notes
+
+Most memory evals end up in app code or in a separate observability product. Manowar keeps a retrieval eval endpoint next to the memory routes because the runtime owns indexing, scoping, cache invalidation, and retrieval. When a user says "the agent forgot," you can test the memory layer before blaming the model.
+
+## Related
+
+- [Retrieval and ranking](/manowar/memory/retrieval-ranking)
+- [Operations](/manowar/memory/operations)
+- [Endpoints memory reference](/endpoints/workflows/memory)
