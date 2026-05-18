@@ -1,0 +1,53 @@
+---
+title: 'Deployed Contracts'
+description: 'Contract addresses on testnets'
+---
+
+### Core Contracts
+
+| Contract | Address |
+| :--- | :--- |
+| **Manowar** (Core) | `0x6C277Fd54831e35eDaCd2729F5bC64e39bdCE83f` |
+| **Agent Factory** (Registry) | `0x47d2D5cfe2B75B620AfD6D73ff5FB665c650d760` |
+| **Agent Manager** | `0x1004cC7fB6DcDA6Db67A270B0E130eB46c33b210` |
+| **Warp** (Bridge) | `0x5D8badCa8EDf27ce70a100C79dd3d86B5BE305d9` |
+| **Clone** | `0x5ED9c7159dC5C6c1dDEFb5d61f0dF1277eF94EEb` |
+| **RFA** (Requests) | `0x67f0E11d1c80Cc7106A97909d1c2Aa7bfB1259aD` |
+| **Lease** | `0x56760D79d363413adc4f9F21cF4949c302270071` |
+| **Distributor** | `0xc199f85EdE4038FB6Bb32Aae9cdEbdAFBA0449e0` |
+| **Royalties** | `0xA8d8531Fe968A9cd5129b5571C06f7BdDF35836D` |
+| **Delegation** | `0xFa097fc49592Cfe1eBaF6714BE2131C3c3933E55` |
+| **Utils** | `0x6554d9A40D7b6Ed77973f2A088FFF701eC113D02` |
+|   |   |
+|  The Dispenser is a multi-chain faucet to fund initial users.
+| **Dispenser** | `0x261938c0eAFA429797dD068bA4382e5b757B4615` |
+
+> [!CAUTION]
+> These are Testnet addresses. Do not send Mainnet assets.
+
+----
+
+### ERC-4337 Account Abstraction (v0.7)
+
+| Contract | Address | Notes |
+| :--- | :--- | :--- |
+| **EntryPoint v0.7** | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` | Universal (CREATE2) |
+| **AccountFactory** | `0x4bE0ddfebcA9A5A4a617dee4DeCe99E7c862dceb` | Universal (CREATE2) |
+| **Account Implementation** | `0x94eC38a5d2EDA5A543Ab4c08D998338D4082beb2` | ThirdWeb Account v0.7 |
+| **Paymaster** | `0xA7c85b07aBE6eE06Cd2f1268Ea22d7156C7A67D4` | Gas sponsorship |
+
+> [!NOTE]
+> All our contracts use **universal addresses** (same address on all supported chains). 
+> We deploy them via CREATE2 with Arachnid's deployer to ensure that both core contracts and Smart Accounts have the same address across all chains. 
+
+> **Why Same Addresses Matter:**
+> - It dramatically increases standardization/portability (= compose.market is native on any chain)
+> - Consistent smart account addresses across chains (= less identity fragmentation)
+> - It simplifies deployment pipeline and frontend configuration (better "dev experience")
+> - Enables cross-chain account abstraction
+
+> **How it works:** The address depends on:
+> - Salt (32 bytes, arbitrary value you choose)
+> - Init code (bytecode + constructor args)
+
+> *If both are identical across chains, the resulting address is identical.*
