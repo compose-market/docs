@@ -1,0 +1,112 @@
+---
+title: "Compose Keys"
+description: "Budgeted bearer credentials for Compose APIs and external OpenAI-compatible clients."
+---
+
+A Compose Key is not a provider API key. It is a signed Compose credential with an owner wallet, chain, expiry, purpose, and budget.
+
+Use API-purpose keys for external apps. Use session-purpose keys for the first-party app session flow.
+
+## Create an API key
+
+```http
+POST /api/keys
+```
+
+Headers:
+
+| Header | Description |
+| --- | --- |
+| `x-session-user-address` | Owner wallet address. |
+| `x-chain-id` | Chain for balance, allowance, and settlement checks. |
+
+Body:
+
+```json
+{
+  "budgetLimit": 1000000,
+  "expiresAt": 1790000000000,
+  "chainId": 43113,
+  "purpose": "api",
+  "name": "OpenCode"
+}
+```
+
+`budgetLimit` uses USDC atomic units. `1000000` means 1 USDC.
+
+Response:
+
+```json
+{
+  "keyId": "f65a...",
+  "token": "compose-...",
+  "budgetLimit": "1000000",
+  "budgetUsed": "0",
+  "budgetRemaining": "1000000",
+  "purpose": "api",
+  "chainId": 43113
+}
+```
+
+The API checks funding before it creates the key. If the wallet lacks USDC balance or allowance for the requested budget, the endpoint returns `402` with details.
+
+## Use a key
+
+```bash
+curl https://api.compose.market/external/v1/chat/completions \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Deploy" }
+    ]
+  }'
+```
+
+On each paid call, Compose validates the key, reserves budget, runs the service, prices the result, then settles the final amount.
+
+## Key purposes
+
+| Purpose | Use it for | Notes |
+| --- | --- | --- |
+| `api` | IDEs, scripts, backend integrations, external OpenAI-compatible clients | Independent budget. Best fit for external use. |
+| `session` | First-party app sessions | Must match the active session for the same wallet and chain. |
+
+## Manage keys
+
+```http
+GET /api/keys
+```
+
+Lists keys for `x-session-user-address`. The response includes budget state but not token material.
+
+```http
+GET /api/keys/{keyId}
+Authorization: Bearer compose-...
+```
+
+Returns one key. The bearer key must belong to the same wallet as the target key.
+
+```http
+DELETE /api/keys/{keyId}
+Authorization: Bearer compose-...
+```
+
+Revokes a key. Revocation uses signed key ownership, not an unsigned wallet header.
+
+## Budget headers
+
+| Header | Meaning |
+| --- | --- |
+| `x-compose-key-budget-limit` | Original budget. |
+| `x-compose-key-budget-used` | Settled amount recorded against the key. |
+| `x-compose-key-budget-remaining` | Spendable budget left. |
+| `x-compose-key-final-amount-wei` | Amount settled for the request. |
+| `x-compose-key-tx-hash` | Settlement transaction hash when available. |
+
+## Related
+
+- [External inference](/inference/external-use/overview)
+- [OpenCode config](/inference/external-use/configs/well-known-opencode)
+- [Sessions](/x402/sessions)

@@ -1,0 +1,96 @@
+---
+title: "x402 quickstart"
+description: "Make a paid request with a Compose Key or raw x402."
+---
+
+Start most integrations with a Compose Key. Raw x402 'upto' is great for agentic / a2a workflows, cause Manowar agents control a wallet and can handle a `402 Payment Required` retry flow natively.
+
+## Call with a Compose Key
+
+Use this for servers, scripts, IDEs, and OpenAI-compatible apps.
+
+```bash
+curl https://api.compose.market/v1/chat/completions \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      { "role": "user", "content": "Explain x402 in one sentence." }
+    ]
+  }'
+```
+
+If you are configuring an IDE or app that expects an OpenAI-compatible base URL, use `/external/v1`:
+
+```bash
+curl https://api.compose.market/external/v1/chat/completions \
+  -H "Authorization: Bearer $COMPOSE_MARKET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Hello from an external client." }
+    ]
+  }'
+```
+
+External responses keep the OpenAI shape because many external tools reject unknown fields.
+
+## Call with raw x402
+
+Raw x402 has two requests.
+
+First, send the request without `PAYMENT-SIGNATURE`:
+
+```bash
+curl -i https://api.compose.market/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Price this request." }
+    ]
+  }'
+```
+
+The API returns `402 Payment Required` and a `PAYMENT-REQUIRED` header. Sign that requirement with your x402 client, then retry:
+
+```bash
+curl https://api.compose.market/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "x-chain-id: 43113" \
+  -H "PAYMENT-SIGNATURE: $PAYMENT_SIGNATURE" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [
+      { "role": "user", "content": "Run the paid request." }
+    ]
+  }'
+```
+
+For usage-priced calls, add `x-x402-max-amount-wei` to set your own cap:
+
+```bash
+-H "x-x402-max-amount-wei: 1000000"
+```
+
+Amounts are USDC atomic units. `1000000` is 1 USDC.
+
+## Common failures
+
+| Status | Meaning | What to check |
+| --- | --- | --- |
+| `400` | Request shape is invalid. | Body JSON, model ID, modality, or metering input. |
+| `401` | Auth failed. | Missing, expired, revoked, or malformed Compose Key. |
+| `402` | Payment failed. | Missing x402 signature, exhausted budget, insufficient allowance, or settlement failure. |
+| `429` | Rate limit. | Retry with backoff. Provider limits can surface here too. |
+
+## Related
+
+- [Compose Keys](/x402/compose-key)
+- [Sessions](/x402/sessions)
+- [Facilitator](/x402/facilitator)
+- [Inference quickstart](/inference/quickstart)
