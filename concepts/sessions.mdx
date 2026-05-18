@@ -39,7 +39,6 @@ The session is active immediately. All subsequent requests skip wallet signature
 | Chain | Mechanism |
 |-------|-----------|
 | **Avalanche** | ERC-4337 Session Key + USDC Approval |
-| **Cronos** | USDC Approval + Compose Key (EIP-3009) |
 
 The approval authorizes the **treasury wallet** to pull USDC from your smart account, up to your budget limit.
 
@@ -93,7 +92,7 @@ For external tools like **Cursor**, **OpenCode**, or **OpenClaw**, generate an *
 ### Use the Key
 
 ```bash
-curl -X POST https://manowar.compose.market/agent/{id}/chat \
+curl -X POST https://api.compose.market/agent/{id}/chat \
   -H "Authorization: Bearer compose-abc123..." \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello"}'

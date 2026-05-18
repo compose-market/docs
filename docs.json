@@ -25,8 +25,7 @@
             "group": "Getting Started",
             "pages": [
               "introduction",
-              "guides/core-flows",
-              "manowar/deployed-contracts"
+              "guides/core-flows"
             ]
           },
           {
@@ -43,85 +42,240 @@
         ]
       },
       {
-        "tab": "Contracts Protocol",
+        "tab": "Inference",
         "groups": [
           {
-            "group": "Protocol",
+            "group": "Overview",
             "pages": [
-              "manowar/introduction",
-              "manowar/multichain",
-              "manowar/deployed-contracts"
+              "inference/introduction",
+              "inference/quickstart",
+              "inference/why",
+              "inference/streaming",
+              "inference/tools",
+              "inference/assistants",
+              "inference/realtime",
+              "inference/metering",
+              "inference/vendors"
             ]
           },
           {
-            "group": "Core Contracts",
+            "group": "External Use",
             "pages": [
-              "manowar/core-contracts/manowar",
-              "manowar/core-contracts/agent-factory"
+              "inference/external-use/overview",
+              "inference/external-use/configs",
+              "inference/external-use/configs/well-known",
+              "inference/external-use/configs/well-known-opencode",
+              "inference/external-use/configs/well-known-zencoder",
+              "inference/external-use/configs/well-known-zed",
+              "inference/external-use/configs/well-known-cline",
+              "inference/external-use/configs/well-known-hermes",
+              "inference/external-use/configs/well-known-openclaw"
             ]
           },
           {
-            "group": "Extensions",
+            "group": "Families",
             "pages": [
-              "manowar/extensions/overview"
+              "inference/families/overview",
+              "inference/families/openai",
+              "inference/families/anthropic",
+              "inference/families/mistral",
+              "inference/families/google",
+              "inference/families/alibaba",
+              "inference/families/deepseek",
+              "inference/families/black-forest-labs",
+              "inference/families/stability-ai",
+              "inference/families/z-ai",
+              "inference/families/speech-models",
+              "inference/families/others"
+            ]
+          },
+          {
+            "group": "Modalities",
+            "pages": [
+              "inference/modalities/overview",
+              "inference/modalities/text",
+              "inference/modalities/image",
+              "inference/modalities/video",
+              "inference/modalities/speech",
+              "inference/modalities/embeddings",
+              "inference/modalities/vision",
+              "inference/modalities/others"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "inference/guides/migration-from-ai-sdk",
+              "inference/reference/specification"
             ]
           }
         ]
       },
       {
-        "tab": "Agentic Framework",
+        "tab": "X402 Facilitator",
         "groups": [
           {
-            "group": "Framework",
+            "group": "Overview",
             "pages": [
-              "framework/framework",
-              "framework/modules",
-              "framework/end-to-end",
-              "framework/memory-and-context",
-              "framework/global-execution"
+              "x402/introduction",
+              "x402/quickstart",
+              "x402/compose-key",
+              "x402/sessions",
+              "x402/facilitator"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Manowar",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "manowar/overview",
+              "manowar/end-to-end",
+              "manowar/global-execution",
+              "manowar/modules",
+              "manowar/native-observability-telemetry",
+              "manowar/agent-to-agent",
+              "manowar/lazy-discovery",
+              "manowar/minimal-token-prompting",
+              "manowar/strongly-typed"
             ]
           },
           {
             "group": "Memory",
             "pages": [
-              "framework/memory/introduction",
-              "framework/memory/architecture",
-              "framework/memory/flows"
+              "manowar/memory/introduction",
+              "manowar/memory/architecture",
+              "manowar/memory/layers",
+              "manowar/memory/retrieval-ranking",
+              "manowar/memory/flows",
+              "manowar/memory/operations",
+              "manowar/memory/evaluation"
+            ]
+          },
+          {
+            "group": "Harness",
+            "pages": [
+              "manowar/harness/introduction",
+              "manowar/harness/architecture",
+              "manowar/harness/a2a",
+              "manowar/harness/coordinators",
+              "manowar/harness/depth-3",
+              "manowar/harness/planning",
+              "manowar/harness/sandboxing",
+              "manowar/harness/certificates-receipts",
+              "manowar/harness/checkpoints",
+              "manowar/harness/memory-scratchpad"
+            ]
+          },
+          {
+            "group": "Tools",
+            "pages": [
+              "manowar/tools/overview",
+              "manowar/tools/model-store",
+              "manowar/tools/connectors/mcp-store",
+              "manowar/tools/connectors/onchain-tools",
+              "manowar/tools/connectors/accounts",
+              "manowar/tools/channels",
+              "manowar/tools/search/web-search",
+              "manowar/tools/search/deep-search"
             ]
           }
         ]
       },
       {
-        "tab": "Endpoints",
+        "tab": "Contracts",
         "groups": [
           {
-            "group": "Inference (Lambda)",
+            "group": "Protocol",
             "pages": [
-              "endpoints/inference/generate",
-              "endpoints/inference/list-models",
-              "endpoints/inference/multimodal"
+              "contracts/introduction",
+              "contracts/multichain",
+              "contracts/deployed-contracts"
             ]
           },
           {
-            "group": "Agents (MCP)",
+            "group": "Core Contracts",
             "pages": [
-              "endpoints/agents/chat",
-              "endpoints/agents/register",
-              "endpoints/agents/discovery"
+              "contracts/core-contracts/manowar",
+              "contracts/core-contracts/agent-factory"
             ]
           },
           {
-            "group": "Workflows (Manowar)",
+            "group": "Extensions",
             "pages": [
-              "endpoints/manowar/get-agent",
-              "endpoints/manowar/invoke-agent",
-              "endpoints/manowar/workflows"
+              "contracts/extensions/overview"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "APIs & Endpoints",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "endpoints/overview"
             ]
           },
           {
-            "group": "Registry (Connector)",
+            "group": "System",
             "pages": [
-              "endpoints/connector/list"
+              "endpoints/system/health",
+              "endpoints/system/metrics",
+              "endpoints/system/feedback"
+            ]
+          },
+          {
+            "group": "Inference",
+            "pages": [
+              "endpoints/inference/models",
+              "endpoints/inference/modalities",
+              "endpoints/inference/chat-and-responses",
+              "endpoints/inference/media",
+              "endpoints/inference/external"
+            ]
+          },
+          {
+            "group": "Payments & x402",
+            "pages": [
+              "endpoints/payments/intents",
+              "endpoints/payments/compose-keys",
+              "endpoints/payments/sessions",
+              "endpoints/payments/facilitator",
+              "endpoints/payments/dispenser",
+              "endpoints/payments/settlement"
+            ]
+          },
+          {
+            "group": "Agents & Workflows",
+            "pages": [
+              "endpoints/agents/discovery",
+              "endpoints/agents/runtime",
+              "endpoints/workflows/discovery",
+              "endpoints/workflows/runtime",
+              "endpoints/workflows/triggers",
+              "endpoints/workflows/workspace",
+              "endpoints/workflows/memory"
+            ]
+          },
+          {
+            "group": "Connectors",
+            "pages": [
+              "endpoints/connectors/proxy",
+              "endpoints/connectors/backpack",
+              "endpoints/connectors/registry"
+            ]
+          },
+          {
+            "group": "Mesh",
+            "pages": [
+              "endpoints/mesh/linking",
+              "endpoints/mesh/storage",
+              "endpoints/mesh/network",
+              "endpoints/utilities/decorative-generation"
             ]
           }
         ]
@@ -135,9 +289,9 @@
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Blog",
-          "href": "https://blog.compose.market",
-          "icon": "newspaper"
+          "anchor": "App",
+          "href": "https://compose.market",
+          "icon": "sparkles"
         }
       ]
     }

@@ -85,7 +85,7 @@ See [Sessions](/concepts/sessions) for details.
 For Cursor, OpenCode, OpenClaw, and other external clients:
 
 ```bash
-curl -X POST https://manowar.compose.market/agent/{id}/chat \
+curl -X POST https://api.compose.market/agent/{id}/chat \
   -H "Authorization: Bearer compose-abc123..." \
   -H "Content-Type: application/json"
 ```
@@ -112,9 +112,7 @@ Inference pricing varies by model—see individual model cards.
 Compose Market supports payments on multiple chains:
 
 | Chain | ID | Facilitator |
-|-------|-----|-------------|
-| Cronos Mainnet | 25 | Cronos Labs |
-| Cronos Testnet | 338 | Cronos Labs |
+|-------|-----|-------------
 | Avalanche C-Chain | 43114 | ThirdWeb |
 | Avalanche Fuji | 43113 | ThirdWeb |
 
@@ -125,7 +123,7 @@ The `X-CHAIN-ID` header determines which chain to use for settlement.
 For internal service-to-service communication within Compose infrastructure:
 
 ```
-x-manowar-internal: {MANOWAR_INTERNAL_SECRET}
+x-runtime-internal: {RUNTIME_INTERNAL_SECRET}
 ```
 
 This bypasses all payment verification. Used by the orchestrator when delegating to nested agents within a workflow.

@@ -11,8 +11,8 @@ Agents are accessible via two services:
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| Lambda | `api.compose.market` | Discovery, models, inference |
-| Manowar | `manowar.compose.market` | Agent chat, registration |
+| api/ | `api.compose.market` | Discovery, models, inference, agent registration |
+| runtime | `runtime.compose.market` | Agent chat,  Workflows|
 
 ## Discovery
 
@@ -24,15 +24,15 @@ GET https://api.compose.market/agent/{wallet}  # Get agent by wallet
 ## Execution
 
 ```
-POST https://manowar.compose.market/agent/{id}/chat     # Chat
-POST https://manowar.compose.market/agent/{id}/stream   # Streaming
-POST https://manowar.compose.market/agent/{id}/multimodal  # Image/audio
+POST https://api.compose.market/agent/{id}/chat     # Chat
+POST https://api.compose.market/agent/{id}/stream   # Streaming
+POST https://api.compose.market/agent/{id}/multimodal  # Image/audio
 ```
 
 ## Registration
 
 ```
-POST https://manowar.compose.market/agent/register
+POST https://api.compose.market/agent/register
 ```
 
 ## AgentCard Schema
@@ -60,7 +60,7 @@ Agents are stored on IPFS as `AgentCard` metadata:
 
 ## Payments (x402)
 
-Chat endpoints require x402 payment via the `x-payment` header. For nested Manowar calls, the `x-manowar-internal` header bypasses payment.
+Chat endpoints require x402 payment via the `x-payment` header. For nested Workflow calls, the `x-runtime-internal` header bypasses payment.
 
 ## Tools
 
