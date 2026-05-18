@@ -1,0 +1,67 @@
+---
+title: "Harness A2A"
+description: "Agent-to-agent execution rules inside MAL plans."
+---
+
+MAL swarms use registered Compose agents. `task` and `delegate` do not accept raw model ids.
+
+That rule is the whole point of the harness. A MAL subagent is a deployed agent with its own wallet, card, model, memory scope, tools, and creator ownership. It is not a temporary prompt frame around the coordinator's model.
+
+## Validation
+
+Before a `task` or `delegate` runs, the interpreter calls `ensureRegisteredAgent()`.
+
+| Check | Behavior |
+| --- | --- |
+| Missing wallet | Fails with `UnregisteredAgentError`. |
+| Malformed wallet | Fails before network lookup. |
+| `GET /agent/{wallet}` returns 200 | Step can execute. |
+| `GET /agent/{wallet}` returns 404 | Fails closed. |
+| Network/timeout/5xx | Fails closed. |
+
+Lookups are cached for five minutes.
+
+## Task vs Delegate
+
+| Op | Use |
+| --- | --- |
+| `task` | Spawn a focused subagent with optional tool bindings, persona override, budget, and isolation. |
+| `delegate` | Ask a registered deployed agent to perform a request with a budget. |
+
+Both resolve the target agent's card model. If you want to call a model directly, use `models_call`.
+
+`task` is useful when the coordinator needs a bounded specialist run with optional tool bindings, persona override, budget, or isolation. `delegate` is the simpler A2A call: ask a registered deployed agent to do one thing and return the result. In both cases, the target agent remains the execution unit.
+
+## Example
+
+```yaml
+steps:
+  - op: delegate
+    saveAs: analysis
+    agentWallet: "0x1111111111111111111111111111111111111111"
+    prompt: "Analyze this request and return risk notes."
+    budget:
+      maxWallMs: 120000
+
+  - op: stop
+    output: "{{analysis}}"
+```
+
+## Comparison
+
+| System | A2A shape | Manowar shape |
+| --- | --- | --- |
+| OpenAI Agents SDK | Handoffs route to another agent object. | `task` and `delegate` route to deployed wallet-addressed agents. |
+| AutoGen | Agents exchange messages inside a team/runtime. | MAL subagents are registered Compose agents with card models and memory scope. |
+| LangGraph | Handoffs are graph edges or commands in app code. | MAL plan ops are interpreted by the hosted runtime. |
+
+## Why This Matters
+
+Prompt-only subagents are cheap to create but hard to account for. They borrow the parent prompt, parent context window, parent credentials, and parent billing surface.
+
+Manowar uses a stricter primitive. The coordinator can compose other agents without dissolving them into its own context. That keeps tokens smaller, permissions clearer, and economic attribution attached to the agent that did the work.
+
+## Related
+
+- [Agent-to-agent](/manowar/agent-to-agent)
+- [Depth and budgets](/manowar/harness/depth-3)

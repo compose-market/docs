@@ -1,0 +1,41 @@
+---
+title: "Checkpoints"
+description: "MAL checkpoints, workflow checkpoints, and agent checkpoint storage."
+---
+
+Manowar has several checkpoint concepts. They serve different readers.
+
+## MAL Checkpoints
+
+MAL checkpoints are Redis snapshots for typed plans.
+
+| Property | Value |
+| --- | --- |
+| Key | `mal:run:{agentWallet}:{composeRunId}` |
+| TTL | 24 hours |
+| Saved after | Each successful non-terminal top-level step. |
+| Cleared after | Completed, stopped, errored, or aborted plan. |
+| Contents | `planId`, `composeRunId`, completed step index, step results, saved values, aggregate usage. |
+
+Nested `if`, `loop`, and inline fanout blocks do not create separate checkpoint streams. The top-level plan snapshot captures their step result.
+
+## Workflow Checkpoints
+
+Workflow checkpoints are annotations:
+
+| Function | Meaning |
+| --- | --- |
+| `recordObservation()` | What the workflow noticed. |
+| `recordDecision()` | A decision and its reason. |
+| `recordInsight()` | A reusable lesson. |
+| `recordError()` | A failure signal. |
+| `persistCheckpoints()` | Persists run annotations to memory/feedback paths. |
+
+## Agent Filesystem Checkpoints
+
+`agent/checkpoint.ts` provides a local JSON checkpoint saver with retention and health helpers. It is separate from MAL Redis checkpoints and workflow annotations.
+
+## Related
+
+- [Native observability](/manowar/native-observability-telemetry)
+- [Harness architecture](/manowar/harness/architecture)

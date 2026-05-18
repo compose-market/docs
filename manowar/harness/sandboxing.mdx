@@ -1,0 +1,41 @@
+---
+title: "Sandboxing"
+description: "Daytona-backed physical isolation for harness subagents."
+---
+
+Harness subagents run in-process by default. Physical isolation is opt-in through `isolated: true` on a `task` step or `requireIsolation: true` on a plan path that routes into the sandbox adapter.
+
+## Behavior
+
+`harness/sandbox.ts` uses the Daytona integration in `runtime/src/mesh/sandbox.ts`.
+
+| Condition | Behavior |
+| --- | --- |
+| `DAYTONA_CONCLAVE_SNAPSHOT_ID` configured | Boot a fresh Daytona sandbox and run the harness boot command. |
+| Snapshot missing | Return a typed `sandbox_unavailable` error. |
+| Sandbox command exits 0 | Return `completed`. |
+| Sandbox command exits nonzero | Return `error` with stderr preview. |
+
+Explicit isolation never silently downgrades to in-process execution.
+
+## Example
+
+```yaml
+steps:
+  - op: task
+    saveAs: isolatedResult
+    agentWallet: "0x1111111111111111111111111111111111111111"
+    prompt: "Analyze the untrusted archive."
+    isolated: true
+    budget:
+      maxWallMs: 180000
+```
+
+## Sandbox Evidence
+
+Sandbox execution can return metering records, sandbox labels, stdout/stderr, wall time, and exit code. Proof bundles can include sandbox metadata when isolation is active.
+
+## Related
+
+- [Certificates and receipts](/manowar/harness/certificates-receipts)
+- [Depth and budgets](/manowar/harness/depth-3)

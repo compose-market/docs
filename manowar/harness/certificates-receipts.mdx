@@ -1,0 +1,40 @@
+---
+title: "Certificates And Receipts"
+description: "What harness proof bundles establish, and what remains in x402 receipts."
+---
+
+MAL proof bundles are hash artifacts. They are useful for audit, but they are not trusted execution environment attestations.
+
+## Proof Bundle
+
+When a plan sets `requireProof: true`, the interpreter accumulates:
+
+| Field | Meaning |
+| --- | --- |
+| `planHash` | Hash of the canonical plan before execution. |
+| `steps[]` | Per-step input hash, output hash, op, success flag, and optional inference run ids. |
+| `inferenceRunIds[]` | Run ids surfaced by subagent/tool execution. |
+| `sandbox` | Optional Daytona metadata when isolation is active. |
+| `proofCid` | Pinata CID when pinning succeeds. |
+
+The pinned bundle schema version is `compose.proof.v1`.
+
+## Honest Trust Model
+
+| Claim | Status |
+| --- | --- |
+| Step inputs and outputs can be hash-checked against the bundle. | Yes. |
+| The bundle can point to inference run ids for cross-checking receipts. | Yes. |
+| Pinata can store the proof bundle CID. | Yes, when `PINATA_JWT` is configured. |
+| The runtime emits a live EVM signature in this module. | No. `signProofBundle()` is a placeholder. |
+| Daytona proves TEE-grade execution. | No. The sandbox path is isolation, not TEE attestation. |
+
+## Receipts
+
+x402 receipts belong to the API and inference layers. Harness proof bundles can reference inference run ids; verifiers should cross-check those ids against Compose/x402 receipts rather than treating the proof bundle as payment authority.
+
+## Related
+
+- [x402](/x402/introduction)
+- [Sandboxing](/manowar/harness/sandboxing)
+- [Harness checkpoints](/manowar/harness/checkpoints)

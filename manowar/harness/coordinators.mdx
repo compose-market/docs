@@ -1,0 +1,50 @@
+---
+title: "Coordinators"
+description: "Dynamic coordinator model discovery for agentic harness work."
+---
+
+The harness does not keep a hardcoded coordinator list. `harness/coordinators.ts` reads the API catalog and filters model rows by agentic capabilities.
+
+## Source
+
+```text
+GET {API_INTERNAL_URL}/v1/models/all
+```
+
+The request uses internal API headers and caches results for five minutes.
+
+## Filter
+
+Coordinator candidates must have at least one capability:
+
+```json
+["introspection", "agentic"]
+```
+
+Returned rows are normalized into:
+
+```ts
+type CoordinatorModel = {
+  modelId: string;
+  provider: string;
+  name?: string;
+  description?: string;
+  contextWindow?: unknown;
+  capabilities: string[];
+};
+```
+
+## Failure Behavior
+
+| Failure | Behavior |
+| --- | --- |
+| API fetch fails | Return cached pool if available, otherwise `[]`. |
+| API returns non-OK | Return cached pool if available, otherwise `[]`. |
+| Invalid JSON | Return cached pool if available, otherwise `[]`. |
+
+There is no hardcoded fallback list. The generated model catalog owns model availability.
+
+## Related
+
+- [Model store](/manowar/tools/model-store)
+- [Inference models](/endpoints/inference/models)

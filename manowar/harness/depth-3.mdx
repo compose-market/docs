@@ -1,0 +1,60 @@
+---
+title: "Depth And Budgets"
+description: "Runtime guards for MAL plans and subagent execution."
+---
+
+Harness budgets are runtime budgets. They do not contain prices, USDC amounts, or payment fields.
+
+## Defaults
+
+| Budget | Default |
+| --- | --- |
+| `maxToolBatches` | `6` |
+| `maxTokens` | `80000` |
+| `maxWallMs` | `300000` |
+| `maxDepth` | `3` |
+
+Managed subagents in `framework.ts` also enforce a default max depth of `3`.
+
+## Stop Reasons
+
+Subagent stop reasons:
+
+| Reason | Meaning |
+| --- | --- |
+| `completed` | Clean final answer. |
+| `budget_tokens` | Token budget exceeded. |
+| `budget_tool_batches` | Tool batch budget exceeded. |
+| `budget_wall` | Wall-clock budget exceeded. |
+| `depth_exceeded` | Recursion depth exceeded. |
+| `aborted` | Parent or caller aborted execution. |
+| `error` | Runtime or tool failure. |
+
+MAL run stop reasons:
+
+| Reason | Meaning |
+| --- | --- |
+| `completed` | Plan ran through all steps. |
+| `stop_op` | Plan ended through `op: stop`. |
+| `error` | A step failed or validation threw. |
+| `aborted` | Execution was aborted. |
+
+## Example
+
+```yaml
+budget:
+  maxToolBatches: 4
+  maxTokens: 50000
+  maxWallMs: 180000
+  maxDepth: 3
+steps:
+  - op: delegate
+    saveAs: result
+    agentWallet: "0x1111111111111111111111111111111111111111"
+    prompt: "Run the bounded analysis."
+```
+
+## Related
+
+- [Harness architecture](/manowar/harness/architecture)
+- [Harness A2A](/manowar/harness/a2a)

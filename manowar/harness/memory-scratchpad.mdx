@@ -1,0 +1,56 @@
+---
+title: "Memory, Scratchpad, And Conclave"
+description: "Private run state, shared swarm state, and durable memory in the harness."
+---
+
+The harness has three state surfaces. They are intentionally separate.
+
+| Surface | Scope | TTL | Use |
+| --- | --- | --- | --- |
+| Agent memory | Agent/user/thread/workflow scope | Durable or collection-defined | Recall across turns and runs. |
+| Scratchpad | `agentWallet + composeRunId + key` | 1 hour | Private per-agent/run state. |
+| Conclave | `rootComposeRunId + key` | 24 hours | Shared swarm artifacts and coordination state. |
+
+## Scratchpad
+
+Scratchpad keys live under:
+
+```text
+mal:scratch:{agentWallet}:{composeRunId}:{key}
+```
+
+Use scratchpad for local intermediate state that other agents should not read by default.
+
+```yaml
+steps:
+  - op: scratch
+    action: write
+    key: plan.md
+    value: "Draft the outline before synthesis."
+
+  - op: scratch
+    action: read
+    key: plan.md
+    saveAs: plan
+```
+
+## Conclave
+
+Conclave keys live under:
+
+```text
+mal:conclave:{rootComposeRunId}:k:{key}
+```
+
+Every agent in the same swarm shares the same `rootComposeRunId`, so the coordinator and descendants can read the same bus. Each write records `writtenBy`, `ts`, and a monotonic `version`.
+
+Use conclave for handoff artifacts such as `plan.md`, `phase`, `draft.html`, or cross-agent status.
+
+## Memory
+
+Use durable memory for user facts, workflow learnings, session summaries, patterns, and archives. Do not use scratchpad or conclave for long-term personalization.
+
+## Related
+
+- [Memory](/manowar/memory/introduction)
+- [Harness planning](/manowar/harness/planning)

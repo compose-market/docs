@@ -1,0 +1,70 @@
+---
+title: "Harness"
+description: "Typed multi-step execution with the Manowar Agent Loop (MAL)."
+---
+
+The Manowar harness runs Manowar Agent Loop (MAL) plans. A MAL plan is YAML or JSON with a closed set of operations. The interpreter validates the plan, executes each step, stores saved values, resolves references, and returns a structured run result.
+
+Use the harness when a task needs multiple steps, parallel branches, registered subagents, direct tool calls, checkpoints, proof bundles, scratch state, or shared swarm state.
+
+## Why MAL Exists
+
+Prompt-only agent loops spend tokens re-explaining how to act. MAL makes execution a typed runtime concern:
+
+| Concern | Prompt-only loop | MAL harness |
+| --- | --- | --- |
+| Step dispatch | Model decides from prose. | Interpreter dispatches a typed `op`. |
+| References | Model copies text around. | Runtime resolves `{{stepId.path}}`. |
+| Budgets | Usually prompt-instructed. | Runtime enforces token, tool batch, wall time, and depth budgets. |
+| Parallelism | Model describes it. | Runtime runs `fanout` branches with concurrency controls. |
+| Resume | App-specific. | Redis checkpoint store can resume by `composeRunId`. |
+
+## Minimal Plan
+
+```yaml
+description: "Summarize a source and stop"
+steps:
+  - op: tool
+    saveAs: source
+    toolName: search_call
+    args:
+      query: "Compose.Market Manowar memory"
+
+  - op: synthesize
+    saveAs: summary
+    from: ["source"]
+    model: "gpt-5.5"
+    instruction: "Summarize the result in five bullets."
+
+  - op: stop
+    output: "{{summary}}"
+```
+
+## Ops
+
+| Op | Runtime behavior |
+| --- | --- |
+| `task` | Spawn a focused registered subagent. |
+| `delegate` | Call a registered deployed agent. |
+| `fanout` | Run branches in parallel. |
+| `tool` | Call a tool directly. |
+| `if` | Branch on a safe condition. |
+| `loop` | Repeat a bounded block. |
+| `scratch` | Read/write private run state. |
+| `synthesize` | Combine saved artifacts with an explicit model. |
+| `stop` | Return a final output. |
+| `ask_user` | Ask the host for input. |
+
+## Comparison
+
+| System | Multi-step control | Manowar harness |
+| --- | --- | --- |
+| LangGraph | State graph with nodes and durable execution. | Typed plan interpreted inside the Compose runtime. |
+| Google ADK | Workflow agents and runner services. | Registered Compose agents plus MAL ops. |
+| AutoGen | Event-driven agent teams and messages. | Runtime-level plan dispatch, budgets, and proof/checkpoint hooks. |
+
+## Related
+
+- [Harness architecture](/manowar/harness/architecture)
+- [Planning](/manowar/harness/planning)
+- [Checkpoints](/manowar/harness/checkpoints)

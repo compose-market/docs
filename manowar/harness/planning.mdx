@@ -1,0 +1,83 @@
+---
+title: "Planning"
+description: "How to shape MAL plans with saved values, references, conditions, loops, and synthesis."
+---
+
+MAL plans are plain YAML or JSON. The interpreter accepts parsed objects too, but YAML is easier to read in docs.
+
+## References
+
+Saved values use `saveAs`. Later steps reference them with `{{name}}` or `{{name.path}}`.
+
+```yaml
+steps:
+  - op: tool
+    saveAs: model
+    toolName: models_call
+    args:
+      query: "long context code model"
+      prompt: "Return a model recommendation."
+
+  - op: stop
+    output: "{{model.output}}"
+```
+
+Reference traversal is intentionally restricted to simple names, dots, and array indexes. It does not run JavaScript.
+
+## Branching
+
+```yaml
+steps:
+  - op: tool
+    saveAs: search
+    toolName: search_call
+    args:
+      query: "latest protocol documentation"
+
+  - op: if
+    cond: "search.success == true"
+    then:
+      - op: stop
+        output: "{{search.output}}"
+    else:
+      - op: stop
+        output: "Search failed."
+```
+
+## Fanout
+
+```yaml
+steps:
+  - op: fanout
+    saveAs: branches
+    gather: all
+    concurrency: 3
+    branches:
+      - id: docs
+        steps:
+          - op: delegate
+            saveAs: notes
+            agentWallet: "0x1111111111111111111111111111111111111111"
+            prompt: "Extract documentation notes."
+      - id: risks
+        steps:
+          - op: delegate
+            saveAs: notes
+            agentWallet: "0x2222222222222222222222222222222222222222"
+            prompt: "Extract risk notes."
+
+  - op: synthesize
+    saveAs: final
+    from: ["branches"]
+    model: "gpt-5.5"
+    instruction: "Merge the notes. Keep disagreements explicit."
+```
+
+## Synthesis Requires A Model
+
+`synthesize` has no fallback model. The plan must specify `model`. This keeps coordinator selection explicit and avoids accidental provider routing.
+
+## Related
+
+- [Strongly typed execution](/manowar/strongly-typed)
+- [Coordinators](/manowar/harness/coordinators)
