@@ -1,0 +1,83 @@
+---
+title: "Sessions"
+description: "Session budgets, live budget tracking, and session lifecycle events."
+---
+
+A session is a time-bounded payment context linked to a Compose Key. It tracks how much you've spent and how much remains. The SDK monitors the budget in real time via response headers.
+
+## Check session status
+
+```typescript
+const session = await sdk.keys.session();
+
+if (session.hasSession) {
+  console.log(`Budget: ${session.budgetRemaining} wei remaining`);
+  console.log(`Expires in: ${session.status.expiresInSeconds}s`);
+}
+```
+
+## Set a budget limit
+
+When creating a Compose Key, you can set a maximum spend:
+
+```typescript
+const { token } = await sdk.keys.create({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+  maxAmountWei: "100000000", // 100 USDC (6 decimals)
+});
+```
+
+## Live budget tracking
+
+Every billable response includes budget headers. The SDK parses them and emits a `budget` event:
+
+```typescript
+sdk.events.on("budget", (event) => {
+  console.log(`Used: ${event.snapshot.usedWei} wei`);
+  console.log(`Remaining: ${event.snapshot.remainingWei} wei`);
+  console.log(`Limit: ${event.snapshot.limitWei} wei`);
+});
+```
+
+## Session events
+
+Subscribe to real-time session lifecycle events via SSE:
+
+```typescript
+const sub = sdk.session.events.subscribe({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+for await (const event of sub) {
+  if (event.type === "session-active") {
+    console.log("Session healthy, budget remaining:", event.budgetRemaining);
+  }
+  if (event.type === "session-expired") {
+    console.log("Session expired:", event.reason);
+    // Re-create a Compose Key here
+  }
+  if (event.type === "session-lease") {
+    console.log("Lease expiring, retrying in", event.retryAfterMs, "ms");
+  }
+}
+```
+
+## Session invalid reasons
+
+| Reason | Description |
+|--------|-------------|
+| `budget-depleted` | You've spent your entire budget |
+| `expired` | The session time limit has passed |
+| `revoked` | The Compose Key was revoked |
+| `chain-mismatch` | The request's chain ID doesn't match the session's |
+
+When a session becomes invalid, the SDK emits a `sessionInvalid` event:
+
+```typescript
+sdk.events.on("sessionInvalid", (event) => {
+  console.log("Session invalid:", event.reason);
+  // Create a new Compose Key
+});
+```

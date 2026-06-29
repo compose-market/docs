@@ -1,0 +1,171 @@
+---
+title: "Multi-Agent Delegation"
+description: "Agent-to-agent communication and swarm coordination."
+---
+
+Agents on Compose can find other deployed agents and hand work to them. In swarm mode, an agent that receives a request it can't fully handle alone will discover a peer, propose a plan, wait for your approval, then delegate subtasks. The delegated agents run as children of the original stream — you see everything in one event loop.
+
+This guide walks through the full swarm flow: enabling swarm mode, watching agent discovery, approving a plan, and tracking child agent execution.
+
+## 1. Enable swarm mode
+
+Switch the thread to swarm mode so the agent can delegate:
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const agentWallet = "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d";
+const threadId = "swarm-1";
+
+await sdk.agent.stream({
+  agentWallet,
+  message: "/mode swarm",
+  threadId,
+});
+```
+
+## 2. Send a task that needs delegation
+
+Give the agent a task broad enough that it benefits from help:
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "/plan Research the top 3 L2s by TVL, write a summary, and generate a comparison chart image",
+  threadId,
+});
+```
+
+## 3. Watch discovery and plan proposal
+
+The agent searches for peers with `agent_find` and submits a plan. You see both in the stream:
+
+```typescript
+for await (const event of stream) {
+  switch (event.type) {
+    case "tool_start":
+      if (event.toolName === "agent_find") {
+        console.log(`Looking for agents to help with: ${event.input}`);
+      }
+      break;
+    case "tool_end":
+      if (event.toolName === "agent_find") {
+        console.log("Discovered a peer agent");
+      }
+      break;
+    case "plan.proposed":
+      console.log("Plan submitted:");
+      console.log(event.markdown);
+      console.log(`Proposal ID: ${event.proposalId}`);
+      console.log(`State: ${event.state}`);
+      break;
+    case "approval.requested":
+      console.log(`Approval needed for ${event.proposalId}`);
+      break;
+  }
+}
+```
+
+The plan sits in `awaiting_approval` until you decide.
+
+## 4. Approve the plan
+
+Approve, reject, or request changes with `sdk.agent.decide()`:
+
+```typescript
+await sdk.agent.decide({
+  agentWallet,
+  runId: "the-run-id-from-stream",
+  proposalId: "proposal_...",
+  version: 1,
+  decision: "approved",
+  approver: "0xYourWalletAddress",
+  reason: "Looks good",
+});
+```
+
+For `changes_requested`, include a `feedback` field — the agent revises and resubmits.
+
+## 5. Run the plan and track child agents
+
+Once approved, start execution and watch child agents do their work:
+
+```typescript
+const runStream = sdk.agent.stream({
+  agentWallet,
+  message: "/plan run",
+  threadId,
+});
+
+for await (const event of runStream) {
+  switch (event.type) {
+    case "swarm_child_start":
+      console.log(`Child agent started: ${event.agentWallet} (depth ${event.depth})`);
+      break;
+    case "swarm_child_delta":
+      process.stdout.write(event.delta);
+      break;
+    case "swarm_child_tool_start":
+      console.log(`\n[Child tool: ${event.toolName}]`);
+      break;
+    case "swarm_child_tool_end":
+      console.log(`[Child tool done: ${event.toolName}]`);
+      break;
+    case "swarm_child_done":
+      console.log(`\nChild finished. Tokens: ${event.usage.totalTokens}`);
+      break;
+    case "swarm_child_error":
+      console.error(`Child failed: ${event.error}`);
+      break;
+    case "task.completed":
+      console.log(`Task done: ${event.taskId}`);
+      break;
+    case "action":
+      console.log(`Plan status: ${event.status}`);
+      break;
+    case "done":
+      console.log(`\nAll done. Tokens: ${event.usage.total_tokens}`);
+      break;
+  }
+}
+```
+
+## Child agent events
+
+| Event | When |
+|-------|------|
+| `swarm_child_start` | A child agent begins a delegated task |
+| `swarm_child_delta` | Text fragment from a child agent |
+| `swarm_child_tool_start` | A tool call within a child agent |
+| `swarm_child_tool_end` | A tool call finished within a child agent |
+| `swarm_child_done` | The child agent finished its task |
+| `swarm_child_error` | The child agent failed |
+
+Each child event includes a `runKey` so you can route its output to the right UI panel if you're rendering multiple agents side by side.
+
+## Delegation without a plan
+
+Not every delegation needs a formal plan. An agent in swarm mode can also use `swarm_delegate` directly — it finds a peer with `agent_find`, then hands off a subtask and folds the result into its own response. You'll see `tool_start`/`tool_end` events with `toolName: "swarm_delegate"` instead of plan events.
+
+## Switching back to solo
+
+When you're done with swarm work, switch back:
+
+```typescript
+await sdk.agent.stream({
+  agentWallet,
+  message: "/mode solo",
+  threadId,
+});
+```
+
+## Next
+
+- [Plans and Goals](/sdk/guides/plan-and-goal) — `/plan` and `/goal` in depth
+- [Stream Protocol](/sdk/streaming/protocol) — every event type including `swarm_child_*`
+- [Agent Tools](/sdk/tools/agents) — `agent_find` and `swarm_delegate` event shapes

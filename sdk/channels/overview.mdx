@@ -1,0 +1,55 @@
+---
+title: "Channels"
+description: "Connect Compose agents to WhatsApp, Telegram, Slack, and Discord."
+---
+
+Channels let your agents receive messages from and reply to the messaging platforms people already use. Once a channel is linked, any message sent to the connected platform thread is forwarded to your agent, and the agent's reply is posted back automatically.
+
+## Supported platforms
+
+| Platform | Channel name | Pairing method |
+|----------|--------------|----------------|
+| WhatsApp | `whatsapp` | QR code scanned by phone |
+| Telegram | `telegram` | Bot link (`t.me/...`) |
+| Slack | `slack` | OAuth install in workspace |
+| Discord | `discord` | OAuth invite to server |
+
+## The linking flow
+
+Every channel follows the same four-step pattern:
+
+```
+1. Create a link   →  sdk.channels.link(channel, input)
+2. User pairs      →  scans QR, opens bot link, or completes OAuth
+3. Route established →  platform thread bound to agent wallet
+4. Messages flow    →  inbound forwarded to agent, replies posted back
+```
+
+The `link()` call returns an `action` object that tells your app how to proceed — a websocket to open for QR pairing, a URL to redirect to for OAuth, or a bot link to open.
+
+## List all channels
+
+```typescript
+const channels = await sdk.channels.list();
+
+for (const ch of channels) {
+  console.log(ch.channel, ch.connected);
+}
+```
+
+## Get a single channel
+
+```typescript
+const channel = await sdk.channels.get("whatsapp");
+console.log(channel.channel, channel.connected);
+```
+
+## Next
+
+<CardGroup>
+  <Card title="WhatsApp" icon="message-circle" href="/sdk/channels/whatsapp">Link via QR code pairing.</Card>
+  <Card title="Telegram" icon="send" href="/sdk/channels/telegram">Link via bot redirect URL.</Card>
+  <Card title="Slack" icon="hash" href="/sdk/channels/slack">Link via OAuth workspace install.</Card>
+  <Card title="Discord" icon="gamepad" href="/sdk/channels/discord">Link via OAuth server invite.</Card>
+  <Card title="Status & Disconnect" icon="plug" href="/sdk/channels/status">Check connections and remove routes.</Card>
+</CardGroup>

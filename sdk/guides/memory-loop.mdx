@@ -1,0 +1,124 @@
+---
+title: "Memory Loop"
+description: "Full pre-turn recall, post-turn persistence, and fact extraction cycle."
+---
+
+This guide runs the complete memory loop end to end: recall context before a turn, stream the agent response, persist the turn, and optionally extract a durable fact. Run this cycle on every turn and your agent builds continuous memory across sessions.
+
+## 1. Recall context before the turn
+
+Ask the memory system for context relevant to the user's next message. You get back a prompt string ready to inject.
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const agentWallet = "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d";
+const threadId = "project-alpha";
+const userAddress = "0xYourWalletAddress";
+
+const context = await sdk.memory.context("What's left on the deployment checklist?", {
+  agentWallet,
+  userAddress,
+  threadId,
+});
+```
+
+The `context` string contains ranked, deduplicated items from past turns and stored facts — packed to a character budget so it's ready for the system prompt.
+
+## 2. Stream the agent response
+
+Run the turn as normal. The context you recalled is already available to the agent through its runtime memory; for custom integrations you can also inject it into your own prompt assembly.
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "What's left on the deployment checklist?",
+  threadId,
+});
+
+let assistantText = "";
+for await (const event of stream) {
+  if (event.type === "text-delta") {
+    process.stdout.write(event.delta);
+    assistantText += event.delta;
+  }
+  if (event.type === "done") {
+    console.log(`\n\nTokens: ${event.usage.total_tokens}`);
+  }
+}
+```
+
+## 3. Persist the turn
+
+Record the exchange so the next recall can draw on it. This is fire-and-forget — it never blocks the response you already streamed.
+
+```typescript
+await sdk.memory.recordTurn({
+  agentWallet,
+  userAddress,
+  threadId,
+  userMessage: "What's left on the deployment checklist?",
+  assistantMessage: assistantText,
+  model: "gpt-4o",
+  totalTokens: 480,
+});
+```
+
+## 4. Optionally extract a durable fact
+
+If the turn revealed something worth remembering permanently — a preference, an identity, a long-lived state — store it explicitly. Pinned facts survive across threads and sessions.
+
+```typescript
+await sdk.memory.remember({
+  agentWallet,
+  userAddress,
+  threadId,
+  content: "The user deploys to Avalanche Fuji for testing.",
+  type: "fact",
+  retention: "pinned",
+  confidence: 0.9,
+});
+```
+
+## Why this creates continuous memory
+
+Each step feeds the next:
+
+| Step | What it stores | Next recall sees it? |
+|------|---------------|---------------------|
+| Recall | Reads working context, transcripts, and facts | — |
+| Persist | Stores transcript, working memory, and a session vector | Yes, thread-local |
+| Remember | Stores a pinned fact in the graph layer | Yes, cross-thread |
+
+After a few turns, the agent recalls prior decisions without being told again. Across a new thread, durable facts still surface — so the agent remembers who the user is and what they care about even months later.
+
+## Running the loop in one call
+
+If you want the SDK to orchestrate all three steps, use `sdk.memory.loop()`:
+
+```typescript
+const result = await sdk.memory.loop({
+  agentWallet,
+  userAddress,
+  threadId,
+  query: "What's left on the deployment checklist?",
+  userMessage: "What's left on the deployment checklist?",
+  assistantMessage: assistantText,
+  model: "gpt-4o",
+  totalTokens: 480,
+});
+
+console.log(result.context);
+console.log(result.stored);
+```
+
+## Next
+
+- [Memory](/sdk/memory/overview) — the three-step loop explained
+- [Recall](/sdk/memory/recall) — context assembly in detail
+- [Facts](/sdk/memory/facts) — durable facts across sessions

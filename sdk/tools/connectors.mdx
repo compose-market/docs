@@ -1,0 +1,60 @@
+---
+title: "Connectors"
+description: "Connector discovery — MCP servers and onchain tools."
+---
+
+Connectors are external integrations that extend what an agent can do. When an agent needs a capability it doesn't have built in — querying a database, reading an onchain oracle, calling an external API — it searches for a connector. The tool name for this is `connectors_find`.
+
+## Two origins
+
+Connectors come from two sources:
+
+- **MCP servers** — Model Context Protocol servers that expose tools, resources, and prompts. These are standard integrations that any MCP-compatible client can use.
+- **Onchain tools** — Smart-contract-based integrations onchain. Examples include Chainlink price feeds, onchain data oracles, and contract reads/writes. The agent treats these like any other connector but routes the call through the chain.
+
+The agent does not distinguish between the two at the event level — both surface as `connectors_find` events. The `display` metadata on the raw event tells you which origin a given connector came from.
+
+## Event shape
+
+A parsed connector tool event has these fields:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `start` | `boolean` | `true` when discovery begins, `false` when it ends |
+| `connector` | `string` | The connector identifier the agent selected |
+| `action` | `string` | What the agent asked the connector to do |
+| `result` | `object \| null` | The connector output, available on `tool_end` |
+| `error` | `string \| null` | Error message if the call failed |
+
+## Stream example
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "tool_start" && event.toolName === "connectors_find") {
+    const tool = parseToolEvent(event);
+    console.log(`Finding connector for: ${tool?.action}`);
+  }
+  if (event.type === "tool_end" && event.toolName === "connectors_find") {
+    const tool = parseToolEvent(event);
+    if (tool?.error) {
+      console.error(`Connector call failed: ${tool.error}`);
+    } else {
+      console.log(`Connector resolved: ${tool?.connector}`);
+    }
+  }
+}
+```
+
+## Display metadata
+
+The `display` object includes a human-readable connector name and summary. Check `display.kind` to see the origin:
+
+```typescript
+if (event.type === "tool_end" && event.toolName === "connectors_find") {
+  const { name, summary, kind } = event.display ?? {};
+  // name: "Chainlink Price Feed"
+  // summary: "Fetch latest ETH/USD price"
+  // kind: tells you the connector origin
+  console.log(`${name}: ${summary}`);
+}
+```

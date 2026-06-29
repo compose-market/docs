@@ -1,0 +1,81 @@
+---
+title: "Compose Keys"
+description: "Bearer token authentication — no wallet signing needed for each call."
+---
+
+A Compose Key is a JWT bearer token that handles payment server-side. You create it once with your wallet address and chain ID, then the SDK attaches it to every request as `Authorization: Bearer compose-<jwt>`.
+
+## Create a key
+
+```typescript
+const { token, keyId } = await sdk.keys.create({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+// The SDK stores the token automatically.
+// In a browser: persisted in localStorage.
+// In Node.js: kept in memory for the process lifetime.
+```
+
+## Pass an existing key
+
+If you already have a token (e.g., from a previous session or another service):
+
+```typescript
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+  composeKey: "compose-eyJhbGci...",
+});
+```
+
+## List keys
+
+```typescript
+const { keys } = await sdk.keys.list();
+// keys: [{ keyId, createdAt, lastUsedAt, revokedAt }]
+```
+
+## Revoke a key
+
+```typescript
+await sdk.keys.revoke({ keyId });
+```
+
+## Check active session
+
+```typescript
+const session = await sdk.keys.session();
+// session: { hasSession, token, budgetLimit, budgetUsed, budgetRemaining, expiresAt }
+```
+
+## Token storage
+
+The SDK auto-detects `localStorage` in browser environments and persists the token under `compose:token:<userAddress>:<chainId>`. In Node.js, tokens are kept in memory.
+
+To use a custom storage adapter (e.g., a database or secure enclave):
+
+```typescript
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+  storage: {
+    get: async (key) => db.get(key),
+    set: async (key, value) => db.set(key, value),
+    delete: async (key) => db.delete(key),
+  },
+});
+```
+
+## When to use Compose Keys vs raw x402
+
+| Compose Key | Raw x402 |
+|-------------|----------|
+| Human-facing apps | Agent-to-agent automation |
+| Web integrations with localStorage | Server-side scripts |
+| No wallet signing per call | No pre-registered token |
+| Budget limits per session | Pay exactly what you use |
+| Token can expire or be revoked | Works as long as the channel has funds |
+
+Use Compose Keys when a human is involved. Use raw x402 when machines talk to machines.

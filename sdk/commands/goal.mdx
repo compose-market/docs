@@ -1,0 +1,105 @@
+---
+title: "Goal"
+description: "Pin a durable goal with /goal that the agent works toward across turns."
+---
+
+A goal is an objective that persists across multiple messages in the same thread. Unlike a one-off prompt, a goal stays active until the agent completes it or you clear it. The agent keeps the goal in mind on every follow-up message you send.
+
+## Pin a goal
+
+```typescript
+await sdk.agent.stream({
+  agentWallet,
+  message: "/goal Increase test coverage to 90%",
+  threadId: "quality",
+});
+```
+
+The agent acknowledges the goal and starts working toward it. The goal state is stored on the thread.
+
+## Send follow-up messages
+
+Once a goal is pinned, continue chatting normally. The agent treats each message as a step toward the goal:
+
+```typescript
+await sdk.agent.stream({
+  agentWallet,
+  message: "Start with the auth module — write tests for the login flow",
+  threadId: "quality",
+});
+
+await sdk.agent.stream({
+  agentWallet,
+  message: "Now cover the user service and the API routes",
+  threadId: "quality",
+});
+```
+
+Every turn, the agent checks whether the goal is closer to done and updates its status.
+
+## Check status
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "/goal status",
+  threadId: "quality",
+});
+
+for await (const event of stream) {
+  if (event.type === "action" && event.action === "goal") {
+    console.log(event.result.goal);
+  }
+}
+```
+
+## Pause, resume, complete, and clear
+
+| Subcommand | What it does |
+|------------|--------------|
+| `/goal pause` | Temporarily stop working on the goal. The agent holds its state. |
+| `/goal resume` | Continue from where the goal was paused. |
+| `/goal complete` | Mark the goal as finished. The agent stops pursuing it. |
+| `/goal clear` | Remove the goal entirely. The agent no longer references it. |
+
+```typescript
+// Pause while you handle something else
+sdk.agent.stream({ agentWallet, message: "/goal pause", threadId: "quality" });
+
+// Pick up later
+sdk.agent.stream({ agentWallet, message: "/goal resume", threadId: "quality" });
+
+// Mark done when satisfied
+sdk.agent.stream({ agentWallet, message: "/goal complete", threadId: "quality" });
+
+// Or remove it completely
+sdk.agent.stream({ agentWallet, message: "/goal clear", threadId: "quality" });
+```
+
+## GoalState
+
+```typescript
+type GoalState = {
+  id: string;          // unique goal identifier
+  threadId: string;    // thread this goal belongs to
+  objective: string;   // the pinned objective text
+  status: GoalStatus;  // current lifecycle state
+  progress?: string;   // optional summary of what's been done so far
+  createdAt: number;   // creation timestamp (ms)
+  updatedAt: number;   // last update timestamp (ms)
+};
+
+type GoalStatus =
+  | "active"    // the agent is pursuing this goal
+  | "paused"    // temporarily on hold
+  | "completed" // the goal was achieved
+  | "cleared";  // the goal was removed
+```
+
+Only one goal is active per thread at a time. Pinning a new goal while one is already active replaces the previous one.
+
+## Related
+
+- [Command Reference](/sdk/commands/reference) — every command at a glance
+- [Plan](/sdk/commands/plan) — break a goal into tracked tasks with `/plan`
+- [Stream Protocol](/sdk/streaming/protocol) — `action` event shape for goals

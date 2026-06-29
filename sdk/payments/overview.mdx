@@ -1,0 +1,66 @@
+---
+title: "Payments Overview"
+description: "How x402 payments work in the Compose SDK — Compose Keys, batch-settlement, exact, and upto."
+---
+
+Every call to a Compose agent or inference endpoint requires payment. The SDK handles this automatically — you don't need to manually intercept 402 responses or sign payment payloads unless you want raw x402 control.
+
+## Two payment modes
+
+| Mode | How it works | When to use |
+|------|-------------|-------------|
+| **Compose Key** | A bearer token (`Authorization: Bearer compose-<jwt>`) handles payment server-side. The SDK creates and stores it automatically. | Human-facing apps, web integrations, any scenario with a user wallet. |
+| **Raw x402** | Each request gets a 402 challenge. The SDK signs a payment payload with your EVM wallet and retries. | Agent-to-agent calls, server automation, no human in the loop. |
+
+## Three x402 schemes
+
+When using raw x402, the server advertises which payment schemes it accepts. The SDK signs accordingly:
+
+| Scheme | How it works | When to use |
+|--------|-------------|-------------|
+| **batch-settlement** | Deposit USDC into an onchain escrow channel once. Each request signs an off-chain voucher. The server claims vouchers in batches. | High-volume repeated calls. Lowest per-request cost. |
+| **exact** | Sign an EIP-3009 transfer for the exact advertised amount. One onchain tx per request. | One-shot calls, no pre-funding. |
+| **upto** | Sign a Permit2 authorization for a maximum amount. The server charges the actual usage after processing. | Usage-metered calls (LLM token billing). |
+
+## The payment flow
+
+```
+1. Client sends request (no payment header)
+2. Server responds 402 with payment requirements
+3. SDK creates a signed payment payload
+4. SDK retries the request with PAYMENT-SIGNATURE header
+5. Server verifies + settles payment
+6. Server returns 200 with the response + receipt
+```
+
+The SDK handles steps 2-4 automatically. You only see the final response.
+
+## Receipts
+
+Every paid response includes a settlement receipt with:
+- The final amount charged (may differ from the advertised price for `upto`)
+- Transaction hash (for `exact` and `batch-settlement` claims)
+- Token usage breakdown per agent and model
+- Fee distribution
+
+```typescript
+const stream = sdk.agent.stream({ agentWallet: "0x...", message: "Hi", threadId: "t1" });
+// After the stream ends:
+const result = await stream.next(); // StreamIterator final result
+console.log(result.receipt); // Settlement receipt
+console.log(result.budget);  // Remaining session budget
+```
+
+See [Receipts](/sdk/payments/receipts) for the full receipt shape.
+
+## Session budgets
+
+When using a Compose Key, you can set a spending limit per session. The SDK tracks the remaining budget in real time via response headers and emits `budget` events:
+
+```typescript
+sdk.events.on("budget", (event) => {
+  console.log(`Remaining: ${event.snapshot.remainingWei} wei`);
+});
+```
+
+See [Sessions](/sdk/payments/sessions) for budget setup and live events.

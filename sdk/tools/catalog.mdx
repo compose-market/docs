@@ -1,0 +1,53 @@
+---
+title: "Catalog"
+description: "Catalog queries when the tool family is unclear."
+---
+
+Sometimes an agent receives a request and isn't sure which tool family to use — should it call a model, find a connector, or delegate to another agent? When the right family is unclear, the agent queries the catalog first. The tool name for this is `query_catalog`.
+
+## How it works
+
+The catalog is a registry of everything available to the agent: models, connectors, and other agents. By querying it, the agent can decide which family fits the task before committing to a specific tool call. The `domain` field on the event tells you which family the catalog returned.
+
+| Domain | Meaning |
+|--------|---------|
+| `models` | The catalog pointed the agent toward model invocation |
+| `connectors` | The catalog pointed the agent toward connector discovery |
+| `agents` | The catalog pointed the agent toward agent delegation |
+
+After the catalog query resolves, you will typically see a follow-up tool call from the matching family — for example, a `models_call` after a catalog query with `domain: "models"`.
+
+## Event shape
+
+A parsed catalog tool event has these fields:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `start` | `boolean` | `true` when the query begins, `false` when it ends |
+| `domain` | `string` | The tool family the catalog selected |
+| `action` | `string` | What the agent was trying to accomplish |
+| `result` | `object \| null` | The catalog response, available on `tool_end` |
+| `error` | `string \| null` | Error message if the query failed |
+
+## Stream example
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "tool_start" && event.toolName === "query_catalog") {
+    const tool = parseToolEvent(event);
+    console.log(`Querying catalog for: ${tool?.action}`);
+  }
+  if (event.type === "tool_end" && event.toolName === "query_catalog") {
+    const tool = parseToolEvent(event);
+    if (tool?.error) {
+      console.error(`Catalog query failed: ${tool.error}`);
+    } else {
+      console.log(`Catalog recommends: ${tool?.domain}`);
+    }
+  }
+}
+```
+
+## Display metadata
+
+The `display` object includes a summary of what the catalog found. Use `display.summary` to show the catalog's recommendation in your UI before the follow-up tool call arrives.

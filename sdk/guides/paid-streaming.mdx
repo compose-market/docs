@@ -1,0 +1,124 @@
+---
+title: "Paid Streaming with x402"
+description: "Full batch-settlement payment flow with SSE streaming."
+---
+
+This guide shows the raw x402 payment path — no Compose Key, no bearer token. You sign each request with an EVM wallet using batch-settlement, the lowest-cost scheme for repeated calls. You deposit USDC into an onchain escrow channel once, then each request signs an off-chain voucher the server verifies instantly.
+
+## 1. Set up the x402 signer
+
+The signer needs a `publicClient` with `readContract` so it can recover channel state from onchain. Without an RPC URL, you'll hit stale-voucher errors after a restart.
+
+```typescript
+import ComposeSDK, { createPrivateKeyX402EvmWallet } from "@compose-market/sdk";
+import { createPublicClient, http } from "viem";
+
+const rpcUrl = "https://avax-fuji.g.alchemy.com/v2/YourRpcKey";
+
+const { x402Signer, address } = createPrivateKeyX402EvmWallet({
+  privateKey: "0xYourPrivateKey",
+  rpcUrl,
+  schemes: ["batch-settlement"],
+});
+
+const publicClient = createPublicClient({ transport: http(rpcUrl) });
+```
+
+## 2. Initialize the SDK
+
+Pass your wallet address and chain. The SDK uses the x402 signer whenever no Compose Key is present.
+
+```typescript
+const sdk = new ComposeSDK({
+  userAddress: address,
+  chainId: 43113,
+});
+```
+
+## 3. Stream an agent
+
+Send a message like normal. Behind the scenes, the first request gets a `402 Payment Required` response with payment requirements. The SDK signs a batch-settlement voucher, retries the request with the payment header, and the server verifies it instantly — no onchain transaction per call.
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "Summarize the latest block.",
+  threadId: "x402-chat",
+});
+```
+
+## 4. Parse events
+
+```typescript
+for await (const event of stream) {
+  switch (event.type) {
+    case "text-delta":
+      process.stdout.write(event.delta);
+      break;
+    case "tool_start":
+      console.log(`\n[Tool: ${event.toolName}]`);
+      break;
+    case "tool_end":
+      console.log(`[Done: ${event.toolName}]`);
+      break;
+    case "done":
+      console.log(`\n\nTokens: ${event.usage.total_tokens}`);
+      break;
+    case "error":
+      console.error(`Error: ${event.error}`);
+      break;
+  }
+}
+```
+
+## 5. Read the receipt
+
+After the stream ends, read the settlement receipt from the final result. It includes the amount charged, the fee breakdown, and token usage per model.
+
+```typescript
+const final = await stream.next();
+const receipt = final.value.receipt;
+
+console.log(receipt.bills[0].total);
+console.log(receipt.bills[0].txId);
+```
+
+## How the 402 challenge works
+
+The SDK handles this automatically, but it helps to know the flow:
+
+```
+1. SDK sends the request with no payment header
+2. Server responds 402 with payment requirements (scheme, amount, channel)
+3. SDK signs a cumulative voucher for the batch-settlement channel
+4. SDK retries the request with the signed payment header
+5. Server verifies the voucher signature instantly
+6. Server returns 200 with the SSE stream + receipt
+```
+
+If the channel needs funding, the SDK deposits USDC onchain first (5× the per-request max by default), then continues.
+
+## Refund unused balance
+
+When you're done, refund the remaining channel balance back to your wallet:
+
+```typescript
+import { BatchSettlementEvmScheme, toClientEvmSigner } from "@x402/evm";
+import { privateKeyToAccount } from "viem/accounts";
+
+const account = privateKeyToAccount("0xYourPrivateKey");
+const signer = toClientEvmSigner(account, publicClient);
+const batchScheme = new BatchSettlementEvmScheme(signer);
+
+await batchScheme.refund("https://api.compose.market/agent/0xa7abfd271130c3ee5c8f8862a123f3697e75af0d/stream");
+```
+
+## When to use this over a Compose Key
+
+Use raw x402 with batch-settlement for agent-to-agent automation, server scripts, and any scenario where no human is in the loop. Use a Compose Key for human-facing apps where a bearer token is simpler. See [Payments Overview](/sdk/payments/overview) for the full comparison.
+
+## Next
+
+- [Batch Settlement](/sdk/payments/batch-settlement) — deposit policy, recovery, and refunds
+- [First Agent Call](/sdk/guides/first-agent-call) — the simpler Compose Key path
+- [Error Handling](/sdk/guides/error-handling) — handling payment failures

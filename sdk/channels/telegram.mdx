@@ -1,0 +1,51 @@
+---
+title: "Telegram"
+description: "Connect a Compose agent to Telegram."
+---
+
+Telegram channels link through a bot URL. When you create a link, the channels service returns a `t.me/...` URL. The user opens it, starts the bot, and a route is established between their Telegram chat and your agent.
+
+## Link flow
+
+```
+1. Create link     →  sdk.channels.link("telegram", input)
+2. Redirect user    →  action.url (t.me bot link)
+3. User starts bot  →  taps "Start" in Telegram
+4. Route established →  messages forwarded to agent
+```
+
+## Create a link
+
+```typescript
+const result = await sdk.channels.link("telegram", {
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+// result.action.type === "redirect"
+// result.action.url — the t.me bot link, e.g. https://t.me/YourBot?start=code
+```
+
+The `action.type` is `"redirect"`. Send the user to `action.url` (or open it in a Telegram deep link). Once they tap **Start**, the bot begins forwarding messages to your agent.
+
+## Check status
+
+```typescript
+const status = await sdk.channels.status("telegram", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+console.log(status.connected);
+console.log(status.routes);
+```
+
+## Disconnect
+
+```typescript
+await sdk.channels.disconnect("telegram", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+```
+
+This removes the Telegram route. The user can still find the bot, but messages will no longer reach the agent until a new link is created. See [Status & Disconnect](/sdk/channels/status) for the full response shape.

@@ -1,0 +1,47 @@
+---
+title: "Slash Commands"
+description: "Control agent behavior with slash commands sent as messages."
+---
+
+Slash commands are short instructions that change how an agent behaves. You send them exactly like a normal message — they go in the `message` field of a stream request. The agent runtime sees the leading `/`, parses the command, and dispatches it instead of treating the text as a prompt.
+
+## How they work
+
+Every slash command is a string you pass to `sdk.agent.stream()`:
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f16d2a123f3697e75af0d",
+  message: "/plan Build a landing page with a hero and pricing section",
+  threadId: "project-1",
+});
+```
+
+The runtime reads the command name and any arguments that follow it. Most commands also accept subcommands (for example `/plan run` or `/goal pause`).
+
+## What you get back
+
+Some commands return **action events** in the stream — structured events like `task.completed` or `action` that report state changes as they happen. Others return a plain inline text response, similar to a normal chat reply. The table below notes which is which.
+
+All eight commands reuse the same `threadId` you already use for conversations, so command state and message history stay connected.
+
+## All eight commands
+
+| Command | Description | Returns |
+|---------|-------------|---------|
+| `/plan` | Create a multi-step plan and run it. Track each task as it completes. | Action events |
+| `/goal` | Pin a durable objective the agent keeps working toward across turns. | Action events |
+| `/mode` | Switch between solo and swarm execution modes. | Action event |
+| `/sandbox` | Force isolated (sandboxed) execution on or off. | Action event |
+| `/proof` | Force auditable proof-of-execution on or off. | Action event |
+| `/thread` | List past conversation threads for this agent. | Inline response |
+| `/artifacts` | List media the agent has generated (images, audio, video). | Inline response |
+| `/receipt` | List x402 payment receipts for this thread. | Inline response |
+
+## Next steps
+
+- [Command Reference](/sdk/commands/reference) — syntax, arguments, and subcommands for every command
+- [Plan](/sdk/commands/plan) — the full plan lifecycle with code examples
+- [Goal](/sdk/commands/goal) — durable goals that span multiple messages
+- [Mode, Sandbox, and Proof](/sdk/commands/mode-sandbox-proof) — execution controls and history listings
+- [Stream Protocol](/sdk/streaming/protocol) — every event type the stream can emit

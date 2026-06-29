@@ -1,0 +1,357 @@
+---
+title: "Stream Protocol"
+description: "Every SSE event type the agent runtime emits, with JSON shapes and field descriptions."
+---
+
+The agent stream is a standard SSE connection (`text/event-stream`). Each frame is a `data:` line containing a JSON object with a `type` field. The stream terminates with `data: [DONE]`.
+
+## Event types
+
+### Text streaming
+
+#### `text-delta`
+
+A fragment of the agent's text response. Concatenate these to build the full response.
+
+```json
+{
+  "choices": [{ "delta": { "content": "Hello" } }]
+}
+```
+
+This uses the OpenAI-compatible `choices` format for compatibility with existing tooling. The `content` field is the text fragment.
+
+### Reasoning
+
+#### `reasoning_delta`
+
+A fragment of the model's chain-of-thought reasoning (when supported by the model).
+
+```json
+{
+  "type": "reasoning_delta",
+  "delta": "Let me think about this..."
+}
+```
+
+### Thinking lifecycle
+
+#### `thinking_start`
+
+```json
+{ "type": "thinking_start", "message": "Thinking..." }
+```
+
+#### `thinking_end`
+
+```json
+{ "type": "thinking_end" }
+```
+
+### Tool execution
+
+#### `tool_start`
+
+The agent is calling a tool (model, connector, search, agent, or catalog).
+
+```json
+{
+  "type": "tool_start",
+  "toolName": "search_call",
+  "input": { "query": "latest bitcoin news" },
+  "content": "<invoke>\nsearch_call\n<query>latest bitcoin news</query>\n</invoke>",
+  "display": {
+    "kind": "search",
+    "name": "general",
+    "summary": "latest bitcoin news"
+  }
+}
+```
+
+#### `tool_end`
+
+The tool finished. Check `failed` to see if it succeeded.
+
+```json
+{
+  "type": "tool_end",
+  "toolName": "search_call",
+  "output": { "success": true, "output": "Bitcoin hit..." },
+  "message": "Search completed",
+  "failed": false,
+  "display": {
+    "kind": "search",
+    "name": "general",
+    "summary": "Search completed"
+  }
+}
+```
+
+### Tool argument streaming
+
+#### `tool_args_delta`
+
+Streams tool call arguments as they're generated (before `tool_start`).
+
+```json
+{
+  "type": "tool_args_delta",
+  "id": "call_abc123",
+  "toolName": "models_call",
+  "argsDelta": "{\"prompt\":\"",
+  "index": 0
+}
+```
+
+### Timing
+
+#### `timing`
+
+Internal timing markers for debugging latency. Not user-facing — safe to ignore.
+
+```json
+{
+  "type": "timing",
+  "source": "runtime",
+  "mark": "msm_end",
+  "elapsedMs": 497
+}
+```
+
+Key marks: `msm_start`, `msm_end`, `model_start`, `first_text_delta`, `done`.
+
+### Plan and goal events
+
+#### `action`
+
+A slash command action was processed (goal observation, plan task update).
+
+```json
+{
+  "type": "action",
+  "action": "goal",
+  "source": "runtime",
+  "status": "completed",
+  "result": { "success": true, "goal": { "id": "goal_...", "status": "active" } }
+}
+```
+
+#### `task.completed` / `task.blocked` / `task.failed` / `task.heartbeat`
+
+Plan task lifecycle events.
+
+```json
+{
+  "type": "task.completed",
+  "action": "plan",
+  "source": "runtime",
+  "status": "completed",
+  "planId": "plan_...",
+  "taskId": "task_...",
+  "result": { "success": true, "plan": {}, "task": {} }
+}
+```
+
+### Plan proposal events
+
+These four event types cover the full proposal lifecycle:
+
+#### `plan.proposed`
+
+A plan was submitted by the agent.
+
+```json
+{
+  "type": "plan.proposed",
+  "proposalId": "proposal_...",
+  "version": 1,
+  "state": "awaiting_approval",
+  "rootComposeRunId": "root-...",
+  "composeRunId": "run-...",
+  "requestedBy": "0x...",
+  "proposal": { "goal": "...", "participants": [], "tasks": [] },
+  "markdown": "# Plan\n\nGoal: ...",
+  "ts": 1782508880000,
+  "updatedAt": 1782508880000,
+  "display": { "kind": "swarm", "id": "proposal_...", "name": "plan proposal" }
+}
+```
+
+#### `approval.requested`
+
+Approval is needed before the plan can execute.
+
+#### `approval.decided`
+
+A decision was made (approved, rejected, or changes requested).
+
+```json
+{
+  "type": "approval.decided",
+  "proposalId": "proposal_...",
+  "version": 1,
+  "state": "approved",
+  "decision": "approved",
+  "approver": "0x...",
+  "reason": "Looks good"
+}
+```
+
+#### `plan.feedback_requested`
+
+The approver requested changes with feedback.
+
+### Child agent events
+
+When an agent delegates to sub-agents (swarm mode):
+
+#### `swarm_child_start`
+
+```json
+{
+  "type": "swarm_child_start",
+  "rootComposeRunId": "root-...",
+  "parentRunId": "run-parent",
+  "subId": "child_1",
+  "depth": 1,
+  "agentWallet": "0xchild...",
+  "runKey": "child_1",
+  "runKeyChain": ["run-parent", "child_1"]
+}
+```
+
+#### `swarm_child_delta`
+
+Text fragment from a child agent.
+
+```json
+{
+  "type": "swarm_child_delta",
+  "runKey": "child_1",
+  "delta": "Analyzing..."
+}
+```
+
+#### `swarm_child_tool_start` / `swarm_child_tool_end`
+
+Tool calls within a child agent.
+
+#### `swarm_child_done`
+
+```json
+{
+  "type": "swarm_child_done",
+  "runKey": "child_1",
+  "usage": { "inputTokens": 100, "outputTokens": 50, "totalTokens": 150 },
+  "toolBatches": 2,
+  "stopReason": "completed",
+  "wallMs": 3400
+}
+```
+
+#### `swarm_child_error`
+
+A child agent failed.
+
+### Conclave events
+
+Shared workspace operations (used in swarm coordination):
+
+```json
+{
+  "type": "conclave",
+  "action": "write",
+  "rootComposeRunId": "root-...",
+  "key": "plan.md",
+  "success": true,
+  "version": 3,
+  "writtenBy": "0x..."
+}
+```
+
+Actions: `write`, `read`, `list`, `delete`.
+
+### Trace events
+
+Internal diagnostic traces — safe to ignore in production:
+
+```json
+{
+  "type": "trace",
+  "source": "capability",
+  "stage": "execute",
+  "action": "execute",
+  "message": "models execute",
+  "display": { "kind": "model", "name": "models", "target": "models_call" }
+}
+```
+
+Sources: `capability`, `model`, `tool`, `agent`, `harness`, `swarm`, `route`.
+
+### Terminal events
+
+#### `done`
+
+The stream completed successfully.
+
+```json
+{
+  "type": "done",
+  "model": "gpt-4o",
+  "usage": {
+    "input_tokens": 352,
+    "output_tokens": 207,
+    "total_tokens": 559
+  },
+  "agent": {
+    "walletAddress": "0x...",
+    "name": "Hello, friend",
+    "model": "gpt-4o",
+    "creatorFee": 1
+  }
+}
+```
+
+#### `stopped`
+
+The stream was aborted (user stop or signal).
+
+```json
+{
+  "type": "stopped",
+  "reason": "user_stop",
+  "usage": { "input_tokens": 100, "output_tokens": 50, "total_tokens": 150 }
+}
+```
+
+#### `error`
+
+The stream failed.
+
+```json
+{
+  "type": "error",
+  "error": "Model timed out",
+  "content": "\n\n[System Error: Model timed out]\n",
+  "model": "gpt-4o"
+}
+```
+
+### Receipt event
+
+A settlement receipt, delivered as a named SSE event:
+
+```
+event: receipt
+data: {"id":"rct_...","service":"agent","finalAmountWei":"1000000",...}
+```
+
+Parse it with:
+
+```typescript
+import { parseReceiptEvent } from "@compose-market/sdk";
+
+sdk.events.on("receipt", (event) => {
+  console.log("Receipt:", event.receipt);
+});
+```

@@ -1,0 +1,62 @@
+---
+title: "Slack"
+description: "Connect a Compose agent to Slack."
+---
+
+Slack channels link through OAuth. When you create a link, the channels service returns an OAuth URL. The user authorizes the app, and the bot is installed in their Slack workspace with a route back to your agent.
+
+## Link flow
+
+```
+1. Create link     →  sdk.channels.link("slack", input)
+2. Redirect user    →  action.url (Slack OAuth)
+3. User authorizes  →  approves workspace install
+4. Route established →  bot installed, messages forwarded to agent
+```
+
+## Create a link
+
+Slack installs at the workspace level, so pass `mode: "guild"`:
+
+```typescript
+const result = await sdk.channels.link("slack", {
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  mode: "guild",
+});
+
+// result.action.type === "oauth"
+// result.action.url — Slack OAuth redirect URL
+```
+
+The `action.type` is `"oauth"`. Redirect the user to `action.url`. After they approve the install, Slack sends the bot token back to the channels service and the route goes live.
+
+## Slack manifest
+
+The channels service exposes a Slack app manifest you can use when creating your own Slack app configuration:
+
+```
+GET https://services.compose.market/channels/slack/manifest
+```
+
+## Check status
+
+```typescript
+const status = await sdk.channels.status("slack", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+console.log(status.connected);
+console.log(status.routes);
+```
+
+## Disconnect
+
+```typescript
+await sdk.channels.disconnect("slack", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+```
+
+This removes the bot from the workspace. See [Status & Disconnect](/sdk/channels/status) for the full response shape.

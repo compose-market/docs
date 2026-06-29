@@ -1,0 +1,62 @@
+---
+title: "Installation"
+description: "Install the Compose SDK and its peer dependencies."
+---
+
+## Install
+
+```bash
+npm install @compose-market/sdk
+```
+
+## Peer dependencies
+
+The SDK depends on `viem` for EVM wallet operations (x402 payment signing). It's installed automatically as a dependency.
+
+For raw x402 payments (without a Compose Key), you also need `@x402/core` and `@x402/evm`:
+
+```bash
+npm install @x402/core @x402/evm
+```
+
+These are already included as dependencies of `@compose-market/sdk`, so you only need to install them separately if you're using x402 outside the SDK.
+
+## Requirements
+
+- **Node.js 20.6+** (uses native `fetch`, `ReadableStream`, `TextDecoder`, `WebCrypto`)
+- **TypeScript 5+** (if using TypeScript — the SDK ships with type definitions)
+
+## Initialize
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113, // Avalanche Fuji testnet
+});
+```
+
+### Configuration options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `userAddress` | `string` | — | Your EVM wallet address. Required for all billable calls. |
+| `chainId` | `number` | — | Chain ID for x402 settlement. Call `sdk.x402.facilitator.chains()` to see supported chains. |
+| `baseUrl` | `string` | `https://api.compose.market` | API base URL. |
+| `channelsUrl` | `string` | `https://services.compose.market` | Channels service base URL. |
+| `composeKey` | `string` | — | A previously issued Compose Key JWT. Stored and reused automatically. |
+| `storage` | `ComposeStorage` | in-memory | Token storage adapter. Browser `localStorage` is auto-detected. |
+| `timeoutMs` | `number` | `60000` | Per-request timeout in milliseconds. |
+| `retry` | `Partial<RetryPolicy>` | `{ maxRetries: 2 }` | Retry policy for transient errors (5xx, 429, network). |
+| `userAgent` | `string` | `@compose-market/sdk/<version>` | User-Agent suffix for analytics. |
+
+## Authentication
+
+There are two ways to authenticate:
+
+1. **Compose Key** (recommended): A bearer token issued by `sdk.keys.create()`. No wallet signing needed — just pass `userAddress` and `chainId`. The SDK handles token storage and refresh automatically.
+
+2. **Raw x402**: Sign each request with an EVM wallet. No Compose Key needed, but every call requires a payment signature. Use this for agent-to-agent calls where no human is in the loop.
+
+See [Payments Overview](/sdk/payments/overview) for the full comparison.

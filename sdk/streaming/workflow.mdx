@@ -1,0 +1,80 @@
+---
+title: "Workflow Streaming"
+description: "Stream responses from Compose workflows — multi-agent orchestration."
+---
+
+Workflows coordinate multiple agents to accomplish complex tasks. The workflow stream works just like the agent stream but includes additional event types for step progress and multi-agent delegation.
+
+## Send a message to a workflow
+
+```typescript
+const stream = sdk.workflow.stream({
+  workflowWallet: "0xWorkflowWalletAddress",
+  message: "Analyze my portfolio and suggest rebalancing",
+  threadId: "wf-1",
+});
+```
+
+### Parameters
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `workflowWallet` | `string` | Yes | The workflow's wallet address. |
+| `message` | `string` | Yes | The prompt to send. |
+| `threadId` | `string` | Yes | Conversation identifier. |
+| `userAddress` | `string` | No | Override the SDK's default. |
+| `composeRunId` | `string` | No | Custom run ID. |
+
+## Workflow-specific events
+
+In addition to all the standard agent stream events (`text-delta`, `tool_start`, `tool_end`, `done`, `error`), workflow streams include:
+
+| Event | Description |
+|-------|-------------|
+| `step` | A workflow step started — includes `stepName`, `stepIndex`, `totalSteps` |
+| `agent` | An agent within the workflow started processing — includes `agentName` |
+| `progress` | Progress update — includes `progress` (0-100) |
+| `result` | A step produced a result |
+
+```typescript
+for await (const event of stream) {
+  switch (event.type) {
+    case "step":
+      console.log(`Step ${event.data.stepIndex}/${event.data.totalSteps}: ${event.data.stepName}`);
+      break;
+    case "agent":
+      console.log(`Agent: ${event.data.agentName}`);
+      break;
+    case "text-delta":
+      process.stdout.write(event.delta);
+      break;
+    case "done":
+      console.log(`\nDone. Tokens: ${event.usage.total_tokens}`);
+      break;
+  }
+}
+```
+
+## Stop a workflow
+
+```typescript
+await sdk.workflow.stop({
+  workflowWallet: "0x...",
+  runId: "run-id",
+  threadId: "wf-1",
+});
+```
+
+## Event bus integration
+
+Workflow lifecycle events are also emitted on the SDK event bus:
+
+```typescript
+sdk.events.on("workflowStreamStart", (event) => {
+  console.log("Workflow started:", event.workflowWallet);
+});
+
+sdk.events.on("workflowStreamEnd", (event) => {
+  console.log("Workflow ended:", event.workflowWallet);
+});
+```

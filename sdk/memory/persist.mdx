@@ -1,0 +1,46 @@
+---
+title: "Persist"
+description: "Record conversation turns after agent responses."
+---
+
+After the agent finishes responding, persist the turn so the next recall can draw on it. This stores the transcript, updates working memory, and indexes the turn for semantic retrieval. Fact extraction is queued separately and shows up in later recall calls.
+
+## Record a turn
+
+```typescript
+await sdk.memory.recordTurn({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  userAddress: "0xYourWalletAddress",
+  threadId: "support-42",
+  userMessage: "Can you refund order #1183?",
+  assistantMessage: "I've started the refund. It will post in 3-5 days.",
+  model: "gpt-4o",
+  totalTokens: 412,
+});
+```
+
+## Parameters
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `agentWallet` | `string` | The agent that handled the turn. |
+| `userAddress` | `string` | The user paired with the agent. |
+| `threadId` | `string` | The conversation thread. |
+| `userMessage` | `string` | What the user said. |
+| `assistantMessage` | `string` | The agent's full reply. |
+| `model` | `string` | The model that produced the reply. |
+| `totalTokens` | `number` | Token count for the turn. |
+
+## Fire-and-forget
+
+`recordTurn()` never blocks the agent response. Call it after you've already streamed the reply to your user — the storage work happens asynchronously. If it fails, the agent's answer is unaffected; you simply lose this turn's contribution to future recall.
+
+## When to call it
+
+Call it once per turn, after the stream completes. If you skip persistence, the agent still responds normally, but recall on the next turn won't include this exchange. For long-running agents, persisting every turn is what creates the feeling of a continuous conversation.
+
+## Related
+
+- [Recall](/sdk/memory/recall) — read context back before the next turn
+- [Facts](/sdk/memory/facts) — extract durable facts that outlive the thread
+- [Memory](/sdk/memory/overview) — the full three-step loop

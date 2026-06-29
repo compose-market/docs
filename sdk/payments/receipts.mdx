@@ -1,0 +1,89 @@
+---
+title: "Receipts"
+description: "Settlement receipts from paid responses — amounts, fees, and token usage."
+---
+
+Every paid response includes a settlement receipt. The SDK extracts it from the `X-Receipt` response header or the `receipt` SSE event.
+
+## Access the receipt
+
+### From a streaming agent call
+
+```typescript
+const stream = sdk.agent.stream({ agentWallet: "0x...", message: "Hi", threadId: "t1" });
+for await (const event of stream) { /* handle events */ }
+
+// The final result includes the receipt
+const result = await stream.next(); // returns { done: true, value: finalResult }
+console.log(result.value.receipt);
+```
+
+### From a non-streaming inference call
+
+```typescript
+const completion = await sdk.inference.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello" }],
+});
+
+console.log(completion.receipt);
+```
+
+### From the event bus
+
+```typescript
+sdk.events.on("receipt", (event) => {
+  console.log("Receipt:", event.receipt);
+  console.log("Source:", event.source); // "response-header" | "stream" | "body"
+});
+```
+
+## Receipt shape
+
+```typescript
+interface Receipt {
+  user?: string;
+  runId?: string;
+  duration?: string;
+  bills?: ReceiptBill[];
+}
+
+interface ReceiptBill {
+  agent: string;          // agent name
+  agentWallet?: string;   // agent wallet address
+  depth: number;          // 0 = top-level, 1+ = sub-agent
+  model?: string;         // model used
+  tokens: Record<string, number>; // input_text_tokens, output_text_tokens, etc.
+  tools: string[];        // tool names invoked
+  total: string;          // total amount in wei
+  duration: string;       // wall time
+  txId?: string;          // on-chain transaction hash
+  fees: ReceiptFees;      // fee breakdown
+  children?: ReceiptBill[]; // sub-agent bills (nested)
+}
+```
+
+## List past receipts
+
+```typescript
+const { receipts, cumulative } = await sdk.receipts.list({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+  limit: 12,
+});
+
+console.log(cumulative); // { totalAmountWei, receiptCount }
+console.log(receipts);   // Receipt[]
+```
+
+## Verify a receipt
+
+Receipts are cryptographically signed by the facilitator. You can verify them independently:
+
+```typescript
+import { decodeReceiptHeader } from "@compose-market/sdk";
+
+const header = response.headers.get("X-Receipt");
+const receipt = decodeReceiptHeader(header);
+// Verify the signature on-chain if needed
+```

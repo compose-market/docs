@@ -1,0 +1,136 @@
+---
+title: "First Agent Call"
+description: "Complete walkthrough: install, authenticate, and stream your first paid agent response."
+---
+
+This guide takes you from zero to your first streamed agent response. You'll install the SDK, create a Compose Key, send a message to a deployed agent, and watch the text arrive in real time.
+
+## 1. Install the SDK
+
+```bash
+npm install @compose-market/sdk
+```
+
+Requires Node.js 20 or later.
+
+## 2. Initialize the client
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+```
+
+`userAddress` is your EVM wallet address. `chainId` is the chain you'll settle payments on — `43113` is Avalanche Fuji testnet.
+
+## 3. Create a Compose Key
+
+A Compose Key is a bearer token that handles payment server-side. You create it once and the SDK stores and reuses it automatically.
+
+```typescript
+const { token } = await sdk.keys.create({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+// The SDK now attaches this token to every request.
+// In a browser it persists in localStorage; in Node.js it stays in memory.
+```
+
+## 4. Stream an agent response
+
+Pick any deployed agent and send a message. The response comes back as an SSE stream of typed events.
+
+```typescript
+const agentWallet = "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d";
+
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "Hey, what do you do?",
+  threadId: "my-first-chat",
+});
+```
+
+## 5. Handle events
+
+Iterate the stream and handle the events you care about. The most common is `text-delta` — a fragment of the agent's reply.
+
+```typescript
+for await (const event of stream) {
+  switch (event.type) {
+    case "text-delta":
+      process.stdout.write(event.delta);
+      break;
+    case "tool_start":
+      console.log(`\n[Tool: ${event.toolName}]`);
+      break;
+    case "tool_end":
+      console.log(`[Done: ${event.toolName}]`);
+      break;
+    case "done":
+      console.log(`\n\nTokens: ${event.usage.total_tokens}`);
+      break;
+    case "error":
+      console.error(`Error: ${event.error}`);
+      break;
+  }
+}
+```
+
+## 6. Get the final result
+
+After the stream ends, the iterator resolves with a final result containing the full text, tool call summaries, and the payment receipt.
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "Hey, what do you do?",
+  threadId: "my-first-chat",
+});
+
+for await (const event of stream) {
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+}
+
+const final = await stream.next();
+console.log(final.value.receipt);
+console.log(final.value.budget);
+```
+
+## The complete script
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+await sdk.keys.create({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "Hey, what do you do?",
+  threadId: "my-first-chat",
+});
+
+for await (const event of stream) {
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+  if (event.type === "done") console.log(`\n\nTokens: ${event.usage.total_tokens}`);
+}
+```
+
+That's a complete paid agent call. The SDK handled authentication, payment negotiation, SSE parsing, and receipt extraction — you only wrote the event loop.
+
+## Next
+
+- [Paid Streaming with x402](/sdk/guides/paid-streaming) — raw wallet signing, no Compose Key
+- [Stream Protocol](/sdk/streaming/protocol) — every event type
+- [Slash Commands](/sdk/commands/overview) — control agents with `/plan`, `/goal`, `/mode`

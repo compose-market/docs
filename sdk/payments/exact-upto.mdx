@@ -1,0 +1,79 @@
+---
+title: "Exact and Upto"
+description: "Per-call payment schemes — no pre-funding needed."
+---
+
+The `exact` and `upto` schemes let you pay per request without pre-funding a channel. Each call results in an on-chain transfer.
+
+## Exact
+
+Fixed-price payments. The server advertises a price, you sign for that exact amount, and the facilitator settles an on-chain transfer.
+
+```typescript
+import ComposeSDK, { createPrivateKeyX402EvmWallet } from "@compose-market/sdk";
+
+const { x402Signer } = createPrivateKeyX402EvmWallet({
+  privateKey: "0xYourPrivateKey",
+  schemes: ["exact"],
+});
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+```
+
+Use `exact` for:
+- One-shot API calls
+- Fixed-price resources (file downloads, gated pages)
+- When you don't want to pre-fund a channel
+
+The signer does not need an RPC URL for `exact` — no on-chain state to read.
+
+## Upto
+
+Usage-based payments. The server advertises a maximum price, you sign a Permit2 authorization for that maximum, and the server charges the actual usage after processing.
+
+```typescript
+const { x402Signer } = createPrivateKeyX402EvmWallet({
+  privateKey: "0xYourPrivateKey",
+  rpcUrl: "https://avax-fuji.g.alchemy.com/v2/YourRpcKey",
+  schemes: ["upto"],
+});
+```
+
+Use `upto` for:
+- LLM token billing (charge for actual tokens used)
+- Compute-time billing
+- Dynamic data queries where the cost varies
+
+The settled amount is always less than or equal to the signed maximum. The server uses settlement overrides to charge the actual amount:
+
+```typescript
+// The SDK receives the final amount in the receipt
+const result = await stream.next();
+console.log(result.receipt.bills[0].total); // actual amount charged
+```
+
+## Register multiple schemes
+
+You can register all three schemes at once — the SDK picks the right one based on what the server advertises:
+
+```typescript
+const { x402Signer } = createPrivateKeyX402EvmWallet({
+  privateKey: "0xYourPrivateKey",
+  rpcUrl: "https://avax-fuji.g.alchemy.com/v2/YourRpcKey",
+  schemes: ["batch-settlement", "upto", "exact"],
+});
+```
+
+## Transfer methods
+
+The EVM implementation supports two transfer methods:
+
+| Method | Description |
+|--------|-------------|
+| `eip3009` | Uses token-native `transferWithAuthorization`. Default for USDC. |
+| `permit2` | Uses Uniswap Permit2 plus an x402 proxy. Supports any ERC-20. |
+
+The SDK automatically selects the right method based on the token's capabilities.

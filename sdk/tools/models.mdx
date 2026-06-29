@@ -1,0 +1,58 @@
+---
+title: "Models"
+description: "Model discovery and invocation through the agent stream."
+---
+
+Agents on Compose can call models for text, image, audio, or video generation. When an agent decides it needs a model — for example, to generate an image or run a different LLM — it emits a model tool event with the tool name `models_call`.
+
+## When this appears
+
+A model tool event appears in the stream when the agent invokes another model as part of its work. This is separate from the agent's own text generation, which comes through `text-delta` events. You will see `models_call` when the agent intentionally calls out to a model for a specific purpose.
+
+## Stream example
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "tool_start" && event.toolName === "models_call") {
+    const tool = parseToolEvent(event);
+    console.log(`Calling model: ${tool?.display?.name}`);
+  }
+  if (event.type === "tool_end" && event.toolName === "models_call") {
+    const tool = parseToolEvent(event);
+    if (tool?.error) {
+      console.error(`Model call failed: ${tool.error}`);
+    } else {
+      console.log("Model call complete");
+    }
+  }
+}
+```
+
+## Event shape
+
+A parsed model tool event has these fields:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `start` | `boolean` | `true` when the call begins, `false` when it ends |
+| `model` | `string` | The model identifier the agent selected |
+| `action` | `string` | What the agent asked the model to do (e.g. `"generate_image"`) |
+| `result` | `object \| null` | The model output, available on `tool_end` |
+| `error` | `string \| null` | Error message if the call failed |
+
+## Display metadata
+
+The `display` object on the raw event gives you ready-to-render metadata:
+
+- **`display.name`** — the human-readable model name (e.g. `"GPT-4o"`, `"FLUX schnell"`)
+- **`display.target`** — the model ID the agent called
+- **`display.summary`** — a one-line description of the call
+
+Use these for UI labels instead of raw identifiers.
+
+```typescript
+if (event.type === "tool_start" && event.toolName === "models_call") {
+  const { name, target, summary } = event.display ?? {};
+  console.log(`${name} (${target}): ${summary}`);
+}
+```

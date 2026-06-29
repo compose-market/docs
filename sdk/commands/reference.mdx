@@ -1,0 +1,119 @@
+---
+title: "Command Reference"
+description: "All slash commands with their arguments and subcommands."
+---
+
+Every slash command is sent as the `message` field in a stream request. The runtime parses the leading `/` and dispatches the command. Arguments follow the command name, separated by spaces.
+
+## Reference table
+
+| Command | Syntax | Arguments | Subcommands | Returns |
+|---------|--------|-----------|-------------|---------|
+| `/plan` | `/plan <prompt>` | `prompt` — what to plan | `run`, `status`, `cancel` | Action events (`task.*`, `plan.*`) |
+| `/goal` | `/goal <objective>` | `objective` — the durable goal | `status`, `pause`, `resume`, `complete`, `clear` | Action events (`action`) |
+| `/mode` | `/mode solo\|swarm` | `solo` or `swarm` | — | Action event |
+| `/sandbox` | `/sandbox on\|off` | `on` or `off` | `status` | Action event |
+| `/proof` | `/proof on\|off` | `on` or `off` | `status` | Action event |
+| `/thread` | `/thread` | — | — | Inline text response |
+| `/artifacts` | `/artifacts` | — | — | Inline text response |
+| `/receipt` | `/receipt` | — | — | Inline text response |
+
+## Sending each command
+
+All commands use the same `sdk.agent.stream()` call. The only thing that changes is the `message` string.
+
+### /plan
+
+```typescript
+// Create a plan
+sdk.agent.stream({ agentWallet, message: "/plan Refactor the auth module", threadId: "t1" });
+
+// Start execution
+sdk.agent.stream({ agentWallet, message: "/plan run", threadId: "t1" });
+
+// Check progress
+sdk.agent.stream({ agentWallet, message: "/plan status", threadId: "t1" });
+
+// Cancel
+sdk.agent.stream({ agentWallet, message: "/plan cancel", threadId: "t1" });
+```
+
+### /goal
+
+```typescript
+// Pin a goal
+sdk.agent.stream({ agentWallet, message: "/goal Increase test coverage to 90%", threadId: "t1" });
+
+// Lifecycle subcommands
+sdk.agent.stream({ agentWallet, message: "/goal status", threadId: "t1" });
+sdk.agent.stream({ agentWallet, message: "/goal pause", threadId: "t1" });
+sdk.agent.stream({ agentWallet, message: "/goal resume", threadId: "t1" });
+sdk.agent.stream({ agentWallet, message: "/goal complete", threadId: "t1" });
+sdk.agent.stream({ agentWallet, message: "/goal clear", threadId: "t1" });
+```
+
+### /mode
+
+```typescript
+// Run a single agent
+sdk.agent.stream({ agentWallet, message: "/mode solo", threadId: "t1" });
+
+// Allow the agent to delegate to sub-agents
+sdk.agent.stream({ agentWallet, message: "/mode swarm", threadId: "t1" });
+```
+
+### /sandbox
+
+```typescript
+// Force isolated execution
+sdk.agent.stream({ agentWallet, message: "/sandbox on", threadId: "t1" });
+
+// Disable isolation
+sdk.agent.stream({ agentWallet, message: "/sandbox off", threadId: "t1" });
+
+// Check current state
+sdk.agent.stream({ agentWallet, message: "/sandbox status", threadId: "t1" });
+```
+
+### /proof
+
+```typescript
+// Require auditable proof of execution
+sdk.agent.stream({ agentWallet, message: "/proof on", threadId: "t1" });
+
+// Disable proof mode
+sdk.agent.stream({ agentWallet, message: "/proof off", threadId: "t1" });
+
+// Check current state
+sdk.agent.stream({ agentWallet, message: "/proof status", threadId: "t1" });
+```
+
+### /thread, /artifacts, /receipt
+
+```typescript
+// List past conversation threads
+sdk.agent.stream({ agentWallet, message: "/thread", threadId: "t1" });
+
+// List generated media
+sdk.agent.stream({ agentWallet, message: "/artifacts", threadId: "t1" });
+
+// List x402 payment receipts
+sdk.agent.stream({ agentWallet, message: "/receipt", threadId: "t1" });
+```
+
+## Reading action events
+
+Commands that return action events emit structured events you can listen for in the stream loop:
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "task.completed") {
+    console.log(`Task ${event.taskId} finished`);
+  }
+  if (event.type === "action" && event.action === "goal") {
+    console.log(`Goal is now ${event.status}`);
+  }
+}
+```
+
+See [Stream Protocol](/sdk/streaming/protocol) for the full list of event types and their fields.

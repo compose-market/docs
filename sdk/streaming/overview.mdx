@@ -1,0 +1,110 @@
+---
+title: "Agent Streaming"
+description: "Stream agent responses in real time with typed SSE events."
+---
+
+When you call a Compose agent, the response comes back as a Server-Sent Events (SSE) stream. Each event has a `type` field that tells you what happened — text being generated, a tool being called, a payment receipt, or the final result.
+
+## Why streaming
+
+Streaming lets you show progress as it happens. Instead of waiting 10 seconds for a full response, you see the first words in under a second. For agent calls that involve tool use, you see each tool start and finish in real time.
+
+## Basic streaming
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "What can you do?",
+  threadId: "chat-1",
+});
+
+for await (const event of stream) {
+  switch (event.type) {
+    case "text-delta":
+      process.stdout.write(event.delta);
+      break;
+    case "tool_start":
+      console.log(`\n[Tool: ${event.toolName}]`);
+      break;
+    case "tool_end":
+      console.log(`[Done: ${event.toolName}]`);
+      break;
+    case "done":
+      console.log(`\nTokens: ${event.usage.total_tokens}`);
+      break;
+  }
+}
+```
+
+## What you receive
+
+The stream yields typed events. The most common ones:
+
+| Event | When | Key fields |
+|-------|------|------------|
+| `text-delta` | Agent generates text | `delta` (string fragment) |
+| `tool_start` | Agent calls a tool | `toolName`, `input`, `display` |
+| `tool_end` | Tool finishes | `toolName`, `output`, `failed`, `error` |
+| `done` | Stream complete | `usage` (token counts), `model`, `agent` |
+| `error` | Stream failed | `error`, `content` |
+| `stopped` | User aborted | `reason` |
+
+The stream also yields timing events, reasoning deltas, plan events, child agent events, and conclave events. See [Stream Protocol](/sdk/streaming/protocol) for the complete reference.
+
+## The final result
+
+After the stream ends, the `StreamIterator` resolves with a final result containing the full text, tool calls, receipt, and budget:
+
+```typescript
+const stream = sdk.agent.stream({ /* ... */ });
+
+for await (const event of stream) {
+  // handle events
+}
+
+// After the loop, get the final result:
+const final = await stream.next(); // { done: true, value: finalResult }
+// final.value.text — full response text
+// final.value.toolCalls — array of tool call summaries
+// final.value.receipt — settlement receipt
+// final.value.budget — remaining session budget
+```
+
+## Aborting a stream
+
+```typescript
+const controller = new AbortController();
+
+const stream = sdk.agent.stream({
+  agentWallet: "0x...",
+  message: "Long task...",
+  threadId: "t1",
+}, { signal: controller.signal });
+
+// Cancel after 5 seconds
+setTimeout(() => controller.abort(), 5000);
+```
+
+You can also stop a stream server-side:
+
+```typescript
+await sdk.agent.stop({
+  agentWallet: "0x...",
+  runId: "the-run-id",
+  threadId: "t1",
+});
+```
+
+## Workflow streaming
+
+Workflows stream the same way, with additional event types for step progress and agent delegation:
+
+```typescript
+const stream = sdk.workflow.stream({
+  workflowWallet: "0xWorkflowWallet",
+  message: "Analyze my portfolio",
+  threadId: "wf-1",
+});
+```
+
+See [Workflow Streaming](/sdk/streaming/workflow) for workflow-specific events.

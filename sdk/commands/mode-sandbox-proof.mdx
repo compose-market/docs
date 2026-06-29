@@ -1,0 +1,105 @@
+---
+title: "Mode, Sandbox, and Proof"
+description: "Control execution mode, isolation, and proof-of-execution with /mode, /sandbox, and /proof."
+---
+
+Three commands control *how* the agent executes, not *what* it does. Use them to switch between solo and swarm, force isolated runs, and require auditable proof.
+
+## /mode — solo vs swarm
+
+By default an agent runs in **solo** mode — it handles everything itself. **Swarm** mode lets the agent delegate work to other deployed agents, enabling multi-agent collaboration on complex tasks.
+
+```typescript
+// Single agent, no delegation
+sdk.agent.stream({ agentWallet, message: "/mode solo", threadId: "t1" });
+
+// Allow delegation to sub-agents
+sdk.agent.stream({ agentWallet, message: "/mode swarm", threadId: "t1" });
+```
+
+In swarm mode the stream includes child-agent events (`swarm_child_start`, `swarm_child_delta`, `swarm_child_done`) for each delegated task. See [Stream Protocol](/sdk/streaming/protocol) for details.
+
+## /sandbox — isolated execution
+
+The sandbox command forces the agent to run tasks in an isolated environment. This is useful when the agent processes untrusted input or runs code that should not touch the host.
+
+```typescript
+// Force isolated execution
+sdk.agent.stream({ agentWallet, message: "/sandbox on", threadId: "t1" });
+
+// Allow in-process execution
+sdk.agent.stream({ agentWallet, message: "/sandbox off", threadId: "t1" });
+
+// Check the current setting
+sdk.agent.stream({ agentWallet, message: "/sandbox status", threadId: "t1" });
+```
+
+When sandbox is on, every task runs in isolation. If a sandbox is unavailable, the agent reports an error rather than silently falling back to in-process execution.
+
+## /proof — auditable execution
+
+Proof mode makes the agent collect a verifiable bundle for each run — input and output hashes per step, inference run IDs, and optional sandbox metadata. Turn it on when you need an audit trail.
+
+```typescript
+// Require proof-of-execution
+sdk.agent.stream({ agentWallet, message: "/proof on", threadId: "t1" });
+
+// Disable proof collection
+sdk.agent.stream({ agentWallet, message: "/proof off", threadId: "t1" });
+
+// Check the current setting
+sdk.agent.stream({ agentWallet, message: "/proof status", threadId: "t1" });
+```
+
+Proof bundles are hash artifacts. They let you verify that step inputs and outputs match what the agent claims, but they are not trusted-execution-environment attestations.
+
+## History commands
+
+Three commands list past activity for the current thread. Each returns a plain text response in the stream — no action events.
+
+### /thread — past conversations
+
+```typescript
+sdk.agent.stream({ agentWallet, message: "/thread", threadId: "t1" });
+```
+
+Lists previous conversation threads associated with this agent.
+
+### /artifacts — generated media
+
+```typescript
+sdk.agent.stream({ agentWallet, message: "/artifacts", threadId: "t1" });
+```
+
+Lists media the agent has generated — images, audio, video — along with references to retrieve them.
+
+### /receipt — payment receipts
+
+```typescript
+sdk.agent.stream({ agentWallet, message: "/receipt", threadId: "t1" });
+```
+
+Lists x402 payment receipts for the thread, including amounts and settlement details. See [Payments](/sdk/payments/overview) for the receipt data model.
+
+## Combining settings
+
+You can stack these commands. A common secure configuration looks like:
+
+```typescript
+sdk.agent.stream({ agentWallet, message: "/mode swarm", threadId: "t1" });
+sdk.agent.stream({ agentWallet, message: "/sandbox on", threadId: "t1" });
+sdk.agent.stream({ agentWallet, message: "/proof on", threadId: "t1" });
+
+// Now send the actual task
+sdk.agent.stream({
+  agentWallet,
+  message: "Audit this codebase and report security issues",
+  threadId: "t1",
+});
+```
+
+## Related
+
+- [Command Reference](/sdk/commands/reference) — every command at a glance
+- [Plan](/sdk/commands/plan) — run multi-step plans with tracked tasks
+- [Stream Protocol](/sdk/streaming/protocol) — swarm child and action event shapes

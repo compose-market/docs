@@ -1,0 +1,77 @@
+---
+title: "Model Catalog"
+description: "Discover models, search by capability, and get pricing."
+---
+
+Every model on Compose is identified by a public ID in a generated catalog. The catalog carries the provider, pricing, context window, modalities, and capabilities for each model. The SDK exposes it through `sdk.models` — you discover, search, and inspect models, and the SDK routes your inference calls to the right provider automatically.
+
+## List models
+
+```typescript
+const { models } = await sdk.models.list();
+
+for (const model of models) {
+  console.log(model.id, model.provider, model.contextWindow);
+}
+```
+
+## Search by capability
+
+Filter by modality, provider, streaming support, context size, or price:
+
+```typescript
+const { models } = await sdk.models.search({
+  modality: "image",
+  streaming: false,
+  maxPrice: "0.05",
+});
+
+for (const model of models) {
+  console.log(model.id, model.pricing);
+}
+```
+
+## Get a single model
+
+```typescript
+const model = await sdk.models.get("gpt-4o");
+
+console.log(model.pricing);
+console.log(model.capabilities);
+```
+
+## Get model parameters
+
+Inspect the supported parameters for a model — temperature, top_p, max_tokens, and any model-specific options:
+
+```typescript
+const params = await sdk.models.getParams("gpt-4o");
+
+console.log(params.supported);
+```
+
+## Multi-provider routing
+
+Models are multi-provider. The catalog may list the same upstream model under different providers, with one designated as the priority row (bare ID) and others given readable aliases:
+
+| Public model ID | Provider | Wire model |
+|-----------------|----------|------------|
+| `gpt-4o` | `openai` | `gpt-4o` |
+| `azure/gpt-4o` | `azure` | `gpt-4o` |
+
+The model string you pass is the contract. The SDK resolves it to the exact provider row — it never inspects your prompt to guess a provider or silently fall back to a duplicate.
+
+## API summary
+
+| Method | Returns | Purpose |
+|--------|---------|---------|
+| `sdk.models.list()` | `Model[]` | Browse the full catalog |
+| `sdk.models.search(filters)` | `Model[]` | Filter by capability and price |
+| `sdk.models.get(id)` | `Model` | Inspect one model |
+| `sdk.models.getParams(id)` | `Params` | Supported call parameters |
+
+## Related
+
+- [Inference](/sdk/inference/overview) — call any catalog model
+- [Modalities](/sdk/inference/modalities) — text, image, video, speech, embeddings
+- [Streaming Inference](/sdk/inference/streaming) — stream model output

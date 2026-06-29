@@ -1,0 +1,118 @@
+---
+title: "Plan"
+description: "Create, run, and track multi-step plans with /plan."
+---
+
+The `/plan` command turns a single prompt into a structured, multi-task plan. You create the plan, start it, and watch each task complete in real time. Check progress with `/plan status`, or stop with `/plan cancel`.
+
+## Lifecycle
+
+1. **Create** — `/plan <prompt>` asks the agent to break your request into tasks.
+2. **Run** — `/plan run` starts execution. The agent works through tasks one by one.
+3. **Observe** — Each task's completion is emitted as an event in the stream and persisted to the thread.
+4. **Finish** — When every task is done, the plan reaches `completed`. A stuck task may go `blocked` or `failed`.
+
+## Create and run the plan
+
+```typescript
+// 1. Create the plan
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "/plan Build a REST API with auth, routes, and tests",
+  threadId: "api-build",
+});
+
+for await (const event of stream) {
+  if (event.type === "plan.proposed") {
+    console.log(event.markdown); // human-readable plan summary
+  }
+}
+
+// 2. Run it
+const runStream = sdk.agent.stream({
+  agentWallet,
+  message: "/plan run",
+  threadId: "api-build",
+});
+
+for await (const event of runStream) {
+  switch (event.type) {
+    case "task.completed":
+      console.log(`Done: ${event.taskId}`);
+      break;
+    case "task.blocked":
+    case "task.failed":
+      console.log(`${event.type}: ${event.taskId}`);
+      break;
+  }
+}
+```
+
+## PlanState
+
+```typescript
+type PlanState = {
+  id: string;                // unique plan identifier
+  threadId: string;          // thread this plan belongs to
+  status: PlanStatus;        // current lifecycle state
+  tasks: TaskRecord[];       // ordered list of tasks
+  goal: string;              // the objective the plan achieves
+  createdAt: number;         // creation timestamp (ms)
+  updatedAt: number;         // last update timestamp (ms)
+};
+
+type PlanStatus =
+  | "draft"              // plan created, not yet proposed
+  | "proposed"           // plan submitted for review
+  | "awaiting_approval"  // waiting for an approver decision
+  | "running"            // execution in progress
+  | "checking"           // verifying task results
+  | "blocked"            // a task is blocked
+  | "completed"          // all tasks finished successfully
+  | "failed"             // a task failed and execution stopped
+  | "cancelled";         // the plan was cancelled
+```
+
+## TaskRecord
+
+```typescript
+type TaskRecord = {
+  id: string;          // unique task identifier
+  title: string;       // short human-readable label
+  description: string; // what the task does
+  status: TaskStatus;  // current task state
+  result?: string;     // output, once the task finishes
+  error?: string;      // failure reason, if status is "failed"
+  order: number;       // position in the task list
+};
+
+type TaskStatus =
+  | "todo"       // not started
+  | "doing"      // currently executing
+  | "blocked"    // waiting on a dependency or input
+  | "done"       // completed successfully
+  | "failed"     // could not complete
+  | "cancelled"; // removed from the plan
+```
+
+## Approving a plan
+
+In swarm mode, a plan may reach `awaiting_approval` before it can run. Approve or reject it with `sdk.agent.decide()`. A `changes_requested` decision sends feedback back so the agent can revise the plan.
+
+```typescript
+await sdk.agent.decide({
+  agentWallet,
+  runId: "run-id-from-stream",
+  proposalId: "proposal_...",
+  version: 1,
+  decision: "approved", // "approved" | "rejected" | "changes_requested"
+  approver: "0xYourWallet",
+  reason: "Looks good",
+});
+```
+
+## Related
+
+- [Command Reference](/sdk/commands/reference) — every command at a glance
+- [Stream Protocol](/sdk/streaming/protocol) — `task.*` and `plan.*` event shapes
+- [Agent Streaming](/sdk/streaming/agent) — `sdk.agent.decide()` parameters

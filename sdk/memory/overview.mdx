@@ -1,0 +1,90 @@
+---
+title: "Memory"
+description: "Pre-turn recall, post-turn persistence, and durable fact extraction for agents."
+---
+
+Agent memory on Compose is a three-step loop that runs around every turn. It gives an agent relevant context before it responds, stores the conversation after it responds, and optionally extracts durable facts that survive across sessions.
+
+## The memory loop
+
+1. **Before a turn — recall.** Pull relevant context from past turns and stored facts, packed into a single prompt string you inject into the agent's system prompt.
+2. **After a turn — persist.** Record the user message and assistant reply so the next recall has something to draw from.
+3. **Optionally — remember facts.** Extract durable facts (preferences, identities, long-lived state) that should outlive any single thread.
+
+The full loop in one snippet:
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const agentWallet = "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d";
+const threadId = "support-42";
+
+// 1. Recall — get a ready-to-inject context block
+const context = await sdk.memory.context("Where did we leave the refund?", {
+  agentWallet,
+  userAddress: "0xYourWalletAddress",
+  threadId,
+});
+
+// 2. Run the turn, passing the context into the agent's system prompt
+const stream = sdk.agent.stream({
+  agentWallet,
+  message: "Where did we leave the refund?",
+  threadId,
+});
+
+let assistantText = "";
+for await (const event of stream) {
+  if (event.type === "text-delta") assistantText += event.delta;
+}
+
+// 3. Persist the turn (fire-and-forget)
+await sdk.memory.recordTurn({
+  agentWallet,
+  userAddress: "0xYourWalletAddress",
+  threadId,
+  userMessage: "Where did we leave the refund?",
+  assistantMessage: assistantText,
+  model: "gpt-4o",
+  totalTokens: 480,
+});
+
+// 4. Optionally extract a durable fact
+await sdk.memory.remember({
+  agentWallet,
+  userAddress: "0xYourWalletAddress",
+  threadId,
+  content: "The user is waiting on a refund for order #1183.",
+  type: "fact",
+  retention: "pinned",
+  confidence: 0.9,
+});
+```
+
+## Scope
+
+Memory is scoped per **agent + user pair**. The same user talking to two different agents gets two separate memory stores. The `threadId` adds short-term isolation within that pair — working context and transcripts stay thread-local — while durable facts cross thread boundaries so the agent remembers stable information across sessions.
+
+## What's available
+
+| Method | Purpose |
+|--------|---------|
+| `sdk.memory.context()` | Assemble a context prompt before a turn |
+| `sdk.memory.recordTurn()` | Persist a conversation turn after a turn |
+| `sdk.memory.remember()` | Store a durable fact explicitly |
+| `sdk.memory.loop()` | Run recall, turn, and persist in one call |
+| `sdk.memory.items.*` | Search, get, update, and delete stored items |
+| `sdk.memory.jobs.*` | Create and inspect maintenance jobs |
+| `sdk.memory.evals.run()` | Evaluate retrieval quality |
+
+## Next
+
+- [Recall](/sdk/memory/recall) — assemble context before a turn
+- [Persist](/sdk/memory/persist) — record turns after a response
+- [Facts](/sdk/memory/facts) — durable facts across sessions
+- [Memory Loop guide](/sdk/guides/memory-loop) — end-to-end walkthrough

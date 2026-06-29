@@ -1,0 +1,117 @@
+---
+title: "Agent Streaming"
+description: "Stream responses from any deployed Compose agent."
+---
+
+The agent stream endpoint is the primary way to interact with Compose agents. Send a message, receive a real-time SSE stream with text, tool calls, and receipts.
+
+## Send a message
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "What can you do?",
+  threadId: "chat-1",
+});
+```
+
+### Parameters
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `agentWallet` | `string` | Yes | The deployed agent's wallet address. |
+| `message` | `string` | Yes | The prompt or slash command to send. |
+| `threadId` | `string` | Yes | Conversation identifier. Reuse across turns for memory continuity. |
+| `userAddress` | `string` | No | Override the SDK's default user address. |
+| `composeRunId` | `string` | No | Custom run ID (for tracking). Auto-generated if omitted. |
+| `attachment` | `object` | No | Media attachment (image, file). |
+
+## Iterate events
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "text-delta") {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+The stream yields events in order. See [Stream Protocol](/sdk/streaming/protocol) for every event type.
+
+## Get the final result
+
+After the stream ends, access the complete result:
+
+```typescript
+const stream = sdk.agent.stream({ /* ... */ });
+
+for await (const event of stream) {
+  // handle events
+}
+
+// The StreamIterator resolves with:
+// { text, toolCalls, requestId, receipt, budget, sessionInvalidReason }
+```
+
+## Stop a running stream
+
+```typescript
+// Client-side abort
+const controller = new AbortController();
+const stream = sdk.agent.stream({ /* ... */ }, { signal: controller.signal });
+controller.abort();
+
+// Server-side stop
+await sdk.agent.stop({
+  agentWallet: "0x...",
+  runId: "run-id-from-stream",
+  threadId: "chat-1",
+});
+```
+
+## Approve a plan
+
+When an agent proposes a plan in swarm mode, approve or reject it:
+
+```typescript
+await sdk.agent.decide({
+  agentWallet: "0x...",
+  runId: "run-id",
+  proposalId: "proposal_...",
+  version: 1,
+  decision: "approved", // or "rejected" or "changes_requested"
+  approver: "0xYourWallet",
+  reason: "Looks good",
+  feedback: "Add more detail to step 2", // for changes_requested
+});
+```
+
+## Attachments
+
+Send images or files alongside the message:
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0x...",
+  message: "What's in this image?",
+  threadId: "vision-1",
+  attachment: {
+    type: "image_url",
+    image_url: { url: "data:image/png;base64,iVBOR..." },
+  },
+});
+```
+
+## Multiple attachments
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0x...",
+  message: "Compare these two designs",
+  threadId: "compare-1",
+  attachments: [
+    { type: "image_url", image_url: { url: "https://..." } },
+    { type: "image_url", image_url: { url: "https://..." } },
+  ],
+});
+```

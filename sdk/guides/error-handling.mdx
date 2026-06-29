@@ -1,0 +1,130 @@
+---
+title: "Error Handling"
+description: "Error types, retries, idempotency, and payment failures."
+---
+
+The SDK throws typed errors so you can catch and react to specific failure modes. Every error is a subclass of `ComposeError`. Transient failures retry automatically; payment and session failures need your attention.
+
+## Error types
+
+| Error class | When it's thrown | Retryable |
+|-------------|-----------------|-----------|
+| `ComposeError` | Base class for all SDK errors | — |
+| `NetworkError` | Connection dropped, timeout, DNS failure | Yes |
+| `ServerError` | 5xx response from the API | Yes |
+| `RateLimitError` | 429 response | Yes (with backoff) |
+| `PaymentError` | Payment failed or was rejected | No |
+| `SessionError` | Compose Key session is invalid | No |
+| `ValidationError` | Request payload failed validation | No |
+| `StreamError` | The SSE stream failed mid-response | No |
+
+## Try/catch pattern
+
+```typescript
+import {
+  ComposeError,
+  NetworkError,
+  PaymentError,
+  SessionError,
+} from "@compose-market/sdk";
+
+try {
+  const stream = sdk.agent.stream({
+    agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+    message: "Hello",
+    threadId: "chat-1",
+  });
+
+  for await (const event of stream) {
+    if (event.type === "text-delta") process.stdout.write(event.delta);
+  }
+} catch (err) {
+  if (err instanceof PaymentError) {
+    console.error(`Payment failed: ${err.code} — ${err.message}`);
+  } else if (err instanceof SessionError) {
+    console.error(`Session invalid: ${err.code}`);
+  } else if (err instanceof NetworkError) {
+    console.error(`Network error: ${err.message}`);
+  } else if (err instanceof ComposeError) {
+    console.error(`SDK error: ${err.code} — ${err.message}`);
+  } else {
+    throw err;
+  }
+}
+```
+
+Every `ComposeError` has a `code` string and a `message`. The `code` is stable — branch on it, not the message text.
+
+## Retry behavior
+
+The SDK retries transient errors (`NetworkError`, `ServerError`, `RateLimitError`) automatically with exponential backoff. Configure the policy at init time:
+
+```typescript
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+  retry: {
+    maxRetries: 3,
+  },
+});
+```
+
+The default is 2 retries. Payment and session errors are never retried — they require action on your side.
+
+## Payment failures
+
+`PaymentError` covers anything that goes wrong during x402 negotiation. Common codes:
+
+| Code | Cause | Fix |
+|------|-------|-----|
+| `insufficient_balance` | Your wallet or channel doesn't have enough USDC | Deposit more funds into the payment channel |
+| `budget_exhausted` | You hit the spending limit on your Compose Key session | Create a new Compose Key with a higher `maxAmountWei` |
+| `payment_rejected` | The server rejected the signed payment payload | Check that your signer and chain ID match the session |
+
+```typescript
+if (err instanceof PaymentError) {
+  if (err.code === "insufficient_balance") {
+    // Top up the channel, then retry the call
+  }
+  if (err.code === "budget_exhausted") {
+    await sdk.keys.create({ userAddress, chainId, maxAmountWei: "1000000000" });
+    // Retry the call
+  }
+}
+```
+
+## Session failures
+
+`SessionError` fires when your Compose Key can no longer be used. Listen for the `sessionInvalid` event to catch this proactively:
+
+```typescript
+sdk.events.on("sessionInvalid", (event) => {
+  console.log(`Session invalid: ${event.reason}`);
+  // reason: "budget-depleted" | "expired" | "revoked" | "chain-mismatch"
+});
+```
+
+| Reason | What to do |
+|--------|-----------|
+| `budget-depleted` | Create a new Compose Key with a higher budget |
+| `expired` | Create a new Compose Key |
+| `revoked` | The key was revoked — create a new one |
+| `chain-mismatch` | The request's chain ID doesn't match the session |
+
+## Stream errors
+
+If the SSE stream fails mid-response, you get an `error` event in the loop, and the iterator throws a `StreamError` when it ends. Partial text already received is still valid — decide whether to show it or discard based on your UX.
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "error") {
+    console.error(`Stream error: ${event.error}`);
+  }
+}
+```
+
+## Next
+
+- [Payments Overview](/sdk/payments/overview) — how payment negotiation works
+- [Sessions](/sdk/payments/sessions) — budgets and session lifecycle
+- [Batch Settlement](/sdk/payments/batch-settlement) — channel funding and recovery

@@ -1,0 +1,55 @@
+---
+title: "Inference"
+description: "Direct model calls for text, images, audio, video, and embeddings."
+---
+
+The SDK gives you direct access to multi-provider model inference — no agent required. You call a model by its public ID, and the SDK routes the request to the correct provider, meters usage, and settles payment in one step. This is the same catalog and adapter layer that agents use internally.
+
+## Capabilities
+
+| Capability | Method | What it does |
+|------------|--------|--------------|
+| Chat completions | `sdk.inference.chat.completions.create()` | OpenAI-shaped text completion |
+| Responses | `sdk.inference.responses.create()` | Responses-style input and output |
+| Streaming responses | `sdk.inference.responses.stream()` | SSE stream of model output |
+| Embeddings | `sdk.inference.embeddings.create()` | Vector embeddings |
+| Image generation | `sdk.inference.images.generate()` | Create an image from a prompt |
+| Image editing | `sdk.inference.images.edit()` | Edit an existing image |
+| Text to speech | `sdk.inference.audio.speech()` | Generate audio from text |
+| Speech to text | `sdk.inference.audio.transcriptions()` | Transcribe audio |
+| Video generation | `sdk.inference.videos.generate()` | Submit a video generation job |
+| Video streaming | `sdk.inference.videos.stream()` | Stream video job status over SSE |
+
+Every call accepts a Compose Key or raw x402 payment. The SDK handles payment negotiation automatically — you just pass the model ID and inputs.
+
+## Minimal chat completion
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const completion = await sdk.inference.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Explain Merkle trees in one sentence." }],
+});
+
+console.log(completion.choices[0].message.content);
+console.log(completion.receipt);
+```
+
+The model string is the contract. The SDK resolves it to the right provider and adapter — you never pick a provider manually. See [Model Catalog](/sdk/inference/catalog) for how to discover available models.
+
+## When to use inference vs agents
+
+Use **inference** when you want a raw model call: a single completion, an embedding, an image. Use **agents** when you want tool use, memory, plans, multi-step reasoning, or streaming with tool events. Inference is simpler and cheaper per call; agents are richer.
+
+## Next
+
+- [Streaming Inference](/sdk/inference/streaming) — stream model output with SSE
+- [Model Catalog](/sdk/inference/catalog) — discover, search, and price models
+- [Modalities](/sdk/inference/modalities) — text, image, video, speech, embeddings
+- [Quickstart](/sdk/quickstart) — your first paid call

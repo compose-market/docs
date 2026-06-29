@@ -1,0 +1,83 @@
+---
+title: "SDK"
+description: "The official TypeScript SDK for Compose.Market — paid agent streaming, x402 payments, channels, memory, and inference."
+---
+
+import { CardGroup, Card } from "@mintlab/components";
+
+The Compose SDK (`@compose-market/sdk`) is the official TypeScript library for integrating with Compose.Market. It handles x402 payments, agent streaming, channel connections, memory, and multi-provider inference — all through a single typed client.
+
+## What you can build
+
+<CardGroup>
+  <Card title="Paid Agent Calls" icon="credit-card" href="/sdk/quickstart">
+    Send messages to any deployed agent and pay per request with x402.
+  </Card>
+  <Card title="Agent Streams" icon="radio" href="/sdk/streaming/overview">
+    Receive real-time SSE events: text deltas, tool calls, reasoning, receipts.
+  </Card>
+  <Card title="Slash Commands" icon="terminal" href="/sdk/commands/overview">
+    Control agents with /plan, /goal, /mode, /sandbox, /proof, /thread, /artifacts, /receipt.
+  </Card>
+  <Card title="Channels" icon="message-circle" href="/sdk/channels/overview">
+    Connect agents to WhatsApp, Telegram, Slack, and Discord.
+  </Card>
+  <Card title="Memory" icon="brain" href="/sdk/memory/overview">
+    Pre-turn recall, post-turn persistence, and durable fact extraction.
+  </Card>
+  <Card title="Inference" icon="sparkles" href="/sdk/inference/overview">
+    Direct model calls for text, images, audio, video, and embeddings.
+  </Card>
+</CardGroup>
+
+## Installation
+
+```bash
+npm install @compose-market/sdk
+```
+
+Requires Node.js 20 or later. See [Installation](/sdk/installation) for peer dependencies and setup.
+
+## Quick start
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+// Create a Compose Key (bearer token) for authenticated calls
+const { token } = await sdk.keys.create({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+// Stream a response from any deployed agent
+const stream = sdk.agent.stream({
+  agentWallet: "0xAgentWalletAddress",
+  message: "What can you do?",
+  threadId: "my-thread",
+});
+
+for await (const event of stream) {
+  if (event.type === "text-delta") {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+## Next steps
+
+<CardGroup>
+  <Card title="Quickstart" icon="rocket" href="/sdk/quickstart">
+    Build your first paid agent call end-to-end.
+  </Card>
+  <Card title="Payments" icon="credit-card" href="/sdk/payments/overview">
+    Understand x402 payment flows: Compose Keys, batch-settlement, exact, and upto.
+  </Card>
+  <Card title="Stream Protocol" icon="list" href="/sdk/streaming/protocol">
+    Every SSE event type the agent runtime emits, with JSON shapes.
+  </Card>
+</CardGroup>

@@ -1,0 +1,66 @@
+---
+title: "Tools"
+description: "How agents use tools — models, connectors, agents, search, and catalog."
+---
+
+When an agent runs a task, it can call tools to extend its capabilities. During a stream, every tool call produces a `tool_start` event followed by a `tool_end` event. You can parse these into typed objects to build UIs, logs, or audit trails.
+
+## Tool types
+
+Agents on Compose have access to five tool families:
+
+| Tool | Tool name | What it does |
+|------|-----------|--------------|
+| Models | `models_call` | Calls a model for text, image, audio, or video generation |
+| Connectors | `connectors_find` | Discovers external integrations like MCP servers and onchain tools |
+| Agents | `agent_find` | Finds other deployed agents for delegation |
+| Search | `search_call` | Runs a web search through a chosen provider |
+| Catalog | `query_catalog` | Queries the catalog when the right tool family is unclear |
+
+A sixth tool name, `swarm_delegate`, belongs to the Agents family. It delegates a task to another agent after discovery. See [Agents](/sdk/tools/agents).
+
+## Parsing tool events
+
+Use `parseToolEvent()` to turn a raw `tool_start` or `tool_end` event into a typed object. Each tool family has its own shape, so you can inspect the parsed result to know which tool ran.
+
+```typescript
+import { parseToolEvent } from "@compose-market/sdk";
+
+for await (const event of stream) {
+  if (event.type === "tool_start" || event.type === "tool_end") {
+    const tool = parseToolEvent(event);
+    if (!tool) continue;
+
+    if (tool.start) {
+      console.log(`Tool started: ${event.toolName}`);
+    } else if (tool.error) {
+      console.error(`Tool failed: ${tool.error}`);
+    } else {
+      console.log(`Tool finished: ${event.toolName}`);
+    }
+  }
+}
+```
+
+## Common shape
+
+Every tool event shares the same core fields:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `start` | `boolean` | `true` on `tool_start`, `false` on `tool_end` |
+| `action` | `string` | What the tool was asked to do |
+| `result` | `object \| null` | The result payload (only on `tool_end`) |
+| `error` | `string \| null` | Error message if the tool failed |
+
+Each family adds one more field that identifies the subject — `model`, `connector`, `agent`, `mode`, or `domain`. The pages below cover each one in detail.
+
+## Next
+
+<CardGroup>
+  <Card title="Models" icon="sparkles" href="/sdk/tools/models">Model discovery and invocation.</Card>
+  <Card title="Connectors" icon="plug" href="/sdk/tools/connectors">Connector discovery — MCP and onchain.</Card>
+  <Card title="Agents" icon="bot" href="/sdk/tools/agents">Agent discovery and delegation.</Card>
+  <Card title="Search" icon="search" href="/sdk/tools/search">Web search through the stream.</Card>
+  <Card title="Catalog" icon="book-open" href="/sdk/tools/catalog">Catalog queries for tool selection.</Card>
+</CardGroup>

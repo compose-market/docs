@@ -1,0 +1,53 @@
+---
+title: "WhatsApp"
+description: "Link a Compose agent to WhatsApp."
+---
+
+WhatsApp channels pair through a QR code. When you create a link, the channels service opens a websocket and streams a QR code. The user scans it with WhatsApp's linked-devices feature, and a route is established between their WhatsApp account and your agent.
+
+## Link flow
+
+```
+1. Create link     →  sdk.channels.link("whatsapp", input)
+2. Open websocket   →  action.socket
+3. Display QR       →  render the QR frames from the socket
+4. User scans       →  phone → Linked Devices → Scan
+5. Route established →  messages forwarded to agent
+```
+
+## Create a link
+
+```typescript
+const result = await sdk.channels.link("whatsapp", {
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+// result.action.type === "websocket"
+// result.action.socket — websocket URL to connect to
+// result.action.command — optional pairing instruction
+```
+
+The `action.type` is `"websocket"` for WhatsApp. Connect to `action.socket` and render each incoming QR frame. When the user scans the code, the socket confirms pairing and the route goes live.
+
+## Check status
+
+```typescript
+const status = await sdk.channels.status("whatsapp", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+console.log(status.connected); // true when a route exists
+console.log(status.routes);    // array of active routes
+```
+
+## Disconnect
+
+```typescript
+await sdk.channels.disconnect("whatsapp", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+```
+
+This removes the WhatsApp route. The user's phone shows the linked device as disconnected. See [Status & Disconnect](/sdk/channels/status) for the full response shape.

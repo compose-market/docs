@@ -1,0 +1,83 @@
+---
+title: "Batch Settlement"
+description: "Pre-funded payment channels for high-volume agent calls — deposit once, pay per request off-chain."
+---
+
+Batch settlement is the most cost-effective x402 scheme for repeated calls. You deposit USDC into an onchain escrow channel once, then each request signs an off-chain voucher. The server verifies vouchers instantly and claims them in batches.
+
+## How it works
+
+1. **Deposit**: Your wallet deposits USDC into a payment channel on-chain (the SDK handles this automatically when needed).
+2. **Voucher**: Each paid request includes a signed cumulative voucher for the channel's total claimable amount.
+3. **Verify**: The server checks the voucher signature instantly — no on-chain transaction per request.
+4. **Claim**: The server periodically claims vouchers from many channels in a single on-chain batch transaction.
+
+## Set up the signer
+
+The signer needs a `publicClient` with `readContract` capability so the SDK can recover channel state from on-chain. Without this, you'll get `invalid_batch_settlement_evm_cumulative_below_claimed` errors.
+
+```typescript
+import ComposeSDK, { createPrivateKeyX402EvmWallet } from "@compose-market/sdk";
+
+const { x402Signer, address } = createPrivateKeyX402EvmWallet({
+  privateKey: "0xYourPrivateKey",
+  rpcUrl: "https://avax-fuji.g.alchemy.com/v2/YourRpcKey",
+  schemes: ["batch-settlement"],
+});
+
+const sdk = new ComposeSDK({
+  userAddress: address,
+  chainId: 43113,
+});
+```
+
+The `rpcUrl` is critical — it gives the signer `readContract` access to query the channel's on-chain state. Without it, the SDK cannot recover channel balances after a restart.
+
+## Deposit policy
+
+By default, the SDK deposits 5× the per-request maximum when a channel needs funding. You can customize this:
+
+```typescript
+import { BatchSettlementEvmScheme, toClientEvmSigner } from "@x402/evm";
+import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, http } from "viem";
+
+const account = privateKeyToAccount("0xYourPrivateKey");
+const signer = toClientEvmSigner(
+  account,
+  createPublicClient({ transport: http("https://avax-fuji.g.alchemy.com/v2/YourRpcKey") }),
+);
+
+const batchScheme = new BatchSettlementEvmScheme(signer, {
+  depositPolicy: { depositMultiplier: 10 }, // deposit 10× per-request max
+});
+```
+
+## Channel recovery
+
+If your process restarts, the SDK recovers channel state from on-chain automatically on the next paid request. No local persistence is required — the on-chain state is the source of truth.
+
+For long-running clients, you can add file-based persistence to avoid the recovery round-trip:
+
+```typescript
+import { FileClientChannelStorage } from "@x402/evm/batch-settlement/client/file-storage";
+
+const batchScheme = new BatchSettlementEvmScheme(signer, {
+  storage: new FileClientChannelStorage({ directory: "./channels" }),
+});
+```
+
+## Refund unused balance
+
+When you're done with a channel, refund the unused balance back to your wallet:
+
+```typescript
+await batchScheme.refund("https://api.compose.market/agent/0x.../stream");
+```
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `invalid_batch_settlement_evm_cumulative_below_claimed` | Stale voucher state — channel was claimed server-side but client doesn't know | Ensure `rpcUrl` is passed to `toClientEvmSigner` so the SDK calls `recoverChannel()` |
+| `No scheme registered for x402 version: 2` | Challenge missing `paymentRequirements` field | The SDK handles this automatically — ensure you're using the latest version |

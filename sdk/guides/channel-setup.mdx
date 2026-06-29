@@ -1,0 +1,108 @@
+---
+title: "Channel Setup"
+description: "Connect an agent to a messaging platform end-to-end."
+---
+
+This guide connects a deployed agent to Telegram so anyone can message it through a bot. The same pattern works for WhatsApp, Slack, and Discord — only the pairing step differs.
+
+## 1. Create a Telegram link
+
+Call `sdk.channels.link()` with the channel name and your agent's wallet address. The service returns a bot URL.
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const result = await sdk.channels.link("telegram", {
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+console.log(result.action.type);
+console.log(result.action.url);
+```
+
+`result.action.type` is `"redirect"` and `result.action.url` is a `t.me/...` bot link.
+
+## 2. Share the bot URL
+
+Send `result.action.url` to whoever should reach the agent. When they open it and tap **Start** in Telegram, the channels service binds their Telegram chat to your agent and begins forwarding messages.
+
+## 3. Check connection status
+
+Verify the route is established:
+
+```typescript
+const status = await sdk.channels.status("telegram", {
+  userAddress: "0xYourWalletAddress",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+console.log(status.connected);
+console.log(status.routes);
+```
+
+## 4. Send a test message
+
+Send a message to the bot in Telegram. The channels service forwards it to your agent, the agent processes it, and the reply is posted back to the Telegram chat automatically. You don't need to run a stream yourself — the channel handles delivery.
+
+To watch what the agent does with the message, listen on the event bus:
+
+```typescript
+sdk.events.on("toolCallStart", (event) => {
+  console.log(`Tool: ${event.toolName}`);
+});
+
+sdk.events.on("receipt", (event) => {
+  console.log("Receipt:", event.receipt);
+});
+```
+
+## 5. Verify the agent responded
+
+Check the thread the channel created for the conversation:
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "/thread",
+  threadId: "channel-check",
+});
+
+for await (const event of stream) {
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+}
+```
+
+## 6. Disconnect
+
+When you want to stop forwarding, remove the route:
+
+```typescript
+await sdk.channels.disconnect("telegram", {
+  userAddress: "0xYourWalletAddress",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+```
+
+The bot remains on Telegram, but messages no longer reach the agent until you create a new link.
+
+## Other platforms
+
+| Platform | Pairing | `action.type` |
+|----------|---------|---------------|
+| WhatsApp | QR code scanned by phone | `websocket` |
+| Telegram | Bot link | `redirect` |
+| Slack | OAuth workspace install | `redirect` |
+| Discord | OAuth server invite | `redirect` |
+
+See [Channels](/sdk/channels/overview) for platform-specific details.
+
+## Next
+
+- [Channels](/sdk/channels/overview) — all supported platforms
+- [Telegram](/sdk/channels/telegram) — the full Telegram reference
+- [First Agent Call](/sdk/guides/first-agent-call) — streaming outside of channels

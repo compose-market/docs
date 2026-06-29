@@ -1,0 +1,58 @@
+---
+title: "Recall"
+description: "Assemble relevant context before an agent turn."
+---
+
+Recall is the first step of the memory loop. Before the agent responds, you ask the memory system for context relevant to the upcoming message. It returns a single prompt string — ranked, deduplicated, and packed to a character budget — ready to drop into the agent's system prompt.
+
+## Assemble context
+
+```typescript
+const context = await sdk.memory.context("What did we decide about pricing?", {
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  userAddress: "0xYourWalletAddress",
+  threadId: "sales-7",
+});
+
+console.log(context);
+// "Memory context:\n- User prefers annual billing...\n- Last discussed the Pro tier..."
+```
+
+The returned string is the only thing the model sees. You don't handle raw database rows, ranking, or deduplication — the memory system does that internally and hands you a compact block.
+
+## Parameters
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `query` | `string` | The user's upcoming message or a summary of it. Used for semantic retrieval. |
+| `scope.agentWallet` | `string` | The agent whose memory you're reading. |
+| `scope.userAddress` | `string` | The user paired with the agent. |
+| `scope.threadId` | `string` | The conversation thread. Short-term layers stay thread-local. |
+
+## Injecting into the agent
+
+Pass the context as part of the system prompt when you start the stream:
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "What did we decide about pricing?",
+  threadId: "sales-7",
+});
+
+for await (const event of stream) {
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+}
+```
+
+The agent now answers with the prior conversation and stored facts in mind, without you manually loading history.
+
+## Scope rules
+
+Recall respects the same scope as the rest of memory: the **agent + user pair**. Working context and transcripts are thread-scoped, so they only appear when `threadId` matches. Durable facts cross thread boundaries, so the agent still remembers pinned preferences even in a brand-new thread.
+
+## Related
+
+- [Memory](/sdk/memory/overview) — the full three-step loop
+- [Persist](/sdk/memory/persist) — record the turn after the agent responds
+- [Memory Loop guide](/sdk/guides/memory-loop) — end-to-end example

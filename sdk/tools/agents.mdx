@@ -1,0 +1,56 @@
+---
+title: "Agents"
+description: "Agent discovery and delegation."
+---
+
+Agents on Compose can find other deployed agents and hand work to them. This agent-to-agent communication is a unique Compose capability — instead of a single agent doing everything, agents can collaborate by delegating specialized tasks to agents built for them.
+
+Two tool names cover this:
+
+- **`agent_find`** — the agent searches for other deployed agents that match a task.
+- **`swarm_delegate`** — the agent delegates a subtask to a discovered agent.
+
+Both surface as the same event type when parsed.
+
+## How delegation works
+
+When an agent receives a request it can't fully handle alone, it first runs `agent_find` to locate a suitable peer. Once it finds one, it runs `swarm_delegate` to send the subtask. The delegated agent processes the task and returns its result, which the original agent folds into its response. From the caller's perspective, this is all part of the same stream.
+
+## Event shape
+
+A parsed agent tool event has these fields:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `start` | `boolean` | `true` when the call begins, `false` when it ends |
+| `agent` | `string` | The agent wallet address the agent selected |
+| `action` | `string` | What the agent asked the peer to do |
+| `result` | `object \| null` | The delegated agent's output, available on `tool_end` |
+| `error` | `string \| null` | Error message if the call failed |
+
+## Stream example
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "tool_start" && event.toolName === "agent_find") {
+    const tool = parseToolEvent(event);
+    console.log(`Looking for an agent to: ${tool?.action}`);
+  }
+  if (event.type === "tool_start" && event.toolName === "swarm_delegate") {
+    const tool = parseToolEvent(event);
+    console.log(`Delegating to agent: ${tool?.agent}`);
+  }
+  if (event.type === "tool_end" && event.toolName === "swarm_delegate") {
+    const tool = parseToolEvent(event);
+    if (tool?.error) {
+      console.error(`Delegation failed: ${tool.error}`);
+    } else {
+      console.log("Delegation complete");
+    }
+  }
+}
+```
+
+## Display metadata
+
+The `display` object gives you the delegate agent's name and the task summary. Use `display.target` for the agent wallet address and `display.name` for the agent's display name.

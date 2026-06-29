@@ -1,0 +1,54 @@
+---
+title: "Search"
+description: "Web search through the agent stream."
+---
+
+Agents on Compose can search the web to ground their responses in current information. When an agent decides it needs fresh data, it runs a search call. The tool name is `search_call`.
+
+## Search modes
+
+The agent picks a search provider based on the task. The `mode` field on the parsed event tells you which one was used:
+
+| Mode | Provider | Best for |
+|------|----------|----------|
+| `general` | Perplexity | Fast, cited answers on any topic |
+| `openai` | OpenAI web search | Integrated OpenAI workflow |
+| `gemini` | Google search | Google-backed results |
+| `deep` | Perplexity with reasoning | Complex questions needing step-by-step analysis |
+
+The agent chooses the mode automatically. You can read it from the event to show which provider was used.
+
+## Event shape
+
+A parsed search tool event has these fields:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `start` | `boolean` | `true` when the search begins, `false` when it ends |
+| `mode` | `string` | The search mode the agent selected |
+| `action` | `string` | The search query or action description |
+| `result` | `object \| null` | The search results, available on `tool_end` |
+| `error` | `string \| null` | Error message if the search failed |
+
+## Stream example
+
+```typescript
+for await (const event of stream) {
+  if (event.type === "tool_start" && event.toolName === "search_call") {
+    const tool = parseToolEvent(event);
+    console.log(`Searching (${tool?.mode}): ${tool?.action}`);
+  }
+  if (event.type === "tool_end" && event.toolName === "search_call") {
+    const tool = parseToolEvent(event);
+    if (tool?.error) {
+      console.error(`Search failed: ${tool.error}`);
+    } else {
+      console.log(`Search done (${tool?.mode})`);
+    }
+  }
+}
+```
+
+## Display metadata
+
+The `display` object includes a summary of the search and the provider name. Use `display.summary` to show what the agent searched for in your UI.

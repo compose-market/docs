@@ -1,0 +1,195 @@
+---
+title: "Plans and Goals"
+description: "Multi-step task execution with /plan and /goal."
+---
+
+Plans and goals are two ways to drive multi-step work. A **plan** breaks a prompt into ordered tasks and tracks each one to completion. A **goal** pins a durable objective the agent keeps working toward across multiple follow-up messages. This guide uses both on the same thread.
+
+## 1. Create a plan
+
+Send `/plan` with a prompt the agent can break into tasks:
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const agentWallet = "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d";
+const threadId = "build-app";
+
+const planStream = sdk.agent.stream({
+  agentWallet,
+  message: "/plan Build a todo app: set up the project, add CRUD endpoints, and write tests",
+  threadId,
+});
+
+for await (const event of planStream) {
+  if (event.type === "plan.proposed") {
+    console.log(event.markdown);
+    console.log(`State: ${event.state}`);
+  }
+}
+```
+
+The agent returns a human-readable plan in `event.markdown` and a structured proposal with ordered tasks.
+
+## 2. Run the plan
+
+Start execution and watch each task complete:
+
+```typescript
+const runStream = sdk.agent.stream({
+  agentWallet,
+  message: "/plan run",
+  threadId,
+});
+
+for await (const event of runStream) {
+  switch (event.type) {
+    case "task.completed":
+      console.log(`Done: ${event.taskId}`);
+      break;
+    case "task.blocked":
+      console.log(`Blocked: ${event.taskId}`);
+      break;
+    case "task.failed":
+      console.log(`Failed: ${event.taskId}`);
+      break;
+    case "action":
+      console.log(`Plan status: ${event.status}`);
+      break;
+    case "done":
+      console.log(`\nTokens: ${event.usage.total_tokens}`);
+      break;
+  }
+}
+```
+
+Each task's result is persisted to the thread, so you can inspect or resume a plan later without losing progress.
+
+## 3. Plan state
+
+```typescript
+type PlanState = {
+  id: string;
+  threadId: string;
+  status: PlanStatus;
+  tasks: TaskRecord[];
+  goal: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type PlanStatus =
+  | "draft"
+  | "proposed"
+  | "awaiting_approval"
+  | "running"
+  | "checking"
+  | "blocked"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+type TaskRecord = {
+  id: string;
+  title: string;
+  description: string;
+  status: "todo" | "doing" | "blocked" | "done" | "failed" | "cancelled";
+  result?: string;
+  error?: string;
+  order: number;
+};
+```
+
+## 4. Pin a goal
+
+A goal persists across messages. Pin one and the agent treats every follow-up as a step toward it:
+
+```typescript
+await sdk.agent.stream({
+  agentWallet,
+  message: "/goal Get the todo app to production-ready quality",
+  threadId,
+});
+```
+
+## 5. Send follow-up messages
+
+Continue chatting normally. The agent keeps the goal in mind on each turn:
+
+```typescript
+await sdk.agent.stream({
+  agentWallet,
+  message: "Add input validation to the create endpoint",
+  threadId,
+});
+
+await sdk.agent.stream({
+  agentWallet,
+  message: "Now add error handling and edge-case tests for all endpoints",
+  threadId,
+});
+```
+
+## 6. Check goal status
+
+```typescript
+const statusStream = sdk.agent.stream({
+  agentWallet,
+  message: "/goal status",
+  threadId,
+});
+
+for await (const event of statusStream) {
+  if (event.type === "action" && event.action === "goal") {
+    console.log(event.result.goal);
+  }
+}
+```
+
+## 7. Goal state
+
+```typescript
+type GoalState = {
+  id: string;
+  threadId: string;
+  objective: string;
+  status: "active" | "paused" | "completed" | "cleared";
+  progress?: string;
+  createdAt: number;
+  updatedAt: number;
+};
+```
+
+Only one goal is active per thread at a time. Pinning a new goal replaces the previous one.
+
+## Lifecycle subcommands
+
+| Command | Effect |
+|---------|--------|
+| `/goal pause` | Hold the goal in place |
+| `/goal resume` | Continue from where it paused |
+| `/goal complete` | Mark the goal as achieved |
+| `/goal clear` | Remove the goal entirely |
+| `/plan status` | Check plan progress |
+| `/plan cancel` | Stop the plan |
+
+## Plan vs goal
+
+| | Plan | Goal |
+|---|---|---|
+| Structure | Ordered, tracked tasks | A persistent objective |
+| Lifetime | Completes or fails | Active until cleared |
+| Best for | Known multi-step work | Open-ended objectives |
+
+Use a plan when you know the steps. Use a goal when you want the agent to keep steering toward an outcome across many turns.
+
+## Next
+
+- [Plan](/sdk/commands/plan) — full plan lifecycle and approval
+- [Goal](/sdk/commands/goal) — durable goals in detail
+- [Multi-Agent Delegation](/sdk/guides/multi-agent) — plans in swarm mode

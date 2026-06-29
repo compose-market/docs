@@ -1,0 +1,75 @@
+---
+title: "Facts"
+description: "Store and retrieve durable facts across sessions."
+---
+
+Facts are pieces of information that should outlive any single conversation thread — a user's name, a preference, a long-lived project state. Unlike working context and transcripts, which are thread-scoped, facts persist across threads and sessions for the same agent + user pair.
+
+## Store a fact
+
+Use `sdk.memory.remember()` to store a fact directly. No extractor runs — the content is indexed as-is with the type and retention you give it.
+
+```typescript
+await sdk.memory.remember({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  userAddress: "0xYourWalletAddress",
+  threadId: "intro-1",
+  content: "The user's preferred language is TypeScript.",
+  type: "preference",
+  retention: "pinned",
+  confidence: 1.0,
+});
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `content` | `string` | The fact text. Keep it under 240 characters. |
+| `type` | `string` | `fact`, `preference`, `identity`, or a custom label. |
+| `retention` | `string` | `pinned` keeps it from decaying; omit for default decay. |
+| `confidence` | `number` | 0 to 1. Facts below the threshold are skipped. |
+
+Pinned facts survive cleanup and decay. Use them for information that should never age out.
+
+## Search for facts
+
+Retrieve stored facts with `sdk.memory.items.search()`:
+
+```typescript
+const { items } = await sdk.memory.items.search({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  userAddress: "0xYourWalletAddress",
+  query: "What language does the user prefer?",
+  limit: 5,
+});
+
+for (const item of items) {
+  console.log(item.content, item.confidence);
+}
+```
+
+Search is semantic — it matches on meaning, not exact keywords. Results are ranked by relevance and confidence.
+
+## Manage individual items
+
+| Method | Description |
+|--------|-------------|
+| `sdk.memory.items.get({ id })` | Read a single item by ID. |
+| `sdk.memory.items.update({ id, ... })` | Update content, confidence, or retention. Re-embeds on content change. |
+| `sdk.memory.items.delete({ id })` | Soft-delete an item so it stops appearing in recall. |
+
+## How facts differ from turns
+
+| | Turns (`recordTurn`) | Facts (`remember`) |
+|---|---|---|
+| Scope | Thread-local | Cross-thread |
+| Lifetime | Session + transcript | Durable, until deleted or decayed |
+| Source | Conversation history | Explicit save |
+| Use | Short-term recall | Long-term memory |
+
+Facts are how an agent remembers who a user is and what they care about, even when they start a brand-new thread months later.
+
+## Related
+
+- [Memory](/sdk/memory/overview) — the full three-step loop
+- [Recall](/sdk/memory/recall) — facts surface in recall automatically
+- [Memory Loop guide](/sdk/guides/memory-loop) — end-to-end example

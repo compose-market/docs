@@ -1,0 +1,60 @@
+---
+title: "Streaming Inference"
+description: "Stream model responses with SSE."
+---
+
+For real-time output, stream a model response with `sdk.inference.responses.stream()`. You receive typed events as the model generates — text fragments, tool calls, and a final done event. This is raw model output over SSE, with no agent runtime in between.
+
+## Stream a response
+
+```typescript
+const stream = sdk.inference.responses.stream({
+  model: "gpt-4o",
+  input: "Write a haiku about state channels.",
+});
+
+for await (const event of stream) {
+  switch (event.type) {
+    case "text-delta":
+      process.stdout.write(event.delta);
+      break;
+    case "tool-call":
+      console.log(`\n[Tool call: ${event.name}]`);
+      break;
+    case "done":
+      console.log(`\nTokens: ${event.usage.total_tokens}`);
+      break;
+  }
+}
+```
+
+## Event types
+
+| Event | When | Key fields |
+|-------|------|------------|
+| `text-delta` | Model emits a text fragment | `delta` |
+| `tool-call` | Model requests a tool call | `name`, `arguments` |
+| `done` | Stream completed | `usage` (token counts) |
+| `error` | Stream failed | `error` |
+
+Concatenate `text-delta` fragments to build the full response. The `done` event carries the final usage and receipt.
+
+## Inference streaming vs agent streaming
+
+Both use SSE, but they serve different layers:
+
+| | Inference streaming | Agent streaming |
+|---|---|---|
+| Source | Raw model output | Agent runtime (model + tools + memory) |
+| Events | `text-delta`, `tool-call`, `done` | `text-delta`, `tool_start`, `tool_end`, `plan.*`, `swarm_child_*`, `done`, and more |
+| Tool events | Tool call requests from the model | Full tool execution lifecycle (start + end + result) |
+| Plan / goal | Not available | `task.*`, `plan.proposed`, `action` events |
+| Payment | Settled on the receipt | Settled on the receipt |
+
+Use inference streaming when you want direct model output with no orchestration. Use agent streaming when you want tools, memory, plans, or multi-agent delegation.
+
+## Related
+
+- [Inference](/sdk/inference/overview) — all inference capabilities
+- [Agent Streaming](/sdk/streaming/overview) — the richer agent event stream
+- [Stream Protocol](/sdk/streaming/protocol) — every agent event type

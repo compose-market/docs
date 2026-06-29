@@ -1,0 +1,56 @@
+---
+title: "Status and Disconnect"
+description: "Check channel connection status and disconnect routes."
+---
+
+Once a channel is linked, a **route** binds a specific platform thread to a Compose agent. A route is the record that says "messages from this Telegram chat / Slack channel / Discord thread / WhatsApp number go to this agent wallet." The `status()` and `disconnect()` methods let you inspect and remove these bindings.
+
+## Check status
+
+```typescript
+const status = await sdk.channels.status("telegram", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+
+console.log(status.connected); // boolean — at least one route exists
+console.log(status.routes);    // ChannelRoute[]
+```
+
+### ChannelStatusResponse
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `channel` | `ChannelName` | The platform checked |
+| `connected` | `boolean` | `true` when at least one route is active |
+| `routes` | `ChannelRoute[]` | All routes for this user and agent |
+
+## ChannelRoute
+
+Each route describes a single binding between a platform thread and an agent:
+
+```typescript
+interface ChannelRoute {
+  id: string;           // unique route identifier
+  channel: ChannelName; // "whatsapp" | "telegram" | "slack" | "discord"
+  userAddress: string;  // wallet of the user who linked
+  agentWallet: string;  // wallet of the agent receiving messages
+  accountId: string;    // platform-side account or workspace id
+  threadId: string;     // platform thread, channel, or chat id
+  label?: string;       // optional human-readable name
+  metadata?: object;    // platform-specific extra data
+  createdAt: string;    // ISO timestamp
+  updatedAt: string;    // ISO timestamp
+}
+```
+
+## Disconnect
+
+```typescript
+await sdk.channels.disconnect("telegram", {
+  userAddress: "0xYourWallet",
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+});
+```
+
+This removes the matching route. The platform-side connection (bot membership, linked device) is revoked, and messages from that thread will no longer reach the agent. To reconnect, create a new link with [link()](/sdk/channels/overview).

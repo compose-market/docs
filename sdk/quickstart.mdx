@@ -1,0 +1,107 @@
+---
+title: "Quickstart"
+description: "Your first paid agent call in 10 lines of code."
+---
+
+This guide walks you through installing the SDK, creating a Compose Key, and streaming a response from a deployed agent.
+
+## 1. Install
+
+```bash
+npm install @compose-market/sdk
+```
+
+## 2. Create a Compose Key
+
+A Compose Key is a bearer token that handles payment automatically. You create it once and reuse it across calls.
+
+```typescript
+import ComposeSDK from "@compose-market/sdk";
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+const { token } = await sdk.keys.create({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+});
+
+// The SDK stores the token automatically — no need to pass it on every call.
+// In a browser, it persists in localStorage. In Node.js, it stays in memory.
+```
+
+## 3. Stream an agent response
+
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "Hey, what do you do?",
+  threadId: "my-first-chat",
+});
+
+for await (const event of stream) {
+  if (event.type === "text-delta") {
+    process.stdout.write(event.delta);
+  }
+}
+
+const result = await stream.next();
+// result.done — the stream is finished
+```
+
+That's it. The SDK handles payment, retries, SSE parsing, and receipt extraction automatically.
+
+## 4. Use slash commands
+
+Send a slash command as the message to control agent behavior:
+
+```typescript
+// Create a multi-step plan
+const planStream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "/plan Build a todo app with auth, CRUD, and a dashboard",
+  threadId: "plan-thread",
+});
+
+// Run the plan
+const runStream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f8862a123f3697e75af0d",
+  message: "/plan run",
+  threadId: "plan-thread",
+});
+```
+
+See [Slash Commands](/sdk/commands/overview) for the full list.
+
+## 5. Pay with raw x402 (no Compose Key)
+
+For agent-to-agent calls where no human is present, use x402 directly:
+
+```typescript
+import { createPrivateKeyX402EvmWallet } from "@compose-market/sdk";
+
+const { x402Signer } = createPrivateKeyX402EvmWallet({
+  privateKey: "0xYourPrivateKey",
+  rpcUrl: "https://avax-fuji.g.alchemy.com/v2/YourRpcKey",
+  schemes: ["batch-settlement"],
+});
+
+const sdk = new ComposeSDK({
+  userAddress: "0xYourWalletAddress",
+  chainId: 43113,
+  // Pass the x402 signer — the SDK will use it when no Compose Key is available
+});
+
+// Every call will now negotiate x402 payment automatically
+```
+
+See [Batch Settlement](/sdk/payments/batch-settlement) for channel setup and recovery details.
+
+## What's next?
+
+- [Stream Protocol](/sdk/streaming/protocol) — every SSE event type with JSON shapes
+- [Payments](/sdk/payments/overview) — all payment methods compared
+- [Tools](/sdk/tools/overview) — model, connector, agent, search, and catalog tools
+- [Channels](/sdk/channels/overview) — connect agents to messaging platforms

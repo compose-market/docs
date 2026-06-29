@@ -1,0 +1,101 @@
+---
+title: "Tool Events"
+description: "Parse tool execution events from the agent stream — models, connectors, agents, search, and catalog."
+---
+
+When an agent calls a tool during a stream, you receive `tool_start` and `tool_end` events. The SDK provides typed helpers to parse these into readable tool event objects.
+
+## Tool event types
+
+Each tool type has a dedicated interface with readable field names:
+
+| Tool | Event type | Key fields |
+|------|-----------|------------|
+| Model call | `ModelToolEvent` | `model`, `action`, `result`, `error` |
+| Connector | `ConnectorToolEvent` | `connector`, `action`, `result`, `error` |
+| Agent | `AgentToolEvent` | `agent`, `action`, `result`, `error` |
+| Search | `SearchToolEvent` | `mode`, `action`, `result`, `error` |
+| Catalog | `CatalogToolEvent` | `domain`, `action`, `result`, `error` |
+
+All share a common shape: `start` (boolean), the tool-specific name field, `action`, `result`, and `error`.
+
+## Parse tool events
+
+```typescript
+import { parseToolEvent } from "@compose-market/sdk";
+
+for await (const event of stream) {
+  if (event.type === "tool_start" || event.type === "tool_end") {
+    const toolEvent = parseToolEvent(event);
+    if (toolEvent) {
+      switch (toolEvent.constructor) {
+        // Check the tool type by inspecting the parsed object
+      }
+
+      if ("model" in toolEvent) {
+        console.log(`Model: ${toolEvent.model} — ${toolEvent.action}`);
+      }
+      if ("connector" in toolEvent) {
+        console.log(`Connector: ${toolEvent.connector} — ${toolEvent.action}`);
+      }
+      if ("agent" in toolEvent) {
+        console.log(`Agent: ${toolEvent.agent} — ${toolEvent.action}`);
+      }
+      if ("mode" in toolEvent) {
+        console.log(`Search (${toolEvent.mode}) — ${toolEvent.action}`);
+      }
+      if ("domain" in toolEvent) {
+        console.log(`Catalog (${toolEvent.domain}) — ${toolEvent.action}`);
+      }
+    }
+  }
+}
+```
+
+## Tool names in the stream
+
+The raw `toolName` field in `tool_start`/`tool_end` events maps to tool types:
+
+| `toolName` | Tool type | What it does |
+|-----------|-----------|-------------|
+| `models_call` | Model | Invokes a model for text, image, audio, or video generation |
+| `connectors_find` | Connector | Discovers connectors (MCP servers, onchain tools) |
+| `agent_find` | Agent | Discovers other deployed agents for delegation |
+| `search_call` | Search | Performs web search (general, deep, or provider-specific) |
+| `query_catalog` | Catalog | Queries the catalog when the tool family is unclear |
+| `swarm_delegate` | Agent | Delegates a task to another agent (swarm mode) |
+
+## Display metadata
+
+Every tool event includes optional `display` metadata from the runtime:
+
+```typescript
+interface ToolEventDisplay {
+  kind: "model" | "connector" | "agent" | "search" | "tool" | "harness" | "swarm" | "conclave" | "route";
+  name?: string;      // human-readable name
+  target?: string;    // model ID, agent wallet, or connector ID
+  summary?: string;   // one-line description
+  details?: Record<string, unknown>;
+}
+```
+
+Use `display.name` and `display.summary` for UI rendering — they're already formatted for humans.
+
+## Event bus integration
+
+Tool lifecycle events are also emitted on the SDK event bus:
+
+```typescript
+sdk.events.on("toolCallStart", (event) => {
+  console.log(`Tool started: ${event.toolName}`);
+  console.log(`Display: ${event.display?.name} — ${event.display?.summary}`);
+});
+
+sdk.events.on("toolCallEnd", (event) => {
+  if (event.failed) {
+    console.error(`Tool failed: ${event.toolName} — ${event.error}`);
+  } else {
+    console.log(`Tool done: ${event.toolName} — ${event.summary}`);
+  }
+});
+```
