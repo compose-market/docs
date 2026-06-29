@@ -277,10 +277,106 @@
               "endpoints/mesh/network",
               "endpoints/utilities/decorative-generation"
             ]
-          }
-        ]
-      }
-    ],
+        }
+      ]
+    },
+    {
+      "tab": "SDK",
+      "groups": [
+        {
+          "group": "Getting Started",
+          "pages": [
+            "sdk/introduction",
+            "sdk/installation",
+            "sdk/quickstart"
+          ]
+        },
+        {
+          "group": "Payments",
+          "pages": [
+            "sdk/payments/overview",
+            "sdk/payments/compose-keys",
+            "sdk/payments/batch-settlement",
+            "sdk/payments/exact-upto",
+            "sdk/payments/receipts",
+            "sdk/payments/sessions"
+          ]
+        },
+        {
+          "group": "Agent Streaming",
+          "pages": [
+            "sdk/streaming/overview",
+            "sdk/streaming/protocol",
+            "sdk/streaming/agent",
+            "sdk/streaming/workflow",
+            "sdk/streaming/tools"
+          ]
+        },
+        {
+          "group": "Tools",
+          "pages": [
+            "sdk/tools/overview",
+            "sdk/tools/models",
+            "sdk/tools/connectors",
+            "sdk/tools/agents",
+            "sdk/tools/search",
+            "sdk/tools/catalog"
+          ]
+        },
+        {
+          "group": "Slash Commands",
+          "pages": [
+            "sdk/commands/overview",
+            "sdk/commands/reference",
+            "sdk/commands/plan",
+            "sdk/commands/goal",
+            "sdk/commands/mode-sandbox-proof"
+          ]
+        },
+        {
+          "group": "Channels",
+          "pages": [
+            "sdk/channels/overview",
+            "sdk/channels/whatsapp",
+            "sdk/channels/telegram",
+            "sdk/channels/slack",
+            "sdk/channels/discord",
+            "sdk/channels/status"
+          ]
+        },
+        {
+          "group": "Memory",
+          "pages": [
+            "sdk/memory/overview",
+            "sdk/memory/recall",
+            "sdk/memory/persist",
+            "sdk/memory/facts"
+          ]
+        },
+        {
+          "group": "Inference",
+          "pages": [
+            "sdk/inference/overview",
+            "sdk/inference/streaming",
+            "sdk/inference/catalog",
+            "sdk/inference/modalities"
+          ]
+        },
+        {
+          "group": "Guides",
+          "pages": [
+            "sdk/guides/first-agent-call",
+            "sdk/guides/paid-streaming",
+            "sdk/guides/multi-agent",
+            "sdk/guides/channel-setup",
+            "sdk/guides/memory-loop",
+            "sdk/guides/plan-and-goal",
+            "sdk/guides/error-handling"
+          ]
+        }
+      ]
+    }
+  ],
     "global": {
       "anchors": [
         {
