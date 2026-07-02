@@ -26,10 +26,10 @@ Most other `/api/*`, `/agent/*`, and `/workflow/*` routes either return public c
 | Header | Description |
 | --- | --- |
 | `X-Request-Id` | Request ID accepted or minted by the root HTTP middleware. |
-| `X-Compose-Receipt` | Native Compose settlement receipt when a JSON route settles after work. |
+| `X-Receipt` | Native Compose settlement receipt when a JSON route settles after work. |
 | `PAYMENT-REQUIRED` | Raw x402 challenge returned when a paid route needs a signed payment. |
 | `PAYMENT-RESPONSE` | x402 settlement response header when the facilitator settles a payment. |
-| `x-compose-response-id` | Response ID for native streaming inference. |
+| `x-response-id` | Response ID for native streaming inference. |
 
 ## Route families
 

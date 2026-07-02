@@ -9,11 +9,11 @@ Manowar uses a dynamic system block built per turn in `framework.ts`. The block 
 
 | Section | Source | Included when |
 | --- | --- | --- |
-| Identity | `agent/identity.ts` or agent config fallback | Always. |
+| Identity | `harness/identity.ts` or agent config fallback | Always. |
 | Persona | Registered `systemPrompt` | Present on the agent config. |
 | Memory | `retrieveAgentMemory()` | Ranked memory exists for the user turn. |
 | Session | Per-request execution context | Session budget, permissions, or Backpack accounts exist. |
-| Capability sentence | `agent/tools/surface.ts` | Always. |
+| Capability sentence | `harness/tools/surface.ts` | Always. |
 
 ## Memory Budget
 

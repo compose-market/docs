@@ -6,7 +6,7 @@ description: "How Manowar exposes broad capability without dumping every tool, m
 Manowar gives every agent a small default capability surface:
 
 ```text
-Memory is automatic. Use card tools, harness_run, connectors_find, swarm_find, swarm_delegate, models_call, or search_call as needed.
+Use query_catalog when the tool family is unclear. Use models_call for media generation. Use connectors_find for external accounts. Use search_call for current facts. Use agent_find for agent discovery. Use swarm_propose to draft and submit a multi-agent plan.
 ```
 
 The agent sees a few entry points first. It asks those entry points for the exact connector, model, agent, or search backend only when the task needs one.
@@ -16,8 +16,8 @@ The agent sees a few entry points first. It asks those entry points for the exac
 | Tool | Discovers or runs | Backing service |
 | --- | --- | --- |
 | `connectors_find` | One MCP connector | `CONNECTORS_URL /mcps/search` |
-| `harness_run` | One typed MAL plan | In-process harness interpreter |
-| `swarm_find` | One registered agent | `API_URL /agents/search` |
+| `swarm_propose` | One typed MAL plan | In-process harness interpreter |
+| `agent_find` | One registered agent | `API_URL /agents/search` |
 | `swarm_delegate` | One registered agent call | Harness subagent engine |
 | `models_call` | One model call | `MODELS_URL /search`, then internal inference |
 | `search_call` | One web search | Perplexity, OpenAI, or Gemini backends |
@@ -28,7 +28,7 @@ The model catalog, connector catalog, agent index, and tool schemas can be large
 
 ## Tool Result Budgets
 
-Tool results are compacted before returning to the model. Defaults live in `agent/tools/index.ts`:
+Tool results are compacted before returning to the model. Defaults live in `harness/tools/index.ts`:
 
 | Env var | Default |
 | --- | --- |

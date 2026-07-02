@@ -1,129 +1,89 @@
 ---
-title: "x402 Payments"
-description: "Machine-to-machine payments for autonomous AI services."
+title: 'x402 Payments'
+description: 'How agents and users pay each other over HTTP using the x402 protocol.'
 ---
 
-Compose Market uses the **x402** protocol to enable programmatic payments between users, agents, and services—eliminating the friction of traditional payment flows.
+Compose.Market uses the x402 protocol (v2) for machine-to-machine payments. Every paid request follows the same pattern: the API asks for payment, the client pays, the API returns the result.
 
-## How It Works
+## The 402 flow
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant API as Compose API
-    participant Redis
-    participant Chain as Blockchain
+    participant Settle as Settlement
 
     Client->>API: Request (no payment header)
     API-->>Client: 402 Payment Required
-    Client->>API: Request + Payment Header
-    API->>Redis: Lock budget (instant)
-    Redis-->>API: ✓ Budget locked
-    API-->>Client: 200 OK + Response
-    Note over API,Chain: Settlement happens asynchronously (batch)
+    Client->>API: Retry + PAYMENT-SIGNATURE
+    API->>Settle: Verify + settle
+    Settle-->>API: Settled
+    API-->>Client: 200 OK + response + receipt
 ```
 
-## Payment Methods
+## Payment methods
 
-Compose Market supports **three payment flows**, optimized for different use cases:
+| Method | Header | Use case |
+|--------|--------|----------|
+| **Compose Key** | `Authorization: Bearer compose-<jwt>` | External tools (OpenCode, Cursor, Cline), first-party app sessions, SDK calls |
+| **Raw x402** | `PAYMENT-SIGNATURE` | Wallet-native clients that sign EIP-712 payloads and retry |
 
-| Method | Header | Use Case | Latency |
-|--------|--------|----------|---------|
-| **Per-call** | `X-PAYMENT` or `PAYMENT-SIGNATURE` | One-off requests | ~2-3s |
-| **Session Bypass** | `x-session-*` headers | Active web sessions | below 100ms |
-| **Compose Key** | `Authorization: Bearer compose-...` | External tools (Cursor, OpenCode) | ~500ms |
+### Compose Key
 
-### Per-Call Payment (x402)
-
-Standard x402 flow for requests without an active session:
-
-```
-POST /agent/{id}/chat
-X-PAYMENT: {base64-eip712-signature}
-X-CHAIN-ID: 43114
-```
-
-If the payment header is missing or invalid:
-
-```http
-HTTP/2 402 Payment Required
-Content-Type: application/json
-
-{
-  "x402Version": 1,
-  "error": "Payment required",
-  "accepts": [{
-    "scheme": "exact",
-    "network": "eip155:43114",
-    "maxAmountRequired": "10000",
-    "payTo": "0x...",
-    "asset": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
-  }]
-}
-```
-
-### Session Bypass (Deferred Settlement)
-
-For web users with active sessions, payments are instant:
-
-1. User creates session with **one-time USDC approval**
-2. Requests skip on-chain verification—budget tracked in Redis
-3. Settlement batched every **2 minutes** or at **$1 threshold**
-
-```
-POST /agent/{id}/chat
-x-session-user-address: 0x...
-x-session-active: true
-x-session-budget-remaining: 5000000
-X-CHAIN-ID: 43114
-```
-
-See [Sessions](/concepts/sessions) for details.
-
-### Compose Key (External Tools)
-
-For Cursor, OpenCode, OpenClaw, and other external clients:
+A bearer token that handles payment server-side. The SDK creates and stores it automatically.
 
 ```bash
-curl -X POST https://api.compose.market/agent/{id}/chat \
+curl https://api.compose.market/external/v1/chat/completions \
   -H "Authorization: Bearer compose-abc123..." \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-5.5", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
-Keys are managed via the session dropdown in the app.
+### Raw x402
+
+For wallet-native clients, the server returns `402` with a `PAYMENT-REQUIRED` header. The client signs and retries with `PAYMENT-SIGNATURE`:
+
+```bash
+curl -X POST https://api.compose.market/v1/chat/completions \
+  -H "PAYMENT-SIGNATURE: <base64-eip712-signature>" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-5.5", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+The x402 payload uses `x402Version: 2` and an `amount` field.
+
+## x402 schemes
+
+| Scheme | How it works | When to use |
+|--------|-------------|-------------|
+| **batch-settlement** | Deposit USDC into an on-chain escrow channel once. Each request signs an off-chain voucher. The server claims vouchers in batches. | High-volume repeated calls (agent endpoints). Lowest per-request cost. |
+| **exact** | Sign an EIP-3009 transfer for the exact advertised amount. | One-shot calls, no pre-funding. |
+| **upto** | Sign a Permit2 authorization for a maximum. The server charges the measured usage after processing. | Usage-metered calls (LLM token billing). |
 
 ## Pricing
 
-All prices in **USDC** (6 decimals, 1 USDC = 1,000,000 wei).
+The API applies a **1% platform fee** on top of the raw provider amount. Pricing is dynamic — each model's price comes from the generated catalog, not a fixed table.
 
-| Operation | Price |
-|-----------|-------|
-| Agent Chat | $0.01 |
-| Tool Call (light) | $0.001 |
-| Tool Call (heavy) | $0.005 |
-| Image Generation | $0.03 |
-| Video Generation | $0.15 |
-| Memory Operation | $0.001 |
+> OpenRouter charges 5.5%. Compose charges 1%. That is a 5.5x difference, and it is factual.
 
-Inference pricing varies by model—see individual model cards.
+## Multi-chain support
 
-## Multi-Chain Support
+Payments settle in USDC on 6 chains:
 
-Compose Market supports payments on multiple chains:
+| Chain | Chain ID | Type |
+|-------|----------|------|
+| Avalanche Fuji | 43113 | Testnet |
+| Avalanche C-Chain | 43114 | Mainnet |
+| Arbitrum Sepolia | 421614 | Testnet |
+| Arbitrum One | 42161 | Mainnet |
+| Base Sepolia | 84532 | Testnet |
+| Base | 8453 | Mainnet |
 
-| Chain | ID | Facilitator |
-|-------|-----|-------------
-| Avalanche C-Chain | 43114 | ThirdWeb |
-| Avalanche Fuji | 43113 | ThirdWeb |
+The `X-CHAIN-ID` header selects the settlement chain. Examples in these docs use `43113` (Fuji).
 
-The `X-CHAIN-ID` header determines which chain to use for settlement.
+## Related
 
-## Internal Bypass
-
-For internal service-to-service communication within Compose infrastructure:
-
-```
-x-runtime-internal: {RUNTIME_INTERNAL_SECRET}
-```
-
-This bypasses all payment verification. Used by the orchestrator when delegating to nested agents within a workflow.
+- [x402 Facilitator](/x402/introduction) — protocol reference, verify/settle endpoints
+- [SDK Payments](/sdk/payments/overview) — TypeScript API for Compose Keys and raw x402
+- [Sessions & Keys](/concepts/sessions) — pre-approved spending limits
+- [Metering](/inference/metering) — how provider output becomes a bill

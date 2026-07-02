@@ -1,31 +1,40 @@
 ---
 title: 'Deployed Contracts'
-description: 'Contract addresses on testnets'
+description: 'Contract addresses on Avalanche Fuji testnet (chain ID 43113).'
 ---
+
+All contracts are deployed on Avalanche Fuji testnet (chain ID 43113) using CREATE2 for universal addresses — same address on every chain.
 
 ### Core Contracts
 
 | Contract | Address |
 | :--- | :--- |
-| **Manowar** (Core) | `0x6C277Fd54831e35eDaCd2729F5bC64e39bdCE83f` |
-| **Agent Factory** (Registry) | `0x47d2D5cfe2B75B620AfD6D73ff5FB665c650d760` |
-| **Agent Manager** | `0x1004cC7fB6DcDA6Db67A270B0E130eB46c33b210` |
-| **Warp** (Bridge) | `0x5D8badCa8EDf27ce70a100C79dd3d86B5BE305d9` |
-| **Clone** | `0x5ED9c7159dC5C6c1dDEFb5d61f0dF1277eF94EEb` |
-| **RFA** (Requests) | `0x67f0E11d1c80Cc7106A97909d1c2Aa7bfB1259aD` |
-| **Lease** | `0x56760D79d363413adc4f9F21cF4949c302270071` |
-| **Distributor** | `0xc199f85EdE4038FB6Bb32Aae9cdEbdAFBA0449e0` |
-| **Royalties** | `0xA8d8531Fe968A9cd5129b5571C06f7BdDF35836D` |
-| **Delegation** | `0xFa097fc49592Cfe1eBaF6714BE2131C3c3933E55` |
-| **Utils** | `0x6554d9A40D7b6Ed77973f2A088FFF701eC113D02` |
-|   |   |
-|  The Dispenser is a multi-chain faucet to fund initial users.
+| **Manowar** (Workflow NFT, ERC-7401) | `0x5ddebFF9e88a1902b947606255C0DDa7aa0Ef5Bf` |
+| **Agent Factory** (Registry, ERC-8004) | `0x0aE5dc07745c5165e02Ad4E100f26032faeC7F4F` |
+| **Agent Manager** | `0xb084Ff2cEEE961d9AAE4e98230C3877e640a0285` |
+| **Warp** (Bridge) | `0x501927C9274827a3648c55AE37631A0B21853B50` |
+| **Clone** | `0xEC5e53E6d9EdE42eB7623a410C64Afa9c09f9f13` |
+| **RFA** (Request for Agent) | `0x52e1d4DD39C9D0bcf986ce814614973310e8A7Bd` |
+| **Lease** | `0xfb7Bc9D0a0b10f967Aa3667b9de1F4a780561544` |
+| **Reputation** | `0x8B35d78fbFDc6D68228ca797dfB40a899e38e5ad` |
+| **Validation** | `0x9a0A0749CaCb32A6Cee6160Ed5bb51397970A5Bc` |
+| **Royalties** | `0x10385ee35AB9a7ceE97423AE28632d36D1078144` |
+| **Distributor** | `0x9f39c9b79654A0E043Be07dC1108F134dD50A54d` |
+| **Delegation** | `0xA51bAfD4058c0c6f576755E7CFF7588f07c3a9ff` |
+| **Utils** | `0x39fEed5C43cD34C2c13964da80819A127a6D92de` |
+
+### Dispenser
+
+The Dispenser is a multi-chain faucet to fund initial users with testnet USDC.
+
+| Contract | Address |
+| :--- | :--- |
 | **Dispenser** | `0x261938c0eAFA429797dD068bA4382e5b757B4615` |
 
 > [!CAUTION]
-> These are Testnet addresses. Do not send Mainnet assets.
+> These are testnet addresses. Do not send mainnet assets.
 
-----
+---
 
 ### ERC-4337 Account Abstraction (v0.7)
 
@@ -37,17 +46,10 @@ description: 'Contract addresses on testnets'
 | **Paymaster** | `0xA7c85b07aBE6eE06Cd2f1268Ea22d7156C7A67D4` | Gas sponsorship |
 
 > [!NOTE]
-> All our contracts use **universal addresses** (same address on all supported chains). 
-> We deploy them via CREATE2 with Arachnid's deployer to ensure that both core contracts and Smart Accounts have the same address across all chains. 
+> All contracts use universal addresses (same on all supported chains) via CREATE2 deployment. This ensures:
+> - Native multi-chain support without per-chain configuration
+> - Consistent smart account addresses across chains
+> - Simplified deployment pipeline and frontend integration
+> - Cross-chain account abstraction
 
-> **Why Same Addresses Matter:**
-> - It dramatically increases standardization/portability (= compose.market is native on any chain)
-> - Consistent smart account addresses across chains (= less identity fragmentation)
-> - It simplifies deployment pipeline and frontend configuration (better "dev experience")
-> - Enables cross-chain account abstraction
-
-> **How it works:** The address depends on:
-> - Salt (32 bytes, arbitrary value you choose)
-> - Init code (bytecode + constructor args)
-
-> *If both are identical across chains, the resulting address is identical.*
+See [Multi-chain](/contracts/multichain) for chain support details and [Agent Factory](/contracts/core-contracts/agent-factory) for minting agents.

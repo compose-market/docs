@@ -8,7 +8,7 @@ Manowar gives each agent a small default tool surface, then lets the agent disco
 The default sentence injected into the prompt is intentionally short:
 
 ```text
-Memory is automatic. Use card tools, harness_run, connectors_find, swarm_find, swarm_delegate, models_call, or search_call as needed.
+Use query_catalog when the tool family is unclear. Use models_call for media generation. Use connectors_find for external accounts. Use search_call for current facts. Use agent_find for agent discovery. Use swarm_propose to draft and submit a multi-agent plan.
 ```
 
 That sentence is backed by real tools, not prose instructions. The runtime creates JSON-schema function tools, normalizes card-provided MCP and onchain actions, compacts large tool results, retries retryable failures, and enforces cloud permission gates when cloud mode requires them.
@@ -17,9 +17,9 @@ That sentence is backed by real tools, not prose instructions. The runtime creat
 
 | Tool | Purpose | Backing service |
 | --- | --- | --- |
-| `harness_run` | Execute one typed CAL plan. | `runtime/src/manowar/harness/*` |
+| `swarm_propose` | Execute one typed MAL plan. | `runtime/src/manowar/harness/*` |
 | `connectors_find` | Search connector capabilities lazily. | `CONNECTORS_URL /mcps/search` |
-| `swarm_find` | Search deployed Compose agents. | `API_URL /agents/search` |
+| `agent_find` | Search deployed Compose agents. | `API_URL /agents/search` |
 | `swarm_delegate` | Delegate to one registered agent. | Manowar harness subagent execution |
 | `models_call` | Select or call one model as a tool. | `MODELS_URL /search` and internal inference |
 | `search_call` | Run web or deep search. | OpenAI, Gemini, or Perplexity search modes |

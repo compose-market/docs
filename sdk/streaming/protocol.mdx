@@ -166,8 +166,8 @@ A plan was submitted by the agent.
   "proposalId": "proposal_...",
   "version": 1,
   "state": "awaiting_approval",
-  "rootComposeRunId": "root-...",
-  "composeRunId": "run-...",
+  "rootRunId": "root-...",
+  "runId": "run-...",
   "requestedBy": "0x...",
   "proposal": { "goal": "...", "participants": [], "tasks": [] },
   "markdown": "# Plan\n\nGoal: ...",
@@ -210,7 +210,7 @@ When an agent delegates to sub-agents (swarm mode):
 ```json
 {
   "type": "swarm_child_start",
-  "rootComposeRunId": "root-...",
+  "rootRunId": "root-...",
   "parentRunId": "run-parent",
   "subId": "child_1",
   "depth": 1,
@@ -261,7 +261,7 @@ Shared workspace operations (used in swarm coordination):
 {
   "type": "conclave",
   "action": "write",
-  "rootComposeRunId": "root-...",
+  "rootRunId": "root-...",
   "key": "plan.md",
   "success": true,
   "version": 3,

@@ -1,110 +1,81 @@
 ---
 title: 'Model Catalog'
-description: 'Access to 50,000+ AI models across providers'
+description: '500+ models from 11 providers through a single x402-native API.'
 ---
 
-Compose Market provides unified access to AI models from multiple providers through a single API.
+Compose.Market provides unified access to AI models through a single API with x402-native payment. The curated catalog has 504 models from 11 providers across 6 modalities.
 
-## Model Catalog
+## Two catalogs
 
-The platform maintains two catalogs:
-
-### Curated Catalog (~2,100 models)
-
-Models visible on the platform with:
-- Verified pricing
-- Validated capabilities
-- Quality assurance
-
-Access via: `GET /v1/models`
-
-### Extended Catalog (50,000+ models)
-
-Complete index from all providers including:
-- Experimental models
-- Community fine-tunes
-- Specialized variants
-
-Access via: `GET /v1/models/all`
+| Catalog | Size | Access |
+|---------|------|--------|
+| **Curated** | 504 models | `GET /v1/models` — verified pricing, validated capabilities |
 
 ## Providers
 
 | Provider | Models | Specialization |
 |----------|--------|----------------|
-| OpenAI | GPT-4o, o1, DALL-E | General, reasoning |
-| Anthropic | Claude 4, 3.7 | Analysis, coding |
-| Google | Gemini 3, Veo, Lyria | Multimodal |
-| AIML | Various | Aggregation |
-| HuggingFace | Open source | Community models |
-| OpenRouter | Routing | 200+ models |
+| Alibaba | 212 | Text (Qwen), speech (CosyVoice), video (Wan), vision, embeddings |
+| Roboflow | 84 | Object detection, segmentation, OCR, image embeddings |
+| Cloudflare | 62 | Edge inference, LLMs, vision, speech via Workers AI |
+| Gemini | 43 | Multimodal text, vision, realtime, TTS, video |
+| Azure | 29 | Hosted OpenAI models with data residency |
+| OpenAI | 22 | GPT, Sora, embeddings, realtime |
+| Fireworks | 14 | Open-source LLMs and rerankers |
+| Cartesia | 13 | Low-latency text-to-speech |
+| ElevenLabs | 11 | Voice generation, music, realtime transcription |
+| Deepgram | 8 | Speech recognition (Nova-3) |
+| ASICloud | 6 | Specialized inference |
 
-## Model Types
+## Modalities
 
-### Text Generation
+| Modality | Models | Example endpoints |
+|----------|--------|-------------------|
+| Text generation | 192 | `/v1/chat/completions`, `/v1/responses` |
+| Speech | 73 | `/v1/audio/speech`, `/v1/audio/transcriptions` |
+| Image generation | 57 | `/v1/images/generations`, `/v1/images/edits` |
+| Video generation | 40 | `/v1/videos/generations` |
+| Realtime | 29 | `/v1/responses` (realtime mode) |
+| Embeddings | 26 | `/v1/embeddings` |
 
-Models for chat, reasoning, and content generation:
+Specialized vision operations — detection, segmentation, OCR, keypoints, classification — are exposed through Roboflow and Cloudflare models in the image/vision modality.
 
-- `google/gemini-3-flash-preview` - Fast multimodal
-- `deepseek/deepseek-v3.2` - Reasoning
-- `arcee-ai/trinity-mini` - Efficient
+## Model examples
 
-### Image Generation
+| Model | Provider | Modality |
+|-------|----------|----------|
+| `gpt-5.5` | Azure / OpenAI | Text |
+| `FLUX.2-pro` | Black Forest Labs | Image |
+| `sora-2` | OpenAI | Video |
+| `cosyvoice-v3-flash` | Alibaba | Speech |
+| `gemini-3-flash-preview` | Gemini | Text, vision, realtime |
+| `qwen3` | Alibaba | Text |
+| `deepseek-v4-flash` | DeepSeek | Text |
+| `text-embedding-3-large` | OpenAI | Embeddings |
 
-Text-to-image and image-to-image:
+## Quick example
 
-- `fal-ai/flux-2` - High quality
-- `bytedance/seedream-4-5` - Fast generation
-- `dall-e-3` - OpenAI
-
-### Video Generation
-
-Text-to-video and image-to-video:
-
-- `openai/sora-2` - Cinematic
-- `google/veo3-1` - Fast
-- `kwai/kling-2.6` - Motion control
-
-### Embeddings
-
-Feature extraction for search and similarity:
-
-- `text-embedding-3-large` - OpenAI
-- `intfloat/e5-mistral-7b-instruct` - Open source
-
-### Audio
-
-Speech and music generation:
-
-- `tts-1-hd` - Text-to-speech
-- `whisper-1` - Speech recognition
-- `google/lyria2` - Music generation
-
-## ModelCard Schema
-
-Each model has a `ModelCard` with:
-
-```typescript
-interface ModelCard {
-  modelId: string;           // Canonical identifier
-  name: string;              // Display name
-  provider: string;          // Provider ID
-  taskType: string;          // Primary task
-  capabilities: string[];    // Supported features
-  pricing: {
-    inputTokenPrice: string;
-    outputTokenPrice: string;
-  };
-  contextWindow?: number;
-  maxOutputTokens?: number;
-}
+```bash
+curl https://api.compose.market/v1/chat/completions \
+  -H "Authorization: Bearer compose-..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.5",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
 ```
 
-## API Compatibility
+## API compatibility
 
-All models use OpenAI-compatible endpoints:
+All models use OpenAI-compatible endpoints. The model string is the contract — Compose resolves the provider from the catalog row, not by inspecting the prompt. Duplicate upstream model IDs get explicit public aliases (e.g. `gpt-5.5` → Azure, `openai/gpt-5.5` → OpenAI).
 
-- `POST /v1/chat/completions` - Text generation
-- `POST /v1/images/generations` - Image generation
-- `POST /v1/embeddings` - Embeddings
+## Pricing
 
-This allows drop-in replacement with existing OpenAI client libraries.
+The API applies a **1% platform fee** on top of the raw provider amount. OpenRouter charges 5.5%. Compose charges 1% — a 5.5x difference that is factual. Pricing is dynamic: each model's price comes from the generated catalog, not a fixed table.
+
+## Related
+
+- [Inference](/inference/introduction) — full API surface, native and external routes
+- [SDK Inference](/sdk/inference/overview) — TypeScript API for model calls
+- [Quickstart](/inference/quickstart) — list models, chat, and stream
+- [Metering](/inference/metering) — how provider output becomes a bill

@@ -28,11 +28,11 @@ The runtime sends the query as a single user message, applies `SEARCH_DEEP_REASO
 
 Use deep search when the agent needs a slower research pass with public sources: market checks, regulatory summaries, technical comparisons, or source collection before synthesis.
 
-Do not use deep search for private account data, authenticated user actions, or deterministic workflow state. Those belong to connectors, Backpack, scratchpad, conclave, or CAL steps.
+Do not use deep search for private account data, authenticated user actions, or deterministic workflow state. Those belong to connectors, Backpack, scratchpad, conclave, or MAL steps.
 
 ## Search vs Synthesis
 
-Deep search gathers and summarizes public information. It is not the final authority for a workflow. In a CAL plan, the usual pattern is:
+Deep search gathers and summarizes public information. It is not the final authority for a workflow. In a MAL plan, the usual pattern is:
 
 ```yaml
 steps:

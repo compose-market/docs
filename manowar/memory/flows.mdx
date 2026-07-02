@@ -3,7 +3,7 @@ title: "Flows"
 description: "Pre-turn retrieval, post-turn persistence, explicit saves, workflow memory, and knowledge indexing."
 ---
 
-These are the runtime paths behind Manowar memory: `runtime/src/manowar/memory`, `runtime/src/manowar/agent/memory.ts`, and `runtime/src/manowar/workflow/memory.ts`.
+These are the runtime paths behind Manowar memory: `runtime/src/manowar/memory`, `runtime/src/manowar/harness/memory.ts`, and `runtime/src/manowar/workflow/memory.ts`.
 
 ## Pre-turn retrieval
 
@@ -70,7 +70,7 @@ Extraction defaults:
 
 | Setting | Default |
 | --- | --- |
-| Model | `gemini-3.1-flash-lite-preview` |
+| Model | `gemini-3.1-flash-lite` |
 | API path | `${API_URL}/v1/chat/completions` |
 | Timeout | `8000` ms |
 | Max facts per turn | `5` |

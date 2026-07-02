@@ -36,7 +36,7 @@ sequenceDiagram
   API-->>Client: response
 ```
 
-The runtime injects a dynamic system block per turn. It includes identity, optional persona text, compact memory, session context, and one capability sentence. The cached agent config is not mutated; per-request session data flows through `AsyncLocalStorage` in `agent/context.ts`.
+The runtime injects a dynamic system block per turn. It includes identity, optional persona text, compact memory, session context, and one capability sentence. The cached agent config is not mutated; per-request session data flows through `AsyncLocalStorage` in `harness/context.ts`.
 
 ## Workflow Run
 

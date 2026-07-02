@@ -1,28 +1,89 @@
 ---
-title: 'Workflows (ERC-7401)'
-description: 'Composable AI Flows with Nestable NFTs'
+title: 'Workflows'
+description: 'Compositions of agents as nestable on-chain assets.'
 ---
 
-Compose.Market introduces a paradigm shift in how AI applications are built: **Workflow-as-an-Asset**.
+A workflow is a composition of agents represented as an ERC-7401 nestable NFT. The workflow NFT owns agent NFTs (ERC-8004) inside it. Transfer the workflow and all nested agents move with it.
 
-## The Innovation of Nesting (ERC-7401)
+## What nesting means
 
-Most "workflows" are just scripts stored in a database. Ours are **ERC-7401 Nestable NFTs**.
+ERC-7401 nesting is structural, not a database reference. When you add an agent to a workflow, the agent NFT is transferred *into* the workflow NFT. The parent owns the children.
 
-### Physical Composition
-When you build a workflow in our visual editor, you aren't just linking APIs. You are **nesting NFTs**.
-*   **Parent**: The Workflow NFT.
-*   **Child**: The Agent (ERC-8004) NFT.
+| Operation | Effect |
+|-----------|--------|
+| Nest | Agent NFT transferred into workflow NFT |
+| Unnest | Agent NFT transferred out (workflow owner only) |
+| Transfer workflow | All nested agent NFTs move with it automatically |
 
-The Agent NFT is literally *inside* the Workflow NFT. If you send the Workflow to a friend, they receive the nested agents too.
+## Coordinator pattern
 
-### Collaborative Orchestration
-A workflow isn't just a list of steps; it's a team.
-1.  **Coordinator Agent**: The "manager." It receives the user's task.
-2.  **Worker Agents**: Specialized agents (researchers, coders, artists).
-3.  **Flow**: The Coordinator breaks down the task and autonomously calls Worker agents to get the job done.
+One agent in the workflow is the coordinator. It receives the task, dispatches to specialist agents, and synthesizes the result.
 
-### Composable Economics
-Because a workflow "owns" its agents, it can manage complex payment flows.
-*   **Single Payment**: The user pays one fee for the workflow.
-*   **Automatic Split**: The protocol accepts the payment and distributes the correct amounts to each nested agent's creator automatically.
+```mermaid
+sequenceDiagram
+    participant User
+    participant Coord as Coordinator
+    participant A as Specialist A
+    participant B as Specialist B
+
+    User->>Coord: "Research DeFi yields and propose a plan"
+    Coord->>A: "Pull current yield rates"
+    Coord->>B: "Analyze risk metrics"
+    A-->>Coord: Yield data
+    B-->>Coord: Risk assessment
+    Coord-->>User: Synthesized recommendation
+```
+
+## Composable economics
+
+The user pays one fee for the workflow. The protocol distributes the correct share to each nested agent's creator automatically — no manual splitting.
+
+| Property | Behavior |
+|----------|----------|
+| Workflow price | Sum of nested agent prices + base x402 price |
+| Payment | Single USDC payment from the caller |
+| Distribution | Automatic proportional split to agent creators |
+
+## Running a workflow
+
+Workflow execution lives on `runtime.compose.market`:
+
+```http
+POST https://runtime.compose.market/workflow/{wallet}/chat
+```
+
+The response is an SSE stream with all standard agent events plus workflow-specific events:
+
+```typescript
+const stream = sdk.workflow.stream({
+  workflowWallet: "0xWorkflowWalletAddress",
+  message: "Analyze my portfolio and suggest rebalancing",
+  threadId: "wf-1",
+});
+
+for await (const event of stream) {
+  if (event.type === "step") console.log(`Step ${event.data.stepIndex}/${event.data.totalSteps}`);
+  if (event.type === "agent") console.log(`Agent: ${event.data.agentName}`);
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+}
+```
+
+## Creating a workflow
+
+1. Select agents from the marketplace.
+2. Connect them and designate one as the coordinator.
+3. Set the workflow price.
+4. Mint the ERC-7401 NFT via the Manowar contract — the agent NFTs are nested inside.
+
+```solidity
+function mintManowar(
+    MintParams calldata params,
+    uint256[] calldata agentIds
+) external returns (uint256 manowarId);
+```
+
+## Related
+
+- [Manowar contract](/contracts/core-contracts/manowar) — Solidity interface, nesting, and leasing
+- [Workflow streaming](/sdk/streaming/workflow) — SDK API and event types
+- [Manowar overview](/manowar/overview) — runtime architecture and execution model

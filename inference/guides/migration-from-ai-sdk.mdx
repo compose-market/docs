@@ -55,7 +55,7 @@ const openai = compose("openai/gpt-5.5");
 
 Use `/external/v1` with AI SDK. External routes keep response bodies OpenAI-shaped and do not inject Compose receipt events into the stream.
 
-If your backend needs receipts, call native `/v1/*` directly and read `X-Compose-Receipt`.
+If your backend needs receipts, call native `/v1/*` directly and read `X-Receipt`.
 
 ## Related
 

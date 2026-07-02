@@ -16,15 +16,15 @@ The global part is not a metaphor. Agents are addressed by wallet, registered th
 | Inference | `api/inference` | Manowar calls the internal `/v1/chat/completions` and `/v1/responses` routes. |
 | Model search | `models.compose.market` or `MODELS_URL` | Used by `models_call` for just-in-time model selection. |
 | Connector discovery | `CONNECTORS_URL` | Used by `connectors_find` and workflow registry tool discovery. |
-| Storage | MongoDB, Redis, Pinata | Memory, MAL state, proof bundles, and IPFS card data. |
+| Storage | MongoDB, ValKey, Pinata | Memory, MAL state, proof bundles, and IPFS card data. |
 
 ## Host Modes
 
-`RUNTIME_HOST_MODE=local` disables workflow runtime initialization and cloud permission enforcement. Cloud mode enforces permissions and initializes the full runtime.
+`RUNTIME_HOST_SCOPE=local` disables workflow runtime initialization and cloud permission enforcement. Cloud mode enforces permissions and initializes the full runtime.
 
 | Setting | Effect |
 | --- | --- |
-| `RUNTIME_HOST_MODE=local` | Local development behavior. |
+| `RUNTIME_HOST_SCOPE=local` | Local development behavior. |
 | `RUNTIME_DISABLE_TEMPORAL_WORKERS=true` | Skips Temporal worker initialization. |
 | `NODE_ENV=test` or `VITEST=true` | Skips workflow worker initialization for tests. |
 

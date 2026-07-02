@@ -1,194 +1,104 @@
 ---
-title: "Sessions & Keys"
-description: "Signature-free inference with deferred settlement."
+title: 'Sessions & Keys'
+description: 'Pre-approved spending limits for instant, signature-free agent calls.'
 ---
 
-Sessions enable **instant AI inference** by pre-approving a spending limit. One signature, unlimited calls within your budget.
+Sessions enable instant AI inference by pre-approving a spending limit. One wallet signature, unlimited calls within budget — no per-request signing.
 
-## Overview
+## How it works
 
 ```mermaid
 flowchart LR
-    subgraph "One-Time Setup"
-        A[Connect Wallet] --> B[Choose Budget]
-        B --> C[Approve USDC]
+    subgraph "One-time setup"
+        A[Connect wallet] --> B[Choose budget + duration]
+        B --> C[One signature: approve USDC]
     end
-    subgraph "Instant Inference"
-        D[Send Request] --> E[Redis Lock]
-        E --> F[Response]
+    subgraph "Instant inference"
+        D[Send request] --> E[Reserve budget]
+        E --> F[Response + budget headers]
     end
-    subgraph "Async Settlement"
-        G[Batch Worker] --> H[On-Chain Transfer]
+    subgraph "Async settlement"
+        G[Batch worker] --> H[On-chain transfer]
     end
     C --> D
-    F -.->|Every 2 min| G
+    F -.->|Periodic| G
 ```
 
-## Creating a Session
+## Creating a session
 
-From the app, click **"Start Session"** in the top bar:
+From the app, click **Start Session**:
 
-1. **Select Budget** — $1, $5, $10, $25, or $100 USDC
-2. **Select Duration** — 1h, 6h, 12h, or 24h
-3. **Approve** — One wallet signature to authorize spending
+1. **Select budget** — $1, $5, $10, $25, or $100 USDC.
+2. **Select duration** — 1h, 6h, 12h, or 24h.
+3. **Approve** — one wallet signature authorizes the treasury to pull USDC up to your budget.
 
 The session is active immediately. All subsequent requests skip wallet signatures.
 
-### What Happens On-Chain
-
-| Chain | Mechanism |
-|-------|-----------|
-| **Avalanche** | ERC-4337 Session Key + USDC Approval |
-
-The approval authorizes the **treasury wallet** to pull USDC from your smart account, up to your budget limit.
-
-## Using a Session
-
-Once active, requests include session headers automatically:
-
-```
-POST /agent/{id}/chat
-x-session-user-address: 0x...
-x-session-active: true
-x-session-budget-remaining: 4500000
-X-CHAIN-ID: 43114
-```
-
-The server:
-1. **Validates** session exists for wallet + chain
-2. **Locks** the request amount in Redis (atomic)
-3. **Returns** response immediately (below 100ms)
-4. **Queues** intent for batch settlement
-
-No on-chain verification per request means **instant responses**.
-
-## Deferred Settlement
-
-Instead of settling each micropayment on-chain, Compose Market batches them:
-
-| Trigger | Condition |
-|---------|-----------|
-| **Timer** | Every 2 minutes |
-| **Threshold** | When pending amount ≥ $1.00 |
-
-The batch worker:
-1. Reads all pending payment intents from Redis
-2. Groups by user + chain
-3. Executes **one** USDC `transferFrom` per user
-4. Marks intents as settled
-
-If settlement fails, budget is unlocked and the user can retry.
-
 ## Compose Keys
 
-For external tools like **Cursor**, **OpenCode**, or **OpenClaw**, generate an **API Key** that inherits your session budget.
+A Compose Key is a signed JWT that inherits a session budget (or stands alone with its own budget). Format: `compose-{base64-jwt}`.
 
-### Generate a Key
+### Generate a key
 
-1. Click the session dropdown → **"Generate API Key"**
-2. Name the key (e.g., "Cursor")
-3. Copy the token (shown once)
+```http
+POST /api/keys
+Authorization: Bearer compose-...
 
-### Use the Key
+{ "budgetLimit": 1000000, "expiresAt": 1790000000000, "chainId": 43113, "purpose": "api", "name": "OpenCode" }
+```
+
+Requires `budgetLimit`, `expiresAt`, `chainId`, and `purpose` (`"api"` or `"session"`). The API checks USDC funding before creating the key. Response includes `keyId`, `token`, and budget state.
+
+### Use and revoke
 
 ```bash
-curl -X POST https://api.compose.market/agent/{id}/chat \
-  -H "Authorization: Bearer compose-abc123..." \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Hello"}'
+curl https://api.compose.market/external/v1/chat/completions \
+  -H "Authorization: Bearer compose-..." \
+  -d '{"model": "gpt-5.5", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
-### Key Properties
+Revoke with `DELETE /api/keys/{keyId}` and `Authorization: Bearer compose-...`. Revocation uses signed key ownership — the bearer key must belong to the same wallet as the target key.
 
-| Property | Value |
-|----------|-------|
-| Format | `compose-{base64-jwt}` |
-| Budget | Inherits from session |
-| Expiry | Same as session |
-| Revocable | Yes, from "Manage Sessions" |
+## Budget headers
 
-Keys are **JWT tokens** containing the user wallet, budget limit, and expiration. Each request deducts from the key's budget.
+Every billable response includes live budget headers:
 
-## API Endpoints
+| Header | Meaning |
+|--------|---------|
+| `x-key-budget-limit` | Original budget |
+| `x-key-budget-used` | Settled amount recorded against the key |
+| `x-key-budget-remaining` | Spendable budget left |
+| `x-payment-method` | `session` for active session requests |
+| `x-session-invalid` | Reason a session key no longer works (`expired`, `budget-depleted`, `revoked`) |
 
-### Create Key
+## Live budget tracking
 
-```
-POST /api/keys
-Headers:
-  x-session-user-address: 0x...
-  x-session-active: true
+The SDK parses budget headers and emits a `budget` event on every paid response:
 
-Body:
-{
-  "budgetLimit": 5000000,
-  "expiresAt": 1738500000000,
-  "name": "Cursor"
-}
-
-Response:
-{
-  "keyId": "abc-123",
-  "token": "compose-...",
-  "budgetLimit": 5000000,
-  "expiresAt": 1738500000000
-}
+```typescript
+sdk.events.on("budget", (event) => {
+  console.log(`Used: ${event.snapshot.usedWei} wei`);
+  console.log(`Remaining: ${event.snapshot.remainingWei} wei`);
+});
 ```
 
-### List Keys
+## Deferred settlement
 
-```
-GET /api/keys
-Headers:
-  x-session-user-address: 0x...
+Instead of settling each micropayment on-chain, the batch worker groups pending intents by user and chain, then executes one USDC `transferFrom` per group. If settlement fails, budget is unlocked and the user can retry.
 
-Response:
-{
-  "keys": [{
-    "keyId": "abc-123",
-    "budgetLimit": 5000000,
-    "budgetUsed": 150000,
-    "expiresAt": 1738500000000,
-    "name": "Cursor"
-  }]
-}
-```
-
-### Revoke Key
-
-```
-DELETE /api/keys/{keyId}
-Headers:
-  x-session-user-address: 0x...
-
-Response: 204 No Content
-```
-
-### Get Settlement Status
-
-```
-GET /api/settlement/status
-Headers:
-  x-session-user-address: 0x...
-  X-CHAIN-ID: 43114
-
-Response:
-{
-  "totalWei": "10000000",
-  "lockedWei": "500000",
-  "usedWei": "4500000",
-  "availableWei": "5000000",
-  "pendingIntents": 3
-}
-```
-
-## Security Model
+## Security model
 
 | Layer | Protection |
 |-------|------------|
-| **Session** | Wallet signature required to create |
-| **Budget** | Atomic Redis locking prevents over-spend |
-| **Settlement** | On-chain USDC approval limits max exposure |
-| **Keys** | JWT signed with server secret, revocable |
+| Session creation | Wallet signature required |
+| Budget | Atomic reservation prevents over-spend |
+| Settlement | On-chain USDC approval limits max exposure |
+| Keys | JWT signed with server secret, revocable via signed ownership |
 
-The worst-case exposure is the **session budget**—funds can only be pulled up to the approved amount, and only to the treasury wallet.
+Worst-case exposure is the session budget — funds can only be pulled up to the approved amount, and only to the treasury wallet.
+
+## Related
+
+- [x402: Sessions](/x402/sessions) — protocol details, session state, and events
+- [SDK: Sessions](/sdk/payments/sessions) — SDK API for budget tracking and session lifecycle
+- [x402 Payments](/concepts/payments) — payment methods and x402 schemes

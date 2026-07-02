@@ -39,11 +39,11 @@ sequenceDiagram
   Tool-->>Agent: compact result
 ```
 
-The internal call includes Manowar metadata such as `agentWallet`, `userAddress`, and `composeRunId` when available. That keeps usage attributable to the running agent while still treating the selected model as a tool.
+The internal call includes Manowar metadata such as `agentWallet`, `userAddress`, and `runId` when available. That keeps usage attributable to the running agent while still treating the selected model as a tool.
 
 ## Why Models Are Not Subagents
 
-CAL rejects `task.model` and `delegate.model`. If a plan needs another autonomous participant, it must provide `agentWallet`. If a plan needs one model output, it should call `models_call`.
+MAL rejects `task.model` and `delegate.model`. If a plan needs another autonomous participant, it must provide `agentWallet`. If a plan needs one model output, it should call `models_call`.
 
 | Need | Use |
 | --- | --- |

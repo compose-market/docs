@@ -3,13 +3,13 @@ title: "Error Handling"
 description: "Error types, retries, idempotency, and payment failures."
 ---
 
-The SDK throws typed errors so you can catch and react to specific failure modes. Every error is a subclass of `ComposeError`. Transient failures retry automatically; payment and session failures need your attention.
+The SDK throws typed errors so you can catch and react to specific failure modes. Every error is a subclass of `Error`. Transient failures retry automatically; payment and session failures need your attention.
 
 ## Error types
 
 | Error class | When it's thrown | Retryable |
 |-------------|-----------------|-----------|
-| `ComposeError` | Base class for all SDK errors | — |
+| `Error` | Base class for all SDK errors | — |
 | `NetworkError` | Connection dropped, timeout, DNS failure | Yes |
 | `ServerError` | 5xx response from the API | Yes |
 | `RateLimitError` | 429 response | Yes (with backoff) |
@@ -22,7 +22,7 @@ The SDK throws typed errors so you can catch and react to specific failure modes
 
 ```typescript
 import {
-  ComposeError,
+  Error,
   NetworkError,
   PaymentError,
   SessionError,
@@ -45,7 +45,7 @@ try {
     console.error(`Session invalid: ${err.code}`);
   } else if (err instanceof NetworkError) {
     console.error(`Network error: ${err.message}`);
-  } else if (err instanceof ComposeError) {
+  } else if (err instanceof Error) {
     console.error(`SDK error: ${err.code} — ${err.message}`);
   } else {
     throw err;
@@ -53,7 +53,7 @@ try {
 }
 ```
 
-Every `ComposeError` has a `code` string and a `message`. The `code` is stable — branch on it, not the message text.
+Every `Error` has a `code` string and a `message`. The `code` is stable — branch on it, not the message text.
 
 ## Retry behavior
 

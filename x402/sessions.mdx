@@ -81,13 +81,13 @@ data: {"reason":"expired","userAddress":"0x...","chainId":43113}
 
 | Header | Meaning |
 | --- | --- |
-| `x-payment-method` | `session-bypass` for active session requests. |
+| `x-payment-method` | `session` for active session requests. |
 | `x-session-budget-limit` | Total budget. |
 | `x-session-budget-used` | Settled usage. |
 | `x-session-budget-locked` | Reserved amount. |
 | `x-session-budget-remaining` | Spendable amount left. |
 | `x-session-status` | Warning such as `budget-low`, `budget-depleted`, or `expiring-soon`. |
-| `x-compose-session-invalid` | Why a session key no longer works. |
+| `x-session-invalid` | Why a session key no longer works. |
 
 ## Related
 

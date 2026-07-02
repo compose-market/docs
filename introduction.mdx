@@ -1,43 +1,74 @@
 ---
 title: 'Welcome to Compose.Market'
-description: 'The First Decentralized Marketplace for Composable AI Agents'
+description: 'A platform where AI agents have on-chain identity, infinite memory, and can summon and pay other agents.'
 ---
 
-**Compose.Market** is a platform where AI agents are composable, on-chain assets. We bridge the gap between AI and Web3 by making it invisible to the user.
+import { CardGroup, Card } from "@mintlab/components"
 
-<CardGroup cols={2}>
-  <Card title="Build Workflows" icon="diagram-project" href="/manowar/core-contracts/manowar">
-    Drag & drop agents into complex, autonomous workflows.
+**Compose.Market** is the platform where AI agents have on-chain identity, infinite memory, and can summon and pay other agents — "The OS of Autonomy."
+
+## Four pillars
+
+| Pillar | Standard | What it gives you |
+|--------|----------|-------------------|
+| **Agents** | ERC-8004 | Wallet-addressed NFTs with identity, model, tools, memory. 1% platform fee. |
+| **Workflows** | ERC-7401 | Nestable NFTs that own agent NFTs. Transfer the workflow, transfer all its agents. |
+| **Payments** | x402 v2 | Machine-to-machine HTTP payments in USDC across 6 chains. 1% platform fee. |
+| **Inference** | 500+ models | 504 curated models from 11 providers, 6 modalities, single x402-native API. |
+
+## Choose your path
+
+<CardGroup cols={3}>
+  <Card title="Use agents" icon="robot" href="/sdk/quickstart">
+    Stream responses from deployed agents in 10 lines of TypeScript.
   </Card>
-  <Card title="Lease Agents" icon="money-bill-transfer" href="/concepts/agents">
-    Monetize your agents by leasing them to other users.
+  <Card title="Build agents" icon="code" href="/manowar/overview">
+    Use the Manowar runtime, 6-layer memory, and connector system.
+  </Card>
+  <Card title="Integrate inference" icon="brain" href="/inference/quickstart">
+    Call 500+ models through one OpenAI-compatible API.
+  </Card>
+  <Card title="Connect channels" icon="comments" href="/sdk/channels/overview">
+    Link agents to WhatsApp, Telegram, Slack, and Discord.
+  </Card>
+  <Card title="Deploy contracts" icon="file-contract" href="/contracts/introduction">
+    Mint ERC-8004 agents and ERC-7401 workflows on-chain.
+  </Card>
+  <Card title="API reference" icon="square-terminal" href="/endpoints/overview">
+    Browse every endpoint, header, and response shape.
   </Card>
 </CardGroup>
 
-## The "x402-Native" Platform
+## Getting started without crypto knowledge
 
-Our platform is "x402-native," meaning every interaction is a machine-payable HTTP request. You don't sign transactions manually; the agents do it for you.
+You do not need to be a crypto expert. Compose.Market uses ERC-4337 account abstraction so the crypto layer stays invisible:
 
-### accessible to Everyone (ERC-4337)
-You do **not** need to be a crypto expert to use Compose.Market.
-Thanks to **ERC-4337 Account Abstraction** and **Gas Sponsorship**:
-*   **No Extension Needed**: You don't need MetaMask or Phantom.
-*   **Social Login**: Log in with Google, Github, or Email.
-*   **Gasless**: We pay the network fees. You only pay for the AI inference itself (in credits or USDC).
+- **No wallet extension** — no MetaMask or Phantom required.
+- **Social login** — sign in with Google, GitHub, or email.
+- **Gasless** — we sponsor network fees. You only pay for AI inference in USDC.
 
-This is the power of true **Account Abstraction**: complex crypto operations happen seamlessly in the background.
+## Explore the docs
 
-## Core Innovations
-
-### 1. ERC8004-Manowar: Sovereign Agents
-An agent isn't just a script; it's an on-chain identity (ERC-8004) that can receive payments and build reputation.
-*   **Identity**: Immutable DNA and reputation.
-*   **x402 Payments**: Autonomous machine-to-machine payments.
-
-### 2. ERC7401: Nestable Workflows
-We use **ERC-7401 Nestable NFTs** to create "physical" compositions.
-*   **Drag & Drop**: When you place an agent in a workflow, the NFT is nested inside.
-*   **Atomic**: The workflow is a single asset containing all its dependencies.
-
-### 3. Decentralized Inference
-We connect to a decentralized grid of Inference providers to offer **1000+ SOTA models** at the lowest possible cost.
+<CardGroup cols={4}>
+  <Card title="Overview" icon="book-open" href="/guides/core-flows">
+    Concepts, core flows, and platform mental model.
+  </Card>
+  <Card title="Inference" icon="brain" href="/inference/introduction">
+    500+ models, 6 modalities, metering, and streaming.
+  </Card>
+  <Card title="x402" icon="coins" href="/x402/introduction">
+    Payment protocol, Compose Keys, sessions, facilitator.
+  </Card>
+  <Card title="Manowar" icon="code" href="/manowar/overview">
+    Agent runtime, 6-layer memory, harness, tools.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/contracts/introduction">
+    ERC-8004 agents, ERC-7401 workflows, multichain.
+  </Card>
+  <Card title="APIs" icon="square-terminal" href="/endpoints/overview">
+    Endpoint reference for every route family.
+  </Card>
+  <Card title="SDK" icon="package" href="/sdk/quickstart">
+    TypeScript SDK for agents, inference, payments, channels.
+  </Card>
+</CardGroup>

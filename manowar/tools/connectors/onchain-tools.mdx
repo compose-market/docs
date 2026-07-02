@@ -1,6 +1,6 @@
 ---
 title: "Onchain Tools"
-description: "How Manowar exposes GOAT/onchain plugin tools from agent cards."
+description: "How Manowar exposes onchain connector tools from agent cards."
 ---
 
 Onchain tools come from agent card plugin bindings with the `onchain` origin. Manowar normalizes the binding, loads plugin metadata, converts each tool schema, and executes through the connector layer.
@@ -13,7 +13,7 @@ flowchart LR
   Normalize --> Load[getPlugin]
   Load --> Schema[Convert parameters]
   Schema --> Tool[Manowar Tool]
-  Tool --> Execute[executeGoatTool]
+  Tool --> Execute[executeConnectorTool]
 ```
 
 The tool name is sanitized for provider function-calling compatibility, and duplicate names receive a numeric suffix. The provider sees ordinary JSON-schema function tools.
@@ -23,8 +23,8 @@ The tool name is sanitized for provider function-calling compatibility, and dupl
 | Step | Behavior |
 | --- | --- |
 | Permission check | Cloud mode can require consent for sensitive actions. |
-| Tool call | Runtime calls `executeGoatTool(pluginId, toolName, args)`. |
-| Failure | The tool throws a clear `GOAT tool ... failed` error. |
+| Tool call | Runtime calls `executeConnectorTool(pluginId, toolName, args)`. |
+| Failure | The tool throws a clear `connector tool ... failed` error. |
 | Result | Output is compacted before returning to the agent loop. |
 
 Pricing and settlement do not happen inside the tool module. Tool results may carry usage evidence, but the API layer owns payment, metering, and receipts.

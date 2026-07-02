@@ -1,36 +1,53 @@
 ---
-title: "MCP Overview"
-description: "Model Context Protocol servers and tool runtimes."
+title: 'Connectors'
+description: 'MCP servers and onchain tools that agents can call during execution.'
 ---
 
-Compose Market maintains a comprehensive registry of MCP (Model Context Protocol) servers and blockchain tools, providing agents with access to external capabilities.
+Agents on Compose.Market access external capabilities through connectors. There are two types: MCP servers (standardized tool interfaces) and onchain tools (blockchain-native capabilities).
 
-## Tool Sources
+## MCP servers
 
-### MCP Servers
+MCP servers expose tools through the Model Context Protocol. Bindings use the `mcp:` prefix.
 
-MCP servers provide standardized tool interfaces that agents can invoke. The registry includes servers from:
+| Connector | Description |
+|-----------|-------------|
+| `mcp:github` | Repository access, issues, pull requests |
+| `mcp:fetch` | HTTP fetch and web retrieval |
+| `mcp:filesystem` | Local file read/write operations |
+| `mcp:brave-search` | Web search via Brave Search API |
 
-- **Official MCP Registry** - Servers from the Model Context Protocol project
-- **Community Servers** - Third-party implementations
+## Onchain tools
 
-Each server exposes tools that agents can call during execution.
+Onchain tools provide blockchain-native capabilities. Bindings use the `onchain:` prefix.
 
-### GOAT Plugins
+| Connector | Description |
+|-----------|-------------|
+| `onchain:coingecko` | Crypto market data and prices |
+| `onchain:uniswap` | DEX token swaps |
+| `onchain:erc20` | ERC-20 token transfers, approvals, and queries |
+| `onchain:1inch` | DEX aggregation for optimal routing |
+| `onchain:ens` | ENS name resolution |
+| `onchain:opensea` | NFT marketplace access |
+| `onchain:polymarket` | Prediction market trading |
 
-[GOAT SDK](https://github.com/goat-sdk/goat) plugins provide blockchain-native tools:
+## Using connectors in agents
 
-| Plugin | Description |
-|--------|-------------|
-| `goat:erc20` | ERC-20 token operations |
-| `goat:coingecko` | Crypto market data |
-| `goat:uniswap` | DEX swaps |
-| `goat:1inch` | DEX aggregation |
-| `goat:ens` | ENS name resolution |
-| `goat:opensea` | NFT marketplace |
-| `goat:polymarket` | Prediction markets |
+Specify connectors in the agent card using the `{origin}:{id}` format:
 
-## Transport Types
+```json
+{
+  "connectors": [
+    { "registryId": "onchain:coingecko", "name": "CoinGecko", "origin": "onchain" },
+    { "registryId": "onchain:uniswap", "name": "Uniswap", "origin": "onchain" },
+    { "registryId": "mcp:github", "name": "GitHub", "origin": "mcp" },
+    { "registryId": "mcp:fetch", "name": "Fetch", "origin": "mcp" }
+  ]
+}
+```
+
+The origin type is `"mcp" | "onchain"`. The runtime resolves each binding, loads tool schemas, and exposes them as JSON-schema function tools during agent execution.
+
+## Transport types
 
 MCP servers can be accessed via different transports:
 
@@ -41,63 +58,22 @@ MCP servers can be accessed via different transports:
 | `http` | Remote HTTP/SSE endpoints |
 | `docker` | Containerized servers |
 
-## Registry Structure
-
-Tools in the registry follow a unified schema:
-
-```typescript
-interface UnifiedServerRecord {
-  registryId: string;      // "mcp:github", "goat:uniswap"
-  origin: "mcp" | "goat" | "internal";
-  name: string;
-  description: string;
-  transport: "npx" | "stdio" | "http" | "docker";
-  tools: Array<{
-    name: string;
-    description: string;
-    inputSchema: object;
-  }>;
-  available: boolean;
-  executable: boolean;
-}
-```
-
-## Using Tools in Agents
-
-When creating an agent, specify tools using the `{origin}:{id}` format:
-
-```json
-{
-  "plugins": [
-    "goat:coingecko",
-    "goat:uniswap",
-    "mcp:github",
-    "mcp:fetch"
-  ]
-}
-```
-
-The runtime automatically:
-1. Resolves the tool from the registry
-2. Spawns the server (for MCP) or loads the plugin (for GOAT)
-3. Makes tools available during agent execution
-4. Handles authentication and API keys
-
-## Runtime Architecture
+## Architecture
 
 ```mermaid
 graph LR
     Agent[Agent] --> Runtime[Tool Runtime]
-    Runtime --> GOAT[GOAT Runtime]
-    Runtime --> MCP[MCP Runtime]
-    GOAT --> Plugins[Blockchain Plugins]
-    MCP --> Servers[MCP Servers]
+    Runtime --> Onchain[Onchain Tools]
+    Runtime --> MCP[MCP Servers]
+    Onchain --> Blockchain[Blockchain APIs]
+    MCP --> Servers[External Services]
 ```
 
-### Tool Execution Flow
+The runtime resolves each connector from the registry, spawns the server (for MCP) or loads the plugin (for onchain), makes tools available during execution, and handles authentication.
 
-1. Agent receives user message
-2. LLM decides to invoke a tool
-3. Runtime routes to appropriate handler (GOAT or MCP)
-4. Tool executes and returns result
-5. Agent continues with tool output
+## Related
+
+- [SDK Tools](/sdk/tools/overview) — tool families, parsing, and the `connectors_find` API
+- [Manowar Tools](/manowar/tools/overview) — runtime tool surface and execution model
+- [Onchain Tools](/manowar/tools/connectors/onchain-tools) — onchain connector internals
+- [MCP Store](/manowar/tools/connectors/mcp-store) — MCP discovery and loading

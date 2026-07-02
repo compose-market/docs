@@ -54,9 +54,9 @@ Usage-priced inference uses `upto` because the final token count or media eviden
 | `PAYMENT-REQUIRED` | Response | Encoded x402 payment requirement for raw x402 clients. |
 | `PAYMENT-SIGNATURE` | Request | Signed x402 payment payload on the retry request. |
 | `Authorization` | Request | `Bearer compose-...` for Compose Key clients. |
-| `X-Compose-Receipt` | Response | Base64 JSON receipt for native routes. |
+| `X-Receipt` | Response | Base64 JSON receipt for native routes. |
 | `x-payment-intent-id` | Response | Prepared payment intent used for reserve/settle/abort flows. |
-| `x-compose-key-budget-remaining` | Response | Remaining key budget after settlement. |
+| `x-key-budget-remaining` | Response | Remaining key budget after settlement. |
 
 ## Native and external routes
 

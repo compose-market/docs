@@ -15,7 +15,7 @@ Manowar observability is native runtime data. It does not depend on LangSmith or
 | Feedback | `recordFeedback()` and helpers | Supports quality score, error, insight, and decision feedback. |
 | Learnings | `recordLearning()` and `getRelevantLearnings()` | Lets workflow planning review prior outcomes. |
 | Workflow checkpoints | `workflow/checkpoint.ts` | Records observations, decisions, insights, outputs, and errors. |
-| MAL checkpoints | `harness/checkpoint.ts` | Redis resume snapshots for typed MAL plans. |
+| MAL checkpoints | `harness/checkpoint.ts` | ValKey resume snapshots for typed MAL plans. |
 
 ## Usage Extraction
 
@@ -52,8 +52,8 @@ Cron metadata records total executions, successes, failures, and last-run detail
 
 | Checkpoint type | Storage | Purpose |
 | --- | --- | --- |
-| Agent filesystem checkpoint | Local JSON files | Local checkpoint saver in `agent/checkpoint.ts`. |
-| MAL checkpoint | Redis `cal:run:{agentWallet}:{composeRunId}` | Resume state for a typed plan. |
+| Agent filesystem checkpoint | Local JSON files | Local checkpoint saver in `harness/checkpoint.ts`. |
+| MAL checkpoint | ValKey `mal:run:{agentWallet}:{runId}` | Resume state for a typed plan. |
 | Workflow annotation checkpoint | Memory/telemetry | Human-readable observations, decisions, insights, and errors. |
 
 ## Comparison

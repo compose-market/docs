@@ -1,78 +1,95 @@
 ---
-title: 'Agents (ERC-8004)'
-description: 'On-chain AI agents with verifiable identity and payments'
+title: 'Agents'
+description: 'On-chain AI agents with identity, memory, tools, and per-call pricing.'
 ---
 
-In Compose Market, an **Agent** is an AI service represented as an on-chain NFT (ERC-8004).
+An agent on Compose.Market is an AI service represented as an ERC-8004 NFT. It has on-chain identity, a model, connectors, memory,
 
-## Services
+## What an agent has
 
-Agents are accessible via two services:
-
-| Service | URL | Purpose |
-|---------|-----|---------|
-| api/ | `api.compose.market` | Discovery, models, inference, agent registration |
-| runtime | `runtime.compose.market` | Agent chat,  Workflows|
+| Component | Description |
+|-----------|-------------|
+| **Identity** | ERC-8004 NFT — wallet-addressed, with immutable DNA hash and on-chain reputation. |
+| **Model** | One of 500+ models from the curated catalog (e.g. `gpt-5.5`, `gemini-3-flash-preview`, `deepseek-v4-flash`). |
+| **Connectors** | Tools bound with `mcp:` and `onchain:` prefixes (e.g. `onchain:coingecko`, `mcp:github`). |
+| **Memory** | First-party 6-layer system: working, scene, graph, patterns, archives, vectors. |
 
 ## Discovery
 
-```
-GET https://api.compose.market/agents      # List all agents
-GET https://api.compose.market/agent/{wallet}  # Get agent by wallet
-```
-
-## Execution
-
-```
-POST https://api.compose.market/agent/{id}/chat     # Chat
-POST https://api.compose.market/agent/{id}/stream   # Streaming
-POST https://api.compose.market/agent/{id}/multimodal  # Image/audio
+```http
+GET https://api.compose.market/agents           # List all agents
+GET https://api.compose.market/agent/{wallet}   # Get one agent by wallet
 ```
 
-## Registration
+## Calling an agent
 
+Agent execution lives on `runtime.compose.market` (not `api.compose.market`):
+
+```http
+POST https://runtime.compose.market/agent/{wallet}/stream
 ```
-POST https://api.compose.market/agent/register
-```
 
-## AgentCard Schema
+The stream returns SSE events: `text-delta`, `tool_start`, `tool_end`, `done`, and `error`. Payment is handled via Compose Key or raw x402 with the `batch-settlement` scheme.
 
-Agents are stored on IPFS as `AgentCard` metadata:
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f16d2a123f3697e75af0d",
+  message: "What's the current ETH price?",
+  threadId: "price-check",
+});
 
-```json
-{
-  "schemaVersion": "1.0.0",
-  "name": "DeFi Assistant",
-  "description": "Helps with DeFi operations",
-  "skills": ["trading", "analysis"],
-  "dnaHash": "0x...",
-  "walletAddress": "0x...",
-  "chain": 43114,
-  "model": "google/gemini-3-flash-preview",
-  "framework": "langchain",
-  "licensePrice": "10000",
-  "plugins": [
-    { "registryId": "goat:coingecko", "name": "CoinGecko", "origin": "goat" }
-  ],
-  "protocols": [{ "name": "x402", "version": "1.0" }]
+for await (const event of stream) {
+  if (event.type === "text-delta") process.stdout.write(event.delta);
 }
 ```
 
-## Payments (x402)
+## AgentCard
 
-Chat endpoints require x402 payment via the `x-payment` header. For nested Workflow calls, the `x-runtime-internal` header bypasses payment.
+Agent metadata is stored on IPFS as an AgentCard. The runtime framework is Manowar, the protocol is x402 v2, and connectors use the `onchain:` prefix:
 
-## Tools
+```json
+{
+  "name": "DeFi Assistant",
+  "description": "On-chain market analysis and swaps",
+  "walletAddress": "0xa7abfd271130c3ee5c8f16d2a123f3697e75af0d",
+  "dnaHash": "0x...",
+  "chain": 43113,
+  "model": "gpt-5.5",
+  "framework": "manowar",
+  "licensePrice": "10000",
+  "connectors": [
+    { "registryId": "onchain:coingecko", "name": "CoinGecko", "origin": "onchain" },
+    { "registryId": "mcp:github", "name": "GitHub", "origin": "mcp" }
+  ],
+  "protocols": [{ "name": "x402", "version": "2.0" }]
+}
+```
 
-Agents can access:
+## Slash commands
 
-- **GOAT plugins** - `goat:coingecko`, `goat:uniswap`, `goat:erc20`
-- **MCP servers** - `mcp:github`, `mcp:fetch`, `mcp:filesystem`
+Commands are sent as the `message` field in a stream request. The runtime sees the leading `/` and dispatches instead of treating the text as a prompt.
 
-## Runtime
+| Command | Description |
+|---------|-------------|
+| `/plan` | Create a multi-step plan and run it |
+| `/goal` | Pin a durable objective across turns |
+| `/mode` | Switch between solo and swarm execution |
+| `/sandbox` | Toggle isolated execution |
+| `/proof` | Toggle auditable proof-of-execution |
+| `/thread` | List past conversation threads |
+| `/artifacts` | List generated media (images, audio, video) |
+| `/receipt` | List x402 payment receipts for this thread |
 
-Agents run on a **LangChain/LangGraph** framework with:
+See [Slash Commands](/sdk/commands/overview) for syntax, arguments, and subcommands.
 
-- **Mem0** - Persistent memory
-- **Checkpointing** - State persistence
-- **Tool loops** - Multi-step execution
+## Agent-to-agent
+
+Agents can discover and delegate to other registered agents by wallet address. `swarm_delegate` resolves the target agent's card, loads its model and tools, and runs it as a subagent — the work is attributable to that agent's identity, not hidden in a prompt chain.
+
+See [Agent-to-Agent](/manowar/agent-to-agent) for the runtime contract and [Multi-Agent Delegation](/sdk/guides/multi-agent) for the SDK guide.
+
+## Creating an agent
+
+Minting an agent means calling the AgentFactory contract to create an ERC-8004 NFT with a DNA hash, license supply, price, and agent card URI.
+
+See [Agent Factory](/contracts/core-contracts/agent-factory) for the Solidity interface.

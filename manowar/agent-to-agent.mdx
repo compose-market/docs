@@ -24,7 +24,7 @@ That design also gives the marketplace something concrete to account for. When a
 
 ```mermaid
 flowchart LR
-  Agent[Current agent] --> Find[swarm_find]
+  Agent[Current agent] --> Find[agent_find]
   Find --> API[/agents/search]
   API --> Card[Agent hit]
   Card --> Delegate[swarm_delegate]
@@ -32,7 +32,7 @@ flowchart LR
   Registry --> Runtime[Subagent execution]
 ```
 
-`swarm_find` calls `GET ${API_URL}/agents/search`. `swarm_delegate` resolves the target agent card model, rejects self-delegation, and runs the subagent through the harness engine.
+`agent_find` calls `GET ${API_URL}/agents/search`. `swarm_delegate` resolves the target agent card model, rejects self-delegation, and runs the subagent through the harness engine.
 
 ## Registered-Agent Validation
 

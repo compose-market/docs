@@ -54,9 +54,9 @@ External routes are for clients that can set an OpenAI-compatible `baseURL` and 
 
 | Header | Description |
 | --- | --- |
-| `x-compose-public-model` | Public catalog ID requested by the client. |
-| `x-compose-upstream-provider` | Provider selected by the catalog resolver. |
-| `x-compose-upstream-model` | Provider wire model used upstream. |
+| `x-public-model` | Public catalog ID requested by the client. |
+| `x-upstream-provider` | Provider selected by the catalog resolver. |
+| `x-upstream-model` | Provider wire model used upstream. |
 
 External response bodies do not include `compose_receipt`. Upstream content-filter errors are sanitized while keeping the diagnostic headers above.
 

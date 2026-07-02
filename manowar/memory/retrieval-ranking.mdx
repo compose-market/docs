@@ -15,13 +15,13 @@ sequenceDiagram
   participant Vector as vector.ts
   participant Rank as ranking.ts
   participant Pack as summary.ts
-  participant Redis
+  participant ValKey
 
   Runtime->>Loop: pre_turn query + scope
   Loop->>Layers: search selected layers
-  Layers->>Redis: read scoped layer cache
+  Layers->>ValKey: read scoped layer cache
   Layers->>Vector: graph and vector layers
-  Vector->>Redis: read scoped vector cache
+  Vector->>ValKey: read scoped vector cache
   Vector->>Vector: query embedding
   Vector->>Vector: Atlas vector search
   Vector->>Rank: decay, optional rerank, optional MMR
@@ -46,7 +46,7 @@ sequenceDiagram
 | Query input type | `query` |
 | Cache TTL | `86400` seconds |
 
-Query and document embeddings use separate Redis keys. The same text can produce different vectors because Voyage's asymmetric retrieval models treat query and document inputs differently.
+Query and document embeddings use separate ValKey keys. The same text can produce different vectors because Voyage's asymmetric retrieval models treat query and document inputs differently.
 
 The embedder has no silent provider fallback. If embeddings are unavailable, the operation fails instead of mixing vector spaces.
 

@@ -56,9 +56,9 @@ OpenCode accepts a smaller model metadata schema than `/external/v1/models`. The
 If OpenCode starts but a model call fails, check the response headers:
 
 ```text
-x-compose-public-model
-x-compose-upstream-provider
-x-compose-upstream-model
+x-public-model
+x-upstream-provider
+x-upstream-model
 ```
 
 They show which catalog row the request reached.

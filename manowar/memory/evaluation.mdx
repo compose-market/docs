@@ -57,7 +57,7 @@ This keeps evals deterministic enough for regression checks. Use concrete substr
 | It checks retrieval, not generation. | A good eval run does not prove the model used the memory correctly. |
 | It uses substring or id matching. | Paraphrased correct memories can fail if the expected string is too narrow. |
 | It measures raw layer payload size. | It does not directly measure the compact prompt produced by `summary.ts`. |
-| It runs live retrieval. | Embedding, Mongo, Redis, and rerank configuration affect results. |
+| It runs live retrieval. | Embedding, Mongo, ValKey, and rerank configuration affect results. |
 
 Use evals as regression tests for indexing, scoping, filtering, and retrieval. Use separate answer-quality evals when you need to measure model behavior after memory is injected.
 

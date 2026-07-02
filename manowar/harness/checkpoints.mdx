@@ -7,15 +7,15 @@ Manowar has several checkpoint concepts. They serve different readers.
 
 ## MAL Checkpoints
 
-MAL checkpoints are Redis snapshots for typed plans.
+MAL checkpoints are ValKey snapshots for typed plans.
 
 | Property | Value |
 | --- | --- |
-| Key | `mal:run:{agentWallet}:{composeRunId}` |
+| Key | `mal:run:{agentWallet}:{runId}` |
 | TTL | 24 hours |
 | Saved after | Each successful non-terminal top-level step. |
 | Cleared after | Completed, stopped, errored, or aborted plan. |
-| Contents | `planId`, `composeRunId`, completed step index, step results, saved values, aggregate usage. |
+| Contents | `planId`, `runId`, completed step index, step results, saved values, aggregate usage. |
 
 Nested `if`, `loop`, and inline fanout blocks do not create separate checkpoint streams. The top-level plan snapshot captures their step result.
 
@@ -33,7 +33,7 @@ Workflow checkpoints are annotations:
 
 ## Agent Filesystem Checkpoints
 
-`agent/checkpoint.ts` provides a local JSON checkpoint saver with retention and health helpers. It is separate from MAL Redis checkpoints and workflow annotations.
+`harness/checkpoint.ts` provides a local JSON checkpoint saver with retention and health helpers. It is separate from MAL ValKey checkpoints and workflow annotations.
 
 ## Related
 

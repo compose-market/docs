@@ -10,7 +10,6 @@ Manowar lives under `runtime/src/manowar`. The modules are small enough to inspe
 | Module | Responsibility |
 | --- | --- |
 | `index.ts` | Exposes the single framework id, `manowar`. |
-| `mode.ts` | Resolves local/cloud host behavior and worker initialization gates. |
 | `runtime.ts` | Registers agents and workflows, validates cards, derives wallets, warms runtimes. |
 | `framework.ts` | Creates agents, model wrappers, managed workers, streams, stop controllers, and Responses calls. |
 | `telemetry.ts` | Extracts tokens, records usage, feedback, learning records, and run metadata. |
@@ -19,13 +18,13 @@ Manowar lives under `runtime/src/manowar`. The modules are small enough to inspe
 
 | Module | Responsibility |
 | --- | --- |
-| `agent/graph.ts` | Native model/tool loop with streaming, tool repair, and turn budgets. |
-| `agent/context.ts` | Per-turn execution context via `AsyncLocalStorage`. |
-| `agent/identity.ts` | Agent identity hydration and compact identity rendering. |
-| `agent/memory.ts` | Pre-turn retrieval, post-turn persistence, and explicit remember calls. |
-| `agent/memory-scope.ts` | Global/local memory scope resolution. |
-| `agent/state.ts` | Tool leases and visibility states: `base`, `memory`, `tool`, `model`, `swarm`. |
-| `agent/tools/*` | Tool factories, tool-call parsing, model/agent/search clients, and surface sentence. |
+| `harness/graph.ts` | Native model/tool loop with streaming, tool repair, and turn budgets. |
+| `harness/context.ts` | Per-turn execution context via `AsyncLocalStorage`. |
+| `harness/identity.ts` | Agent identity hydration and compact identity rendering. |
+| `harness/memory.ts` | Pre-turn retrieval, post-turn persistence, and explicit remember calls. |
+| `harness/memory-scope.ts` | Global/local memory scope resolution. |
+| `harness/state.ts` | Tool leases and visibility states: `base`, `memory`, `tool`, `model`, `swarm`. |
+| `harness/tools/*` | Tool factories, tool-call parsing, model/agent/search clients, and surface sentence. |
 
 ## Memory
 
@@ -38,7 +37,7 @@ Manowar lives under `runtime/src/manowar`. The modules are small enough to inspe
 | `memory/embedding.ts` | Voyage embeddings through MongoDB's AI gateway. |
 | `memory/ranking.ts` | Temporal decay, Cloudflare rerank, and MMR ordering. |
 | `memory/mongo.ts` | MongoDB connection, collections, and indexes. |
-| `memory/cache.ts` | Redis cache, embedding cache, and scoped invalidation. |
+| `memory/cache.ts` | ValKey cache, embedding cache, and scoped invalidation. |
 | `memory/operations.ts` | Consolidation, patterns, archives, decay, cleanup, and IPFS sync. |
 | `memory/evals.ts` | Memory retrieval evaluation metrics. |
 
@@ -46,17 +45,17 @@ Manowar lives under `runtime/src/manowar`. The modules are small enough to inspe
 
 | Module | Responsibility |
 | --- | --- |
-| `harness/types.ts` | Typed MAL plan, step, budget, result, and subagent contracts. |
-| `harness/interpreter.ts` | Plan parser, validator, deterministic dispatcher, checkpoint/proof orchestration. |
-| `harness/engine.ts` | Subagent execution and budget enforcement. |
-| `harness/parallel.ts` | Fanout concurrency and gather modes. |
-| `harness/registry.ts` | Registered-agent validation through the API. |
-| `harness/scratchpad.ts` | Private per-agent/run scratchpad. |
-| `harness/conclave.ts` | Shared swarm bus. |
-| `harness/checkpoint.ts` | Redis MAL checkpoints. |
-| `harness/proof.ts` | Hash proof bundles and optional Pinata pinning. |
-| `harness/sandbox.ts` | Daytona-backed isolated subagent execution. |
-| `harness/coordinators.ts` | Dynamic coordinator model discovery from the catalog. |
+| `harness/swarm/types.ts` | Typed MAL plan, step, budget, result, and subagent contracts. |
+| `harness/swarm/interpreter.ts` | Plan parser, validator, deterministic dispatcher, checkpoint/proof orchestration. |
+| `harness/swarm/engine.ts` | Subagent execution and budget enforcement. |
+| `harness/swarm/parallel.ts` | Fanout concurrency and gather modes. |
+| `harness/swarm/types.ts` | Registered-agent validation through the API. |
+| `harness/swarm/scratchpad.ts` | Private per-agent/run scratchpad. |
+| `harness/swarm/conclave.ts` | Shared swarm bus. |
+| `harness/swarm/checkpoint.ts` | ValKey MAL checkpoints. |
+| `harness/swarm/proof.ts` | Hash proof bundles and optional Pinata pinning. |
+| `harness/swarm/sandbox.ts` | Daytona-backed isolated subagent execution. |
+| `harness/swarm/coordinators.ts` | Dynamic coordinator model discovery from the catalog. |
 
 ## Workflow
 
@@ -78,7 +77,7 @@ Manowar lives under `runtime/src/manowar`. The modules are small enough to inspe
 | --- | --- | --- |
 | Native executor | OpenAI Agents SDK runner, ADK runner | Manowar calls the Compose inference gateway and records metering evidence. |
 | MAL harness | LangGraph graph, ADK workflow agents | MAL is a typed plan language interpreted by the runtime, not a graph library embedded in user code. |
-| Memory | LangGraph store, ADK session/state/memory | Manowar stores layered memory in first-party Mongo/Redis and injects compact context automatically. |
+| Memory | LangGraph store, ADK session/state/memory | Manowar stores layered memory in first-party Mongo/ValKey and injects compact context automatically. |
 | Swarm delegation | OpenAI handoffs, AutoGen messages | Delegation requires registered Compose agents with wallet identity. |
 | Model store | OpenRouter-style catalog search | Model selection uses the Compose generated catalog and public model ids. |
 | Telemetry | OpenAI tracing, LangSmith, AutoGen logs | Telemetry is in-runtime usage and feedback records used by Compose billing and learning surfaces. |

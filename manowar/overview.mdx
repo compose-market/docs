@@ -27,11 +27,11 @@ flowchart LR
 
 | Area | Runtime behavior | Primary source |
 | --- | --- | --- |
-| Agent execution | Native `NativeAgentExecutor` model/tool loop with streaming, repair, and turn budgets. | `runtime/src/manowar/agent/graph.ts` |
-| Agent identity | Wallet-addressed deployed agents hydrated from API/IPFS metadata. | `runtime/src/manowar/runtime.ts`, `agent/identity.ts` |
-| Memory | Six-layer first-party memory over MongoDB, Redis, Voyage embeddings, and optional Cloudflare rerank. | `runtime/src/manowar/memory/*` |
-| Harness | Manowar Agent Loop (`cal`) typed plans with deterministic step dispatch. | `runtime/src/manowar/harness/*` |
-| Tools | Small default capability surface plus loaded onchain, MCP, Backpack, search, model, and swarm tools. | `runtime/src/manowar/agent/tools/*` |
+| Agent execution | Native `NativeAgentExecutor` model/tool loop with streaming, repair, and turn budgets. | `runtime/src/manowar/harness/graph.ts` |
+| Agent identity | Wallet-addressed deployed agents hydrated from API/IPFS metadata. | `runtime/src/manowar/runtime.ts`, `harness/identity.ts` |
+| Memory | Six-layer first-party memory over MongoDB, ValKey, Voyage embeddings, and optional Cloudflare rerank. | `runtime/src/manowar/memory/*` |
+| Harness | Manowar Agent Loop (`mal`) typed plans with deterministic step dispatch. | `runtime/src/manowar/harness/*` |
+| Tools | Small default capability surface plus loaded onchain, MCP, Backpack, search, model, and swarm tools. | `runtime/src/manowar/harness/tools/*` |
 | Workflows | Plan -> Act -> Reflect orchestration over registered workflow cards. | `runtime/src/manowar/workflow/*` |
 | Telemetry | Token extraction, usage records, feedback, learning records, and run metadata. | `runtime/src/manowar/telemetry.ts` |
 

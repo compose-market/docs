@@ -274,10 +274,15 @@
             "pages": [
               "endpoints/mesh/linking",
               "endpoints/mesh/storage",
-              "endpoints/mesh/network",
+              "endpoints/mesh/network"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
               "endpoints/utilities/decorative-generation"
             ]
-        }
+          }
       ]
     },
     {

@@ -3,7 +3,7 @@ title: "Architecture"
 description: "Storage, scope, indexes, caches, and runtime boundaries for Manowar memory."
 ---
 
-Manowar memory is built from a few plain services. MongoDB stores the records. Redis stores query and embedding caches. MongoDB's AI gateway calls Voyage for embeddings. Cloudflare Workers AI reranks candidates when configured. The Compose API extracts facts. Temporal runs maintenance jobs when a job needs workflow semantics.
+Manowar memory is built from a few plain services. MongoDB stores the records. ValKey stores query and embedding caches. MongoDB's AI gateway calls Voyage for embeddings. Cloudflare Workers AI reranks candidates when configured. The Compose API extracts facts. Temporal runs maintenance jobs when a job needs workflow semantics.
 
 ## Component map
 
@@ -15,7 +15,7 @@ flowchart LR
   WMem --> Vectors[vector and graph APIs]
   Layers --> Mongo[(MongoDB memory DB)]
   Vectors --> Mongo
-  Layers --> Redis[(Redis cache)]
+  Layers --> ValKey[(ValKey cache)]
   Vectors --> Embed[MongoDB AI Gateway / Voyage]
   Vectors --> Rerank[Cloudflare reranker]
   Loop --> Extract[Compose API fact extractor]
@@ -37,9 +37,9 @@ Agent turns use the hot path. Temporal uses the maintenance path. Both read and 
 | MongoDB | `archives` | Compressed historical payloads and optional IPFS CIDs. |
 | MongoDB | `skills` | Learned skills promoted from validated patterns. |
 | MongoDB | `memory_jobs` | Inline and Temporal maintenance job records. |
-| Redis | `embedding:*`, `embedding:q:*` | 24 hour embedding cache. |
-| Redis | `memory:query:*` | Vector, graph, and layer query caches. |
-| Redis | `memory:ns:*` | Scoped invalidation tokens. |
+| ValKey | `embedding:*`, `embedding:q:*` | 24 hour embedding cache. |
+| ValKey | `memory:query:*` | Vector, graph, and layer query caches. |
+| ValKey | `memory:ns:*` | Scoped invalidation tokens. |
 
 The same `memory` collection stores semantic rows and graph facts. Facts are rows with `source: "fact"` and `metadata.layer: "graph"`. General semantic rows use `source: "session"`, `knowledge`, `pattern`, or `archive`.
 
@@ -77,7 +77,7 @@ Atlas vector search uses index name `vector_index`, path `embedding`, cosine sim
 
 ## Cache invalidation
 
-Memory caches use namespace tokens instead of chasing every cached query key. Writes increment Redis namespace keys at several levels:
+Memory caches use namespace tokens instead of chasing every cached query key. Writes increment ValKey namespace keys at several levels:
 
 | Namespace level | What changes |
 | --- | --- |

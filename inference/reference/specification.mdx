@@ -24,6 +24,12 @@ This is the compact route map for hosted inference. For request examples, start 
 | `GET` | `/v1/models/{model}/params` | Optional parameter metadata for a model. |
 | `GET` | `/external/v1/models` | OpenAI-shaped model list. |
 | `GET` | `/external/v1/models/{model}` | One OpenAI-shaped model row. Slash-containing IDs are supported. |
+| `GET` | `/v1/families` | Family catalog. |
+| `GET` | `/v1/families/{family}` | One family row. |
+| `GET` | `/v1/modalities` | Modality catalog. |
+| `GET` | `/v1/modalities/{modality}` | One modality row. |
+| `GET` | `/v1/modalities/{modality}/operations` | Operations for a modality. |
+| `GET` | `/v1/modalities/{modality}/operations/{operation}/models` | Models for an operation. |
 
 ## Generation routes
 
@@ -34,6 +40,7 @@ This is the compact route map for hosted inference. For request examples, start 
 | `GET` | `/v1/responses/{id}` | No | Retrieves a stored response record. |
 | `GET` | `/v1/responses/{id}/input_items` | No | Returns stored input items. |
 | `POST` | `/v1/responses/{id}/cancel` | No | Cancels a response or async job. |
+| `POST` | `/v1/responses/{id}/input_items` | No | Appends input to a live realtime response. |
 | `POST` | `/v1/embeddings` | No | OpenAI embeddings shape. |
 | `POST` | `/v1/images/generations` | Provider-dependent | Image generation. |
 | `POST` | `/v1/images/edits` | No | Image editing. |
@@ -71,15 +78,14 @@ Common fields:
 | Header | Description |
 | --- | --- |
 | `X-Request-Id` | Request ID minted or accepted by the root middleware. |
-| `X-Compose-Receipt` | Native Compose receipt. |
-| `x-compose-response-id` | Response ID for streaming native responses. |
+| `X-Receipt` | Native Compose receipt. |
 | `x-routing-primary-model` | Primary model selected by routing policy. |
 | `x-routing-final-model` | Final model after retry policy. |
 | `x-routing-attempts` | Number of provider attempts. |
 | `x-routing-fallback-used` | `false` with the single-target routing policy. |
-| `x-compose-public-model` | External route public model ID. |
-| `x-compose-upstream-provider` | External route provider selected by resolver. |
-| `x-compose-upstream-model` | External route provider wire model. |
+| `x-public-model` | External route public model ID. |
+| `x-upstream-provider` | External route provider selected by resolver. |
+| `x-upstream-model` | External route provider wire model. |
 
 ## Error shape
 

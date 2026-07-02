@@ -14,6 +14,7 @@ Common modalities:
 | Images | `/v1/images/generations`, `/v1/images/edits`, `/v1/responses` |
 | Video | `/v1/videos/generations`, `/v1/videos/{id}` |
 | Speech | `/v1/audio/speech`, `/v1/audio/transcriptions` |
+| Realtime | `/v1/responses` with realtime models, `/v1/responses/{id}/input_items` |
 | Embeddings | `/v1/embeddings` |
 
 Specialized outputs such as detections, segmentation, keypoints, and classification appear in catalog metadata for providers such as Roboflow. External configs filter those labels when the target client only accepts a smaller modality enum.

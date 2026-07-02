@@ -10,7 +10,7 @@ Manowar lets the model reason, but keeps execution contracts typed. The clearest
 | Surface | Type source | Runtime behavior |
 | --- | --- | --- |
 | Tools | JSON Schema or Zod | Converted into OpenAI-style function tools. |
-| MAL plans | `harness/types.ts` plus interpreter validation | Parsed from YAML/JSON and dispatched by closed `op` enum. |
+| MAL plans | `harness/swarm/types.ts` plus interpreter validation | Parsed from YAML/JSON and dispatched by closed `op` enum. |
 | Subagents | `SubAgentSpec` | Requires deployed `agentWallet`, explicit model, budgets, and depth. |
 | Memory loop | `AgentMemoryScope` and workflow response types | Enforces scope and step names. |
 | Telemetry | `UsageRecord`, `FeedbackRecord`, `RunMetadataRecord` | Normalizes provider usage into runtime records. |

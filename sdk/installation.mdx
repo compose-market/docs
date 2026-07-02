@@ -45,8 +45,8 @@ const sdk = new ComposeSDK({
 | `chainId` | `number` | — | Chain ID for x402 settlement. Call `sdk.x402.facilitator.chains()` to see supported chains. |
 | `baseUrl` | `string` | `https://api.compose.market` | API base URL. |
 | `channelsUrl` | `string` | `https://services.compose.market` | Channels service base URL. |
-| `composeKey` | `string` | — | A previously issued Compose Key JWT. Stored and reused automatically. |
-| `storage` | `ComposeStorage` | in-memory | Token storage adapter. Browser `localStorage` is auto-detected. |
+| `key` | `string` | — | A previously issued Compose Key JWT. Stored and reused automatically. |
+| `storage` | `Storage` | in-memory | Token storage adapter. Browser `localStorage` is auto-detected. |
 | `timeoutMs` | `number` | `60000` | Per-request timeout in milliseconds. |
 | `retry` | `Partial<RetryPolicy>` | `{ maxRetries: 2 }` | Retry policy for transient errors (5xx, 429, network). |
 | `userAgent` | `string` | `@compose-market/sdk/<version>` | User-Agent suffix for analytics. |

@@ -1,26 +1,60 @@
 ---
 title: "Realtime"
-description: "Realtime route support in the hosted inference API."
+description: "Realtime audio, transcription, translation, and live sessions through the Responses API."
 ---
 
-The hosted API does not expose a realtime WebSocket endpoint.
+Compose supports realtime inference through the `/v1/responses` endpoint with realtime-capable models. The system includes 29 realtime models across multiple providers, a WebSocket vendor layer, and realtime-specific settlement.
 
-For streaming text, use Server-Sent Events:
+## How it works
 
-| Method | Path |
-| --- | --- |
-| `POST` | `/v1/chat/completions` with `"stream": true` |
-| `POST` | `/v1/responses` with `"stream": true` |
-| `POST` | `/external/v1/chat/completions` with `"stream": true` |
-| `POST` | `/external/v1/responses` with `"stream": true` |
+Realtime requests go through the same `/v1/responses` endpoint as text inference. When the resolved model is a realtime type (e.g., `gpt-realtime-2`, `qwen-omni-turbo-realtime`), the engine opens a WebSocket session to the provider, streams audio/text bidirectionally, and meters the result with realtime-specific billing.
 
-For video jobs, use:
-
-```http
-GET /v1/videos/{id}/stream
 ```
+POST /v1/responses
+Authorization: Bearer compose-...
+Content-Type: application/json
+
+{
+  "model": "gpt-realtime-2",
+  "input": [{ "role": "user", "content": "Hello" }],
+  "stream": true
+}
+```
+
+## Realtime models
+
+| Provider | Models | Operations |
+|----------|--------|------------|
+| OpenAI | `gpt-realtime-2`, `gpt-realtime-translate`, `gpt-realtime-whisper` | Realtime transcription, translation, conversation |
+| Alibaba | `qwen-omni-turbo-realtime`, `qwen3-asr-flash-realtime`, `qwen3-omni-flash-realtime`, `qwen3-tts-flash-realtime` | Realtime ASR, TTS, omni-modal |
+| Google | `gemini-2.5-flash-native-audio-latest`, `gemini-3.1-flash-live-preview`, `gemini-3.5-live-translate-preview` | Live audio, live translation |
+| Deepgram | `deepgram/flux-general-en`, `scribe_v2_realtime` | Realtime STT |
+| ElevenLabs | `scribe_v2_realtime` | Realtime speech-to-text |
+
+Use `GET /v1/models?type=realtime` or `GET /v1/models/search?type=realtime` to list all realtime models.
+
+## Appending input to a live session
+
+For ongoing realtime sessions, append audio or text without starting a new response:
+
+```
+POST /v1/responses/{responseId}/input_items
+Authorization: Bearer compose-...
+
+{
+  "type": "message",
+  "role": "user",
+  "content": [{ "type": "input_audio", "input_audio": { "data": "base64..." } }]
+}
+```
+
+## Settlement
+
+Realtime sessions are settled like any other inference call — the metering system extracts audio duration, token counts, and session metrics from the provider's usage format, then settles via x402. The receipt includes per-modality token breakdowns (input_audio_tokens, output_audio_tokens).
 
 ## Related
 
-- [Streaming](/inference/streaming)
-- [Inference API reference](/inference/reference/specification)
+- [Streaming](/inference/streaming) — SSE streaming for text and media
+- [Modalities](/inference/modalities/overview) — All supported modality types
+- [Speech models](/inference/families/speech-models) — TTS and STT provider details
+- [SDK: Inference](/sdk/inference/overview) — TypeScript API for inference

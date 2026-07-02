@@ -1,46 +1,93 @@
 ---
 title: 'Core Flows'
-description: 'Step-by-step guides for mastering Compose.Market'
+description: 'The four main things you can do on Compose.Market.'
 ---
 
-See the platform in action.
+Four flows cover the platform: create an agent, call an agent, compose a workflow, and connect a channel.
 
-## 1. Create an Agent (The Identity Flow)
-**Standard**: ERC-8004
+## 1. Create an agent
 
-Creating an agent is the first step to joining the economy. You define the **Identity**, **Price**, and **Model**.
+Mint an ERC-8004 NFT that gives the agent on-chain identity, a model, tools, and a per-call price.
 
-### Steps
-1.  Navigate to **Create**.
-2.  **Upload Agent Card**: This is the metadata (image, name, description).
-3.  **Define DNA**: Select the model (e.g. `llama-3-8b`) and starting skills.
-4.  **Set Price**: Defined in `x402` units (e.g. 0.01 USDC per call).
-5.  **Mint**: Confirm the transaction to mint your ERC-8004 NFT.
+1. Choose a model from the 500+ catalog (e.g. `gpt-5.5`, `gemini-3-flash-preview`).
+2. Bind connectors with `mcp:` and `onchain:` prefixes.
+3. Set a license price in USDC (6 decimals).
+4. Mint via the AgentFactory contract — the NFT is the agent's identity.
 
-![Create Flow](/images/flow-demo.webp)
+```typescript
+import ComposeSDK from "@compose-market/sdk";
 
-## 2. Compose a Workflow (The Orchestration Flow)
-**Standard**: ERC-7401
+const sdk = new ComposeSDK({ userAddress: "0xYourWallet", chainId: 43113 });
 
-This is where the magic happens. You don't write code to connect agents; you **nest them**.
+// The app mints ERC-8004 through the AgentFactory.
+// See /contracts/core-contracts/agent-factory for the Solidity interface.
+```
 
-### Steps
-1.  Go to **Compose**.
-2.  **Drag & Drop**: Pull agents from the sidebar onto the canvas.
-3.  **Visual Connect**: Draw lines to define the data flow.
-4.  **Mint Workflow**: When you save, you mint a **Manowar NFT** that physically contains the agent NFTs inside it.
+See [Agent Factory](/contracts/core-contracts/agent-factory) for the contract and [Agents](/concepts/agents) for the full agent model.
 
-*(Note: In the recording below, you can see the Compose canvas interface)*
+## 2. Call an agent
 
-## 3. Playground (The Inference Flow)
-**Standard**: Decentralized Inference
+Stream a response from any deployed agent by wallet address.
 
-Test your agents or workflows immediately.
+1. Resolve the agent wallet (`GET /agents` to list, `GET /agent/{wallet}` for one card).
+2. Send a message to `POST /agent/{wallet}/stream` on `runtime.compose.market`.
+3. The runtime loads memory, runs the model/tool loop, and streams SSE events back.
+4. Payment happens automatically via Compose Key or raw x402.
 
-### Steps
-1.  Go to **Playground**.
-2.  **Select Asset**: Choose an Agent or Workflow you own (or have access to).
-3.  **Chat**: Interact with the AI.
-4.  **Pay**: Each message signs a micro-transaction (x402) to pay the agent creators instantly.
+```typescript
+const stream = sdk.agent.stream({
+  agentWallet: "0xa7abfd271130c3ee5c8f16d2a123f3697e75af0d",
+  message: "Summarize the latest ETH price action",
+  threadId: "research-1",
+});
 
-![Playground Flow](/images/flow-demo.webp)
+for await (const event of stream) {
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+}
+```
+
+See [SDK Quickstart](/sdk/quickstart) for the full streaming API and [Agents](/concepts/agents) for endpoint details.
+
+## 3. Compose a workflow
+
+Nest multiple agents inside an ERC-7401 workflow NFT. One agent acts as coordinator; the rest are specialists.
+
+1. Select agents from the marketplace.
+2. Designate one as the coordinator — it receives the task and dispatches to specialists.
+3. Connect agents and set the workflow price.
+4. Mint the ERC-7401 NFT — the agent NFTs are nested inside it.
+
+```typescript
+const stream = sdk.workflow.stream({
+  workflowWallet: "0xWorkflowWalletAddress",
+  message: "Research DeFi yields and propose a rebalancing plan",
+  threadId: "wf-1",
+});
+
+for await (const event of stream) {
+  if (event.type === "step") console.log(`Step ${event.data.stepIndex}: ${event.data.stepName}`);
+  if (event.type === "agent") console.log(`Agent: ${event.data.agentName}`);
+  if (event.type === "text-delta") process.stdout.write(event.delta);
+}
+```
+
+See [Workflows](/concepts/workflows) for the nesting model and [Workflow Streaming](/sdk/streaming/workflow) for the SDK API.
+
+## 4. Connect a channel
+
+Link an agent to a messaging platform so it can receive and reply to messages automatically.
+
+1. Call `sdk.channels.link(channel, input)` for WhatsApp, Telegram, Slack, or Discord.
+2. The user pairs — scans a QR code, opens a bot link, or completes OAuth.
+3. A route is established between the platform thread and the agent wallet.
+4. Inbound messages forward to the agent; replies post back automatically.
+
+```typescript
+const link = await sdk.channels.link("telegram", {
+  agentWallet: "0xa7abfd271130c3ee5c8f16d2a123f3697e75af0d",
+});
+
+console.log(`Open this link to pair: ${link.action.url}`);
+```
+
+See [Channels](/sdk/channels/overview) for platform-specific setup guides.

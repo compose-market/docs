@@ -17,7 +17,7 @@ Prompt-only agent loops spend tokens re-explaining how to act. MAL makes executi
 | References | Model copies text around. | Runtime resolves `{{stepId.path}}`. |
 | Budgets | Usually prompt-instructed. | Runtime enforces token, tool batch, wall time, and depth budgets. |
 | Parallelism | Model describes it. | Runtime runs `fanout` branches with concurrency controls. |
-| Resume | App-specific. | Redis checkpoint store can resume by `composeRunId`. |
+| Resume | App-specific. | ValKey checkpoint store can resume by `runId`. |
 
 ## Minimal Plan
 

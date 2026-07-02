@@ -52,7 +52,7 @@ curl "$COMPOSE_API_URL/v1/chat/completions" \
   }'
 ```
 
-The response is an OpenAI-compatible chat completion. Native responses may include `compose_receipt` in the JSON body, and receipt data is also exposed through `X-Compose-Receipt` when available.
+The response is an OpenAI-compatible chat completion. Native responses may include `receipt` in the JSON body, and receipt data is also exposed through `X-Receipt` when available.
 
 ## Stream a chat call
 
@@ -93,9 +93,9 @@ External responses keep the body clean for OpenAI-compatible clients. Provider d
 
 | Header | Meaning |
 | --- | --- |
-| `x-compose-public-model` | Public catalog ID the client requested. |
-| `x-compose-upstream-provider` | Provider selected by the resolver. |
-| `x-compose-upstream-model` | Provider wire model sent to the adapter. |
+| `x-public-model` | Public catalog ID the client requested. |
+| `x-upstream-provider` | Provider selected by the resolver. |
+| `x-upstream-model` | Provider wire model sent to the adapter. |
 
 ## Related
 
